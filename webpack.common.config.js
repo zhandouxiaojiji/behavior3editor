@@ -1,7 +1,11 @@
 module.exports = {
-  entry: "./src/index.tsx",
+  mode: "development",
+  entry: {
+    "bundle": ["./src/index.tsx"],
+    "main": ["./main.tsx"]
+  },
   output: {
-    filename: "bundle.js",
+    filename: "[name].js",
     path: __dirname + "/dist"
   },
 
@@ -21,4 +25,6 @@ module.exports = {
 
   plugins: [
   ],
+
+  target: "electron-renderer"
 };

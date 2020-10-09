@@ -8,7 +8,8 @@
     "jsx": "react"
   },
   "include": [
-    "./src/**/*"
+    "./src/**/*",
+    "main.tsx"
   ],
   "exclude": [
     "node_modules",
