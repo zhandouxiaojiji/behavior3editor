@@ -1,24 +1,48 @@
 import * as React from 'react';
+import GGEditor, { Mind, RegisterNode } from 'gg-editor';
+import { MindData } from 'gg-editor/lib/common/interfaces';
+const data: MindData = {
+  id: "1",
+  label: 'Central Topic',
+  children: [
+    {
+      id: "2",
+      label: 'Main Topic 1',
+    },
+    {
+      id: "3",
+      label: 'Main Topic 2',
+    },
+    {
+      id: "4",
+      label: 'Main Topic 3',
+    },
+  ],
+};
 
-export interface Props {
-  name: string;
-  enthusiasmLevel?: number;
-}
-
-export default class Hello extends React.Component<Props, object> {
+export default class Hello extends React.Component {
   render() {
-    const { name, enthusiasmLevel = 1 } = this.props;
-
-    if (enthusiasmLevel <= 0) {
-      throw new Error('You could be a little more enthusiastic. :D');
-    }
-
     return (
-      <div className="hello">
-        <div className="greeting">
-          Hello {name + getExclamationMarks(enthusiasmLevel)}
-        </div>
-      </div>
+      <GGEditor style={{ background: "#1E1E1E" }}>
+        <Mind
+          style={{ width: 500, height: 500 }}
+          data={data}
+          graphConfig={{ defaultNode: { type: 'customNode' } }}
+        />
+        <RegisterNode
+          name="customNode"
+          config={{
+            getCustomConfig(model: any) {
+              return {
+                wrapperStyle: {
+                  fill: '#000000',
+                },
+              };
+            },
+          }}
+          extend="bizFlowNode"
+        />
+      </GGEditor>
     );
   }
 }
