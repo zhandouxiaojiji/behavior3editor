@@ -23,7 +23,7 @@ const data: MindData = {
 export default class Hello extends React.Component {
   render() {
     return (
-      <GGEditor style={{ background: "#1E1E1E" }}>
+      <GGEditor style={{ background: "#242424" }}>
         <Mind
           style={{ width: 500, height: 500 }}
           data={data}

@@ -1,6 +1,7 @@
-import { app, BrowserWindow, Menu, MenuItem, dialog } from 'electron';
+import { app, BrowserWindow, Menu, MenuItem, dialog, nativeTheme } from 'electron';
 
 let mainWindow: BrowserWindow = null;
+nativeTheme.themeSource = 'dark';
 let createWindow = function () {
   mainWindow = new BrowserWindow({
     width: 800,
@@ -10,9 +11,9 @@ let createWindow = function () {
     }
     // fullscreenable:false,
     // maximizable:false
-  })
-  mainWindow.webContents.openDevTools()
-  mainWindow.loadFile('index.html')
+  });
+  mainWindow.webContents.openDevTools();
+  mainWindow.loadFile('index.html');
   mainWindow.on('closed', function () {
     mainWindow = null
   })
