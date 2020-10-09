@@ -1,0 +1,19 @@
+{
+  "name": "behavior3editor",
+  "version": "0.0.1",
+  "description": "行为树编辑器",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/zhandouxiaojiji/behavior3editor.git"
+  },
+  "author": "zhandouxiaojiji",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zhandouxiaojiji/behavior3editor/issues"
+  },
+  "homepage": "https://github.com/zhandouxiaojiji/behavior3editor#readme"
+}
