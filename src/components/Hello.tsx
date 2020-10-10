@@ -3,7 +3,7 @@ import GGEditor, { Mind, RegisterNode } from 'gg-editor';
 import { MindData } from 'gg-editor/lib/common/interfaces';
 const data: MindData = {
   id: "1",
-  label: 'Central Topic',
+  label: 'Central Topic111',
   children: [
     {
       id: "2",

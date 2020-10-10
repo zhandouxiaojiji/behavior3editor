@@ -18,7 +18,6 @@ module.exports = {
   module: {
     rules: [
       { test: /\.tsx?$/, loader: "ts-loader" },
-
       { enforce: "pre", test: /\.js$/, loader: "source-map-loader" }
     ]
   },
@@ -26,5 +25,9 @@ module.exports = {
   plugins: [
   ],
 
-  target: "electron-renderer"
+  target: "electron-renderer",
+
+  externals: [{
+    'electron-reload': 'require("electron-reload")'
+  }]
 };
