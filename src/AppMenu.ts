@@ -5,8 +5,15 @@ export function initMenu() {
   const fileMenu: MenuItem = new MenuItem({
     label: "行为树",
     submenu: [
-      { label: "打开文件" },
-      { label: "打开目录" },
+      { 
+        label: "打开文件",
+        accelerator: "Ctrl+O"
+      },
+      { 
+        label: "打开目录",
+        accelerator: "Ctrl+Shift+O"
+     
+      },
       { type: 'separator'},
       {
         label: "最近打开",
@@ -34,14 +41,14 @@ export function initMenu() {
     submenu: [
       {
         label: "重载",
-        accelerator: "ctrl + r",
+        accelerator: "Ctrl+R",
         click: (_, browserWindow) => {
           browserWindow.reload();
         }
       },
       {
         label: "打开控制台",
-        accelerator: "ctrl + shift + i",
+        accelerator: "Ctrl+Shift+I",
         click: (_, browserWindow) => {
           browserWindow.webContents.toggleDevTools();
         }
