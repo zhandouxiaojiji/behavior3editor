@@ -17,7 +17,6 @@ export function initMenu(mainWindow: BrowserWindow) {
                 {name: "Json", extensions:['json']}
               ]
             });
-            console.log("open res", res);
             mainWindow.webContents.send(MainEventType.OPEN_FILE, res.filePaths[0]);
           })();
         }

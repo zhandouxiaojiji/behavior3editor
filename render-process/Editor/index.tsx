@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { DatePicker } from 'antd';
 import { ipcRenderer } from 'electron';
+import * as fs from 'fs';
 import MainEventType from "../../common/MainEventType";
 
 interface EditorState {
@@ -28,6 +29,14 @@ export default class Editor extends Component {
     });
   }
 
+  renderJson() {
+    if(this.state.filepaths.length>0) {
+      const path = this.state.filepaths[0];
+      const str = fs.readFileSync(path, 'utf8');
+      return (<div>{str}</div>)
+    }
+  }
+
   render() {
     return (
       <div>
@@ -37,6 +46,7 @@ export default class Editor extends Component {
         <div>
           当前文件:{this.state.filepaths.join("\n")}
         </div>
+        {this.renderJson()}
       </div>
     )
   }
