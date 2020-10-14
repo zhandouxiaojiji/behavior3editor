@@ -25,6 +25,7 @@ export class MainProcess {
 
   createWindow (){
     this.settings = new Settings();
+    this.appMenu = new AppMenu(this);
     this.mainWindow = new BrowserWindow({
       width: 1280,
       height: 800,
@@ -39,7 +40,12 @@ export class MainProcess {
     this.mainWindow.on('closed', function () {
       this.mainWindow = null
     });
-    this.appMenu = new AppMenu(this);
+    this.rebuildMenu();
+  }
+
+  rebuildMenu() {
+    console.log("rebuild menu");
+    Menu.setApplicationMenu(this.appMenu.createMenu());
   }
 }
 

@@ -3,9 +3,9 @@ import * as fs from 'fs';
 const settingPath = 'settings.json';
 
 export interface SettingsModel {
-  recentWorkspaces: string[];
-  recentFiles: string[];
-  nodeConfigPath: string; // 节点配置路径
+  recentWorkspaces?: string[];
+  recentFiles?: string[];
+  nodeConfigPath?: string; // 节点配置路径
 }
 
 export default class Settings {
@@ -24,7 +24,17 @@ export default class Settings {
     }
   }
 
-  set(config: any) {
+  get nodeConfigPath() {
+    return this.settings.nodeConfigPath;
+  }
+  get recentWorkspaces() {
+    return this.settings.recentWorkspaces;
+  }
+  get recentFiles() {
+    return this.settings.recentFiles;
+  }
+
+  set(config: SettingsModel) {
     this.settings = {
       ...this.settings,
       ...config
