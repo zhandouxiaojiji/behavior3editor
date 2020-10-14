@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 
 const settingPath = 'settings.json';
+const sampleNodeConfig = 'sample-node-config.json'
 
 export interface SettingsModel {
   recentWorkspaces?: string[];
@@ -18,7 +19,7 @@ export default class Settings {
       this.settings = {
         recentWorkspaces: [],
         recentFiles: [],
-        nodeConfigPath: ''
+        nodeConfigPath: sampleNodeConfig,
       };
       this.save();
     }
@@ -32,6 +33,10 @@ export default class Settings {
   }
   get recentFiles() {
     return this.settings.recentFiles;
+  }
+  get nodeConfig() {
+    const str = fs.readFileSync(this.nodeConfigPath, 'utf8');
+    return JSON.parse(str);
   }
 
   set(config: SettingsModel) {

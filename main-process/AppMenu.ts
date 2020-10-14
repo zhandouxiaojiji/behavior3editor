@@ -1,4 +1,4 @@
-import { BrowserView, Menu, app, shell, dialog, BrowserWindow, MenuItem, WebContents, MenuItemConstructorOptions } from 'electron';
+import { Menu, app, dialog, BrowserWindow, MenuItem, WebContents, MenuItemConstructorOptions } from 'electron';
 import MainEventType from '../common/MainEventType';
 import { MainProcess } from './main';
 import Settings from './Settings';
@@ -167,8 +167,18 @@ export default class AppMenu {
   }
 
   private createNodeMenu() {
+    const nodeItems: MenuItemConstructorOptions[] = [];
+    for (let node of this.settings.nodeConfig) {
+      nodeItems.push({
+        label: `${node.name}(${node.desc})`,
+        click: () => {
+          console.log("create node", node.name);
+        }
+      })
+    }
     return new MenuItem({
-      label: "新建节点"
+      label: "新建节点",
+      submenu: nodeItems
     });
   }
 }
