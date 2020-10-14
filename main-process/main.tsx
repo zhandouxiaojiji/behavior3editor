@@ -1,5 +1,5 @@
 import { app, BrowserWindow, Menu, MenuItem, dialog, nativeTheme } from 'electron';
-import {initMenu} from './src/AppMenu'
+import {initMenu} from './AppMenu'
 
 let mainWindow: BrowserWindow = null;
 nativeTheme.themeSource = 'dark';

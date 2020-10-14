@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { DatePicker } from 'antd';
 import { ipcRenderer } from 'electron';
-import EventType from "../EventType";
+import EventType from "../../common/EventType";
 
 interface EditorState {
   workspace: string;

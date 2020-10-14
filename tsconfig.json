@@ -9,8 +9,9 @@
     "jsx": "react"
   },
   "include": [
-    "./src/**/*",
-    "main.tsx"
+    "./common/**/*",
+    "./main-process/**/*",
+    "./render-process/**/*"
   ],
   "exclude": [
     "node_modules",

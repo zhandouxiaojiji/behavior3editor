@@ -1,8 +1,8 @@
 module.exports = {
   mode: "development",
   entry: {
-    "bundle": ["./src/index.tsx"],
-    "main": ["./main.tsx"]
+    "bundle": ["./render-process/index.tsx"],
+    "main": ["./main-process/main.tsx"]
   },
   output: {
     filename: "[name].js",

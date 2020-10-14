@@ -1,5 +1,5 @@
 import { BrowserView, Menu, app, shell, dialog, BrowserWindow, MenuItem } from 'electron';
-import EventType from './EventType';
+import EventType from '../common/EventType';
 
 export function initMenu(mainWindow: BrowserWindow) {
   const menu: Menu = new Menu();
