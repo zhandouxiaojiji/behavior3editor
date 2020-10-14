@@ -1,12 +1,12 @@
 {
   "name": "behavior3editor",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "行为树编辑器",
   "main": "./dist/main.js",
   "scripts": {
     "prestart": "webpack --config webpack.config.js",
     "start": "electron .",
-    "build": "electron-packager ./ behavior3editor --platform=win32 --arch=x64 --out=./build"
+    "build": "electron-packager ./ behavior3editor --platform=win32 --arch=x64 --out=./build --overwrite"
   },
   "repository": {
     "type": "git",

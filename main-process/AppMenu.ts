@@ -1,5 +1,5 @@
 import { BrowserView, Menu, app, shell, dialog, BrowserWindow, MenuItem } from 'electron';
-import EventType from '../common/EventType';
+import MainEventType from '../common/MainEventType';
 
 export function initMenu(mainWindow: BrowserWindow) {
   const menu: Menu = new Menu();
@@ -12,17 +12,29 @@ export function initMenu(mainWindow: BrowserWindow) {
         click: () => {
           (async () => {
             const res = await dialog.showOpenDialog({
-              properties: ['openFile', 'openDirectory']
+              properties: ['openFile'],
+              filters: [
+                {name: "Json", extensions:['json']}
+              ]
             });
             console.log("open res", res);
-            mainWindow.webContents.send(EventType.MAIN_OPEN_FILE, res);
+            mainWindow.webContents.send(MainEventType.OPEN_FILE, res.filePaths[0]);
           })();
         }
       },
       {
         label: "打开目录",
-        accelerator: "Ctrl+Shift+O"
-
+        accelerator: "Ctrl+Shift+O",
+        click: () => {
+          (async () => {
+            const res = await dialog.showOpenDialog({
+              properties: ['openDirectory']
+            });
+            if (res.filePaths.length > 0) {
+              mainWindow.webContents.send(MainEventType.OPEN_WORKSPACE, res.filePaths[0]);
+            }
+          })();
+        }
       },
       { type: 'separator' },
       {

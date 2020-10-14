@@ -1,0 +1,4 @@
+export default {
+  OPEN_FILE: "OPEN_FILE",
+  OPEN_WORKSPACE: "OPEN_WORKSPACE",
+}
