@@ -1,4 +1,4 @@
-import { BrowserView, Menu, app, shell, dialog, BrowserWindow, MenuItem, WebContents } from 'electron';
+import { BrowserView, Menu, app, shell, dialog, BrowserWindow, MenuItem, WebContents, MenuItemConstructorOptions } from 'electron';
 import MainEventType from '../common/MainEventType';
 import { MainProcess } from './main';
 import Settings from './Settings';
@@ -12,6 +12,7 @@ export default class AppMenu {
   constructor(mainProcess: MainProcess) {
     this.mainProcess = mainProcess;
     this.mainWindow = mainProcess.mainWindow;
+    this.webContents = mainProcess.mainWindow.webContents;
     this.settings = mainProcess.settings;
   }
 
@@ -25,6 +26,25 @@ export default class AppMenu {
   }
 
   private createFileMenu() {
+    const fileItems: MenuItemConstructorOptions[] = [];
+    for (let path of this.settings.recentFiles) {
+      fileItems.push({
+        label: path,
+        click: () => {
+          console.log("open recent file", path);
+        }
+      })
+    }
+    const workspaceItems: MenuItemConstructorOptions[] = [];
+    for (let path of this.settings.recentWorkspaces) {
+      workspaceItems.push({
+        label: path,
+        click: () => {
+          console.log("open recent workspace", path);
+        }
+      })
+    }
+
     return new MenuItem({
       label: "行为树",
       submenu: [
@@ -39,7 +59,15 @@ export default class AppMenu {
                   { name: "Json", extensions: ['json'] }
                 ]
               });
-              this.webContents.send(MainEventType.OPEN_FILE, res.filePaths[0]);
+              if (res.filePaths.length > 0) {
+                const path = res.filePaths[0];
+                if (this.settings.recentFiles.indexOf(path) < 0) {
+                  this.settings.recentFiles.unshift(path);
+                  this.settings.save();
+                  this.mainProcess.rebuildMenu();
+                }
+                this.webContents.send(MainEventType.OPEN_FILE, path);
+              }
             })();
           }
         },
@@ -52,7 +80,13 @@ export default class AppMenu {
                 properties: ['openDirectory']
               });
               if (res.filePaths.length > 0) {
-                this.webContents.send(MainEventType.OPEN_WORKSPACE, res.filePaths[0]);
+                const path = res.filePaths[0];
+                if (this.settings.recentWorkspaces.indexOf(path) < 0) {
+                  this.settings.recentWorkspaces.unshift(path);
+                  this.settings.save();
+                  this.mainProcess.rebuildMenu();
+                }
+                this.webContents.send(MainEventType.OPEN_WORKSPACE, path);
               }
             })();
           }
@@ -60,14 +94,11 @@ export default class AppMenu {
         { type: 'separator' },
         {
           label: "最近打开",
-          submenu: []
+          submenu: fileItems,
         },
         {
           label: "最近目录",
-          submenu: [
-            { label: "master" },
-            { label: "分支0908" },
-          ]
+          submenu: workspaceItems,
         },
         { type: 'separator' },
         {
