@@ -8,7 +8,7 @@ let createWindow = function () {
     width: 1280,
     height: 800,
     webPreferences: {
-      // nodeIntegration: true
+      nodeIntegration: true
     }
     // fullscreenable:false,
     // maximizable:false
@@ -18,6 +18,7 @@ let createWindow = function () {
   mainWindow.on('closed', function () {
     mainWindow = null
   });
+  initMenu(mainWindow);
 }
 app.on('ready', createWindow)
 app.on('window-all-closed', () => {
@@ -31,5 +32,3 @@ app.on('activate', () => {
     createWindow()
   }
 });
-
-initMenu();

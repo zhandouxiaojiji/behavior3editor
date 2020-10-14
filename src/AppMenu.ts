@@ -1,20 +1,30 @@
 import { BrowserView, Menu, app, shell, dialog, BrowserWindow, MenuItem } from 'electron';
+import EventType from './EventType';
 
-export function initMenu() {
+export function initMenu(mainWindow: BrowserWindow) {
   const menu: Menu = new Menu();
   const fileMenu: MenuItem = new MenuItem({
     label: "行为树",
     submenu: [
-      { 
+      {
         label: "打开文件",
-        accelerator: "Ctrl+O"
+        accelerator: "Ctrl+O",
+        click: () => {
+          (async () => {
+            const res = await dialog.showOpenDialog({
+              properties: ['openFile', 'openDirectory']
+            });
+            console.log("open res", res);
+            mainWindow.webContents.send(EventType.MAIN_OPEN_FILE, res);
+          })();
+        }
       },
-      { 
+      {
         label: "打开目录",
         accelerator: "Ctrl+Shift+O"
-     
+
       },
-      { type: 'separator'},
+      { type: 'separator' },
       {
         label: "最近打开",
         submenu: []
@@ -22,11 +32,11 @@ export function initMenu() {
       {
         label: "最近目录",
         submenu: [
-          {label: "master"},
-          {label: "分支0908"},
+          { label: "master" },
+          { label: "分支0908" },
         ]
       },
-      { type: 'separator'},
+      { type: 'separator' },
       {
         label: "关闭",
         click: () => {
