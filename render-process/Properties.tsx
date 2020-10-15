@@ -2,14 +2,14 @@ import React, { Component } from "react";
 import { Menu, Input } from "antd";
 import * as fs from 'fs';
 import * as path from 'path';
-import { BehaviorTreeModel } from "../../common/BehaviorTreeModel";
+import { BehaviorTreeModel } from "../common/BehaviorTreeModel";
 import { remote } from 'electron';
-import { MainProcess } from "../../main-process/MainProcess";
-import Settings from "../../main-process/Settings";
+import { MainProcess } from "../main-process/MainProcess";
+import Settings from "../main-process/Settings";
 
 const { Search } = Input;
 
-interface TreeFile {
+export interface TreeFile {
   name: string;
   path: string;
 }
@@ -31,20 +31,15 @@ export default class Properties extends Component<PropertiesProps> {
   componentDidMount() {
     var workspace = this.props.workspace;
     if (workspace == '') {
-      workspace = this.getLastWorkspace();
+      return;
     }
     this.setState({ treeList: this.getTreeList(workspace) });
-  }
-
-  getLastWorkspace() {
-    const settings: Settings = remote.getGlobal("settings");
-    return settings.recentWorkspaces[0];
   }
 
   getTreeList(workspace: string) {
     if (workspace == '' || !fs.existsSync(workspace)) {
       console.log("workspace not exist", workspace);
-      return;
+      return [];
     }
 
     const files = fs.readdirSync(workspace);
@@ -52,8 +47,9 @@ export default class Properties extends Component<PropertiesProps> {
     files.forEach((filename) => {
       const stat = fs.statSync(path.join(workspace, filename))
       if (stat.isFile()) {
+        var name = filename.slice(0, -5)
         list.push({
-          name: filename.slice(0, -5),
+          name,
           path: workspace + '/' + name + '.json'
         });
       }
@@ -62,7 +58,8 @@ export default class Properties extends Component<PropertiesProps> {
   }
 
   render() {
-    const { treeList } = this.state;
+    const { onOpenTree, workspace } = this.props;
+    const treeList = this.getTreeList(workspace);
     return (
       <div>
         <Search
@@ -77,6 +74,7 @@ export default class Properties extends Component<PropertiesProps> {
           {treeList.map((tree) => (
             <Menu.Item
               key={tree.name}
+              onClick={() => onOpenTree(tree.path)}
             >
               {tree.name}
             </Menu.Item>
