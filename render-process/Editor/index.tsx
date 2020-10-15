@@ -34,10 +34,8 @@ export default class Editor extends Component {
     ipcRenderer.on(MainEventType.OPEN_WORKSPACE, (event: any, workspace: any) => {
       console.log("on open workspace", workspace);
       this.setState({ workspace });
-      this.loadAllTrees();
     });
 
-    this.loadAllTrees();
   }
 
   loadAllTrees() {
@@ -89,7 +87,6 @@ export default class Editor extends Component {
             onOpenTree={(path) => {
               console.log("open tree", path);
             }}
-            trees={trees}
           />
         </Sider>
         <Content className="content">
