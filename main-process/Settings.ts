@@ -25,18 +25,7 @@ const sampleNodeClassify: BehaviorNodeClassify[] = [
 export default class Settings {
   private settings: SettingsModel;
   constructor() {
-    if (fs.existsSync(settingPath)) {
-      const str = fs.readFileSync(settingPath, 'utf8');
-      this.settings = JSON.parse(str);
-    } else {
-      this.settings = {
-        recentWorkspaces: [],
-        recentFiles: [],
-        nodeConfigPath: sampleNodeConfig,
-        nodeClassify: sampleNodeClassify,
-      };
-      this.save();
-    }
+    this.load();
   }
 
   get nodeConfigPath() {
@@ -63,6 +52,21 @@ export default class Settings {
       ...config
     };
     this.save();
+  }
+
+  load() {
+    if (fs.existsSync(settingPath)) {
+      const str = fs.readFileSync(settingPath, 'utf8');
+      this.settings = JSON.parse(str);
+    } else {
+      this.settings = {
+        recentWorkspaces: [],
+        recentFiles: [],
+        nodeConfigPath: sampleNodeConfig,
+        nodeClassify: sampleNodeClassify,
+      };
+      this.save();
+    }
   }
 
   save() {

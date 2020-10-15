@@ -3,6 +3,12 @@ import AppMenu from './AppMenu'
 import Settings from './Settings';
 import MainEventType from '../common/MainEventType';
 
+// 一些暴露给render-process的全局变量
+export interface Global {
+  settings: Settings
+}
+declare var global: Global;
+
 export class MainProcess {
   mainWindow: BrowserWindow;
   appMenu: AppMenu;
@@ -26,11 +32,14 @@ export class MainProcess {
 
   createWindow() {
     this.settings = new Settings();
+    global.settings = this.settings;
+    
     this.mainWindow = new BrowserWindow({
       width: 1280,
       height: 800,
       webPreferences: {
-        nodeIntegration: true
+        nodeIntegration: true,
+        enableRemoteModule: true,
       }
       // fullscreenable:false,
       // maximizable:false
@@ -42,11 +51,6 @@ export class MainProcess {
     });
     this.appMenu = new AppMenu(this);
     this.rebuildMenu();
-
-    const lastWorkspace = this.settings.recentWorkspaces[0];
-    if(lastWorkspace) {
-      this.mainWindow.webContents.send(MainEventType.OPEN_WORKSPACE, lastWorkspace);
-    }
   }
 
   rebuildMenu() {
@@ -54,4 +58,6 @@ export class MainProcess {
   }
 }
 
-new MainProcess();
+
+export default new MainProcess();
+

@@ -1,6 +1,6 @@
 import { Menu, app, dialog, BrowserWindow, MenuItem, WebContents, MenuItemConstructorOptions } from 'electron';
 import MainEventType from '../common/MainEventType';
-import { MainProcess } from './main';
+import { MainProcess } from './MainProcess';
 import Settings from './Settings';
 
 export default class AppMenu {
