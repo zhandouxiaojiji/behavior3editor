@@ -1,7 +1,8 @@
 import * as fs from 'fs';
+import { BehaviorNodeTypeModel } from '../common/BehaviorTreeModel';
 
-export interface BehaviorNodeType {
-  type: string;
+export interface BehaviorNodeClassify {
+  classify: string;
   desc?: string;
 }
 
@@ -9,16 +10,16 @@ export interface SettingsModel {
   recentWorkspaces?: string[];
   recentFiles?: string[];
   nodeConfigPath?: string; // 节点配置路径
-  nodeTypes?: BehaviorNodeType[];
+  nodeClassify?: BehaviorNodeClassify[];
 }
 
 const settingPath = 'settings.json';
 const sampleNodeConfig = 'sample-node-config.json';
-const sampleNodeTypes: BehaviorNodeType[] = [
-  { type: "Composite", desc: "复合节点" },
-  { type: "Decorator", desc: "修饰节点" },
-  { type: "Condition", desc: "条件节点" },
-  { type: "Action", desc: "行为节点" },
+const sampleNodeClassify: BehaviorNodeClassify[] = [
+  { classify: "Composite", desc: "复合节点" },
+  { classify: "Decorator", desc: "修饰节点" },
+  { classify: "Condition", desc: "条件节点" },
+  { classify: "Action", desc: "行为节点" },
 ]
 
 export default class Settings {
@@ -32,7 +33,7 @@ export default class Settings {
         recentWorkspaces: [],
         recentFiles: [],
         nodeConfigPath: sampleNodeConfig,
-        nodeTypes: sampleNodeTypes,
+        nodeClassify: sampleNodeClassify,
       };
       this.save();
     }
@@ -49,10 +50,11 @@ export default class Settings {
   }
   get nodeConfig() {
     const str = fs.readFileSync(this.nodeConfigPath, 'utf8');
-    return JSON.parse(str);
+    const types: BehaviorNodeTypeModel[] = JSON.parse(str);
+    return types;
   }
-  get nodeTypes() {
-    return this.settings.nodeTypes;
+  get nodeClassify() {
+    return this.settings.nodeClassify;
   }
 
   set(config: SettingsModel) {

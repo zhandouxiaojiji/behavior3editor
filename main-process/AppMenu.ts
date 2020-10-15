@@ -167,16 +167,16 @@ export default class AppMenu {
   }
 
   private createNodeMenu() {
-    const typeItems: MenuItemConstructorOptions[] = [];
+    const classifyItems: MenuItemConstructorOptions[] = [];
     const map: { [key: string]: MenuItemConstructorOptions } = {}
-    for (let t of this.settings.nodeTypes) {
+    for (let t of this.settings.nodeClassify) {
       let item: MenuItemConstructorOptions = {
-        id: t.type,
-        label: `${t.type}(${t.desc})`,
+        id: t.classify,
+        label: `${t.classify}(${t.desc})`,
         submenu: [],
       };
-      typeItems.push(item);
-      map[t.type] = item;
+      classifyItems.push(item);
+      map[t.classify] = item;
     }
     const other: MenuItemConstructorOptions = {
       id: 'other',
@@ -205,12 +205,12 @@ export default class AppMenu {
     }
 
     if(hasOther) {
-      typeItems.push(other);
+      classifyItems.push(other);
     }
     
     return new MenuItem({
       label: "新建节点",
-      submenu: typeItems
+      submenu: classifyItems
     });
   }
 }
