@@ -1,18 +1,30 @@
 import * as fs from 'fs';
 
-const settingPath = 'settings.json';
-const sampleNodeConfig = 'sample-node-config.json'
+export interface BehaviorNodeType {
+  type: string;
+  desc?: string;
+}
 
 export interface SettingsModel {
   recentWorkspaces?: string[];
   recentFiles?: string[];
   nodeConfigPath?: string; // 节点配置路径
+  nodeTypes?: BehaviorNodeType[];
 }
+
+const settingPath = 'settings.json';
+const sampleNodeConfig = 'sample-node-config.json';
+const sampleNodeTypes: BehaviorNodeType[] = [
+  { type: "Composite", desc: "复合节点" },
+  { type: "Decorator", desc: "修饰节点" },
+  { type: "Condition", desc: "条件节点" },
+  { type: "Action", desc: "行为节点" },
+]
 
 export default class Settings {
   private settings: SettingsModel;
   constructor() {
-    if(fs.existsSync(settingPath)) {
+    if (fs.existsSync(settingPath)) {
       const str = fs.readFileSync(settingPath, 'utf8');
       this.settings = JSON.parse(str);
     } else {
@@ -20,6 +32,7 @@ export default class Settings {
         recentWorkspaces: [],
         recentFiles: [],
         nodeConfigPath: sampleNodeConfig,
+        nodeTypes: sampleNodeTypes,
       };
       this.save();
     }
@@ -37,6 +50,9 @@ export default class Settings {
   get nodeConfig() {
     const str = fs.readFileSync(this.nodeConfigPath, 'utf8');
     return JSON.parse(str);
+  }
+  get nodeTypes() {
+    return this.settings.nodeTypes;
   }
 
   set(config: SettingsModel) {

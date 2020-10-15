@@ -167,18 +167,50 @@ export default class AppMenu {
   }
 
   private createNodeMenu() {
-    const nodeItems: MenuItemConstructorOptions[] = [];
+    const typeItems: MenuItemConstructorOptions[] = [];
+    const map: { [key: string]: MenuItemConstructorOptions } = {}
+    for (let t of this.settings.nodeTypes) {
+      let item: MenuItemConstructorOptions = {
+        id: t.type,
+        label: `${t.type}(${t.desc})`,
+        submenu: [],
+      };
+      typeItems.push(item);
+      map[t.type] = item;
+    }
+    const other: MenuItemConstructorOptions = {
+      id: 'other',
+      label: "其它",
+      submenu: [],
+    };
+    var hasOther = false;
+
     for (let node of this.settings.nodeConfig) {
-      nodeItems.push({
+      const item: MenuItemConstructorOptions = {
         label: `${node.name}(${node.desc})`,
         click: () => {
           console.log("create node", node.name);
         }
-      })
+      }
+      let typeItem = map[node.type];
+      if(!typeItem) {
+        typeItem = other;
+        hasOther = true;
+      }
+      if (typeItem.submenu instanceof Menu) {
+        console.log("typeItem.submenu error", typeItem);
+      } else {
+        typeItem.submenu.push(item);
+      }
     }
+
+    if(hasOther) {
+      typeItems.push(other);
+    }
+    
     return new MenuItem({
       label: "新建节点",
-      submenu: nodeItems
+      submenu: typeItems
     });
   }
 }
