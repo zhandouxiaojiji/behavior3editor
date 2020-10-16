@@ -3,6 +3,7 @@ import GGEditor, { Mind, RegisterNode } from 'gg-editor';
 import { MindData } from 'gg-editor/lib/common/interfaces';
 import { Row, Col } from 'antd';
 import './Editor.css';
+import NodePanel from './NodePanel';
 
 export interface EditorProps {
 
@@ -18,8 +19,7 @@ export default class Editor extends React.Component<EditorProps> {
             {/* <BehaviorTree /> */}
           </Col>
           <Col span={6} className="editorSidebar">
-            {/* <MindDetailPanel />
-            <EditorMinimap /> */}
+            <NodePanel />
           </Col>
         </Row>
         {/* <MindContextMenu />
