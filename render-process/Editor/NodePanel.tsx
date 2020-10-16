@@ -13,16 +13,38 @@ interface NodePanelState {
 
 }
 
-class NodePanel extends React.Component<NodePanelProps, NodePanelState> {
+class Panel extends React.Component<NodePanelProps, NodePanelState> {
   render() {
     const { nodes } = this.props;
+    console.log("NodePanel render", nodes);
     const node = nodes[0];
-    return (
-      <Card>
-        {node ? node.getModel().label : ''}
-      </Card>
-    )
+    if (node) {
+      return (
+        <Card title="节点信息">
+          {node ? node.getModel().label : ''}
+        </Card>
+      )
+    } else {
+      return (
+        <Card title="节点信息">
+          未选中
+        </Card>
+      )
+    }
+
   }
 }
 
-export default DetailPanel.create<NodePanelProps>('node')(withEditorContext(NodePanel));
+export default class NodePanel extends React.Component {
+  render() {
+    console.log("NodePanel render");
+    return (
+      <Card title="节点信息" style = {{height:"100%"}}>
+        未选中fefqwefqwefwewef
+      </Card>
+    )
+  }
+
+}
+
+// export default DetailPanel.create<NodePanelProps>('node')(withEditorContext(Panel));

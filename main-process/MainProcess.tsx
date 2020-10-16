@@ -44,6 +44,7 @@ export class MainProcess {
       // fullscreenable:false,
       // maximizable:false
     });
+    this.mainWindow.maximize();
     // mainWindow.webContents.openDevTools();
     this.mainWindow.loadFile('index.html');
     this.mainWindow.on('closed', function () {

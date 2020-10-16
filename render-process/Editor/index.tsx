@@ -4,6 +4,7 @@ import { MindData } from 'gg-editor/lib/common/interfaces';
 import { Row, Col } from 'antd';
 import './Editor.css';
 import NodePanel from './NodePanel';
+import BehaviorTree from './BehaviorTree';
 
 export interface EditorProps {
 
@@ -15,8 +16,7 @@ export default class Editor extends React.Component<EditorProps> {
       <GGEditor className="editor">
         <Row className="editorBd">
           <Col span={18} className="editorContent">
-            hello
-            {/* <BehaviorTree /> */}
+            <BehaviorTree />
           </Col>
           <Col span={6} className="editorSidebar">
             <NodePanel />

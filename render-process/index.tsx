@@ -114,7 +114,7 @@ export default class Main extends Component {
           />
         </Sider>
         <Content className="content">
-          <Tabs
+          {/* <Tabs
             hideAdd
             className="tabs"
             type="editable-card"
@@ -128,7 +128,8 @@ export default class Main extends Component {
                 );
               })
             }
-          </Tabs>
+          </Tabs> */}
+          <Editor />
         </Content>
       </Layout>
     )
