@@ -114,7 +114,7 @@ export default class Main extends Component {
           />
         </Sider>
         <Content className="content">
-          {/* <Tabs
+          <Tabs
             hideAdd
             className="tabs"
             type="editable-card"
@@ -123,13 +123,12 @@ export default class Main extends Component {
               filepaths.map(filepath => {
                 return (
                   <TabPane tab={path.basename(filepath)} key={filepath}>
-                    <Editor/>
+                    <Editor filepath={filepath} />
                   </TabPane>
                 );
               })
             }
-          </Tabs> */}
-          <Editor />
+          </Tabs>
         </Content>
       </Layout>
     )

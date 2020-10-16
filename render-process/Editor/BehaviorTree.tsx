@@ -1,6 +1,7 @@
 import * as React from 'react';
 import GGEditor, { Mind, RegisterNode, setAnchorPointsState } from 'gg-editor';
-import { MindData } from 'gg-editor/lib/common/interfaces';
+import { INode } from '@antv/g6/lib/interface/item';
+import { MindData, Graph, GraphEvent } from 'gg-editor/lib/common/interfaces';
 const data: MindData = {
   id: "1",
   label: 'Central Topic111',
@@ -20,42 +21,52 @@ const data: MindData = {
   ],
 };
 
-interface BehaviorTreeProps{
-
+interface BehaviorTreeProps {
+  onSelectNode: (node: INode | null) => void;
 }
 
-class BehaviorTree extends React.Component <BehaviorTreeProps> {
+class BehaviorTree extends React.Component<BehaviorTreeProps> {
+  graph: Graph;
   componentDidMount() {
-    // const { graph } = this.props;
-    // graph.on('click', (ev: any) => {
-    //   console.log("click", ev);
-    // });
+  }
 
-    // graph.on('dbclick', (ev: any) => {
-    //   console.log("dbclick", ev);
-    // });
+  initGraph(graph: Graph) {
+    const { onSelectNode } = this.props;
+    graph.on('click', (ev: GraphEvent) => {
+      console.log("click", ev);
+      if (!ev.item) {
+        onSelectNode(null);
+      } else if (ev.item) {
+        onSelectNode(ev.item);
+      }
+    });
 
-    // graph.on('dragenter', (ev: any) => {
-    //   console.log("dragenter", ev);
-    // });
+    graph.on('dbclick', (ev: GraphEvent) => {
+      console.log("dbclick", ev);
+    });
+
+    graph.on('dragenter', (ev: GraphEvent) => {
+      console.log("dragenter", ev);
+    });
+    this.graph = graph;
   }
 
   render() {
     return (
-        <Mind
-          style={{ width: "70vw", height: "100vh" }}
-          graphConfig={{
-            fitView: true,
-            maxZoom: 2,
-            fitViewPadding: [20, 20, 20, 20]
-          }}
-          data={data}
-          ref={component => {
-            if (component) {
-              console.log('graph:', component.graph);
-            }
-          }}
-        />
+      <Mind
+        style={{ width: "70vw", height: "100vh" }}
+        graphConfig={{
+          fitView: true,
+          maxZoom: 2,
+          fitViewPadding: [20, 20, 20, 20]
+        }}
+        data={data}
+        ref={component => {
+          if (component) {
+            this.initGraph(component.graph);
+          }
+        }}
+      />
     );
   }
 }
