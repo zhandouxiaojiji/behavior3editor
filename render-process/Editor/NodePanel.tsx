@@ -2,10 +2,9 @@ import React from 'react';
 import { Card } from 'antd';
 import { DetailPanel, withEditorContext } from 'gg-editor';
 import { EditorContextProps } from 'gg-editor/lib/components/EditorContext';
-import { DetailPanelComponentProps } from 'gg-editor/lib/components/DetailPanel';
 
 
-interface NodePanelProps extends EditorContextProps, DetailPanelComponentProps {
+interface NodePanelProps extends EditorContextProps {
 
 }
 
@@ -13,33 +12,17 @@ interface NodePanelState {
 
 }
 
-class Panel extends React.Component<NodePanelProps, NodePanelState> {
-  render() {
-    const { nodes } = this.props;
-    console.log("NodePanel render", nodes);
-    const node = nodes[0];
-    if (node) {
-      return (
-        <Card title="节点信息">
-          {node ? node.getModel().label : ''}
-        </Card>
-      )
-    } else {
-      return (
-        <Card title="节点信息">
-          未选中
-        </Card>
-      )
-    }
-
+class Panel extends React.Component<NodePanelProps> {
+  componentDidMount() {
+    console.log(this.props);
+    this.props.graph.on("click", (ev: any) => {
+      console.log("on click", ev);
+    })
   }
-}
-
-export default class NodePanel extends React.Component {
   render() {
-    console.log("NodePanel render");
+    console.log("NodePanel render", this.props);
     return (
-      <Card title="节点信息" style = {{height:"100%"}}>
+      <Card title="节点信息" style={{ height: "100%" }}>
         未选中fefqwefqwefwewef
       </Card>
     )
@@ -47,4 +30,4 @@ export default class NodePanel extends React.Component {
 
 }
 
-// export default DetailPanel.create<NodePanelProps>('node')(withEditorContext(Panel));
+export default withEditorContext<NodePanelProps, Panel>(Panel);
