@@ -1,7 +1,10 @@
 import * as React from 'react';
-import GGEditor, { Mind, RegisterNode, setAnchorPointsState } from 'gg-editor';
+import GGEditor, { Mind, RegisterNode, constants, CommandManager } from 'gg-editor';
 import { INode } from '@antv/g6/lib/interface/item';
 import { MindData, Graph, GraphEvent } from 'gg-editor/lib/common/interfaces';
+
+const { EditorCommand } = constants
+
 const data: MindData = {
   id: "1",
   label: 'Central Topic111',
@@ -27,21 +30,32 @@ interface BehaviorTreeProps {
 
 class BehaviorTree extends React.Component<BehaviorTreeProps> {
   graph: Graph;
+  mind: Mind;
   componentDidMount() {
   }
 
   initGraph(graph: Graph) {
     const { onSelectNode } = this.props;
     graph.on('click', (ev: GraphEvent) => {
-      if (!ev.item) {
+      const item = ev.item;
+      if (!item) {
         onSelectNode(null);
-      } else if (ev.item.getType() == "node") {
-        onSelectNode(ev.item as INode);
+      } else if (item.getType() == "node") {
+        onSelectNode(item as INode);
       }
     });
 
-    graph.on('dbclick', (ev: GraphEvent) => {
-      console.log("dbclick", ev);
+    graph.on('dblclick', (ev: GraphEvent) => {
+      console.log("dblclick", ev);
+      const item = ev.item;
+      if (item && item.getType() == 'node') {
+        const commandManager: CommandManager = graph.get('commandManager');
+        if (commandManager.canExecute(graph, EditorCommand.Fold)) {
+          commandManager.execute(graph, EditorCommand.Fold);
+        } else {
+          commandManager.execute(graph, EditorCommand.Unfold);
+        }
+      }
     });
 
     graph.on('dragenter', (ev: GraphEvent) => {
@@ -61,8 +75,9 @@ class BehaviorTree extends React.Component<BehaviorTreeProps> {
         }}
         data={data}
         ref={component => {
-          if (component) {
+          if (component && !this.graph) {
             this.initGraph(component.graph);
+            this.mind = component;
           }
         }}
       />

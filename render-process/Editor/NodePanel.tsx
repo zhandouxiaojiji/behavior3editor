@@ -17,7 +17,6 @@ class Panel extends React.Component<NodePanelProps> {
   }
 
   renderNode() {
-    console.log("NodePanel render", this.props);
     const { curNode } = this.props;
     return (
       <div>
@@ -27,7 +26,6 @@ class Panel extends React.Component<NodePanelProps> {
   }
 
   render() {
-    console.log("NodePanel render", this.props);
     const { curNode } = this.props;
     return (
       <Card title="节点信息" style={{ height: "100%" }}>
