@@ -2,10 +2,10 @@ import React from 'react';
 import { Card } from 'antd';
 import { DetailPanel, withEditorContext } from 'gg-editor';
 import { EditorContextProps } from 'gg-editor/lib/components/EditorContext';
-
+import { INode } from '@antv/g6/lib/interface/item';
 
 interface NodePanelProps extends EditorContextProps {
-
+  curNode: INode | null;
 }
 
 interface NodePanelState {
@@ -14,16 +14,24 @@ interface NodePanelState {
 
 class Panel extends React.Component<NodePanelProps> {
   componentDidMount() {
-    console.log(this.props);
-    this.props.graph.on("click", (ev: any) => {
-      console.log("on click", ev);
-    })
   }
+
+  renderNode() {
+    console.log("NodePanel render", this.props);
+    const { curNode } = this.props;
+    return (
+      <div>
+        {curNode.getModel().label}
+      </div>
+    )
+  }
+
   render() {
     console.log("NodePanel render", this.props);
+    const { curNode } = this.props;
     return (
       <Card title="节点信息" style={{ height: "100%" }}>
-        未选中fefqwefqwefwewef
+        {curNode ? this.renderNode() : "未选中"}
       </Card>
     )
   }

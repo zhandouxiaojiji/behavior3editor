@@ -33,11 +33,10 @@ class BehaviorTree extends React.Component<BehaviorTreeProps> {
   initGraph(graph: Graph) {
     const { onSelectNode } = this.props;
     graph.on('click', (ev: GraphEvent) => {
-      console.log("click", ev);
       if (!ev.item) {
         onSelectNode(null);
-      } else if (ev.item) {
-        onSelectNode(ev.item);
+      } else if (ev.item.getType() == "node") {
+        onSelectNode(ev.item as INode);
       }
     });
 
