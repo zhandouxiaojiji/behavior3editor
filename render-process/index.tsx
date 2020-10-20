@@ -1,8 +1,6 @@
 
 import * as ReactDOM from "react-dom";
 import Editor from "./Editor";
-
-
 import React, { Component } from "react";
 import { Layout, Tabs } from 'antd';
 import { ipcRenderer, remote } from 'electron';
@@ -12,6 +10,7 @@ import MainEventType from "../common/MainEventType";
 import Properties from "./Properties";
 import { BehaviorTreeModel } from "../common/BehaviorTreeModel";
 import Settings from "../main-process/Settings";
+import G6 from '@antv/g6';
 
 import 'antd/dist/antd.dark.css';
 import './index.css';
@@ -29,6 +28,58 @@ export default class Main extends Component {
   state: MainState = {
     workspace: '',
     filepaths: [],
+  }
+
+  componentWillMount() {
+    G6.registerNode(
+      'tree-node',
+      {
+        drawShape: function drawShape(cfg: any, group) {
+          const rect = group.addShape('rect', {
+            attrs: {
+              fill: '#fff',
+              stroke: '#666',
+            },
+            name: 'rect-shape',
+          });
+          const content = cfg.name.replace(/(.{19})/g, '$1\n');
+          const text = group.addShape('text', {
+            attrs: {
+              text: content,
+              x: 0,
+              y: 0,
+              textAlign: 'left',
+              textBaseline: 'middle',
+              fill: '#666',
+            },
+            name: 'rect-shape',
+          });
+          const bbox = text.getBBox();
+          const hasChildren = cfg.children && cfg.children.length > 0;
+          if (hasChildren) {
+            group.addShape('marker', {
+              attrs: {
+                x: bbox.maxX + 12,
+                y: 0,
+                r: 6,
+                symbol: cfg.collapsed ? G6.Marker.expand : G6.Marker.collapse,
+                stroke: '#666',
+                lineWidth: 2,
+              },
+              name: 'collapse-icon',
+            });
+          }
+          rect.attr({
+            x: bbox.minX - 4,
+            y: bbox.minY - 6,
+            width: bbox.width + (hasChildren ? 26 : 8),
+            height: bbox.height + 12,
+          });
+          return rect;
+        },
+      },
+      'single-node',
+    );
   }
 
   componentDidMount() {

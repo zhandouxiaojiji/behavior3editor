@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Row, Col } from 'antd';
 import NodePanel from './NodePanel';
 import { INode } from '@antv/g6/lib/interface/item';
-import { TreeGraph } from '@antv/g6';
+import G6, { TreeGraph } from '@antv/g6';
 import { TreeGraphData, IG6GraphEvent } from '@antv/g6/lib/types';
 import { G6GraphEvent } from '@antv/g6/lib/interface/behavior';
 import './Editor.css';
@@ -40,6 +40,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         default: [
           'drag-canvas',
           'click-select',
+          'hover',
           {
             type: 'collapse-expand',
             trigger: 'dblclick',
@@ -52,16 +53,16 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         ]
       },
       defaultEdge: {
-        shape: 'cubic-horizontal',
+        type: 'cubic-horizontal',
         style: {
           stroke: '#A3B1BF'
         }
       },
       defaultNode: {
-        shape: 'rect',
+        type: 'rect',
         labelCfg: {
           style: {
-            fill: '#000000A6',
+            fill: 'blue',
             fontSize: 10
           }
         },
@@ -69,6 +70,17 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
           stroke: '#72CC4A',
           width: 150
         }
+      },
+      nodeStateStyles: {
+        // 鼠标 hover 上节点，即 hover 状态为 true 时的样式
+        hover: {
+          fill: '#d3adf7',
+        },
+        // 鼠标点击节点，即 click 状态为 true 时的样式
+        selected: {
+          stroke: '#000',
+          lineWidth: 3,
+        },
       },
       layout: {
         type: 'dendrogram', // 布局类型
@@ -78,14 +90,30 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       }
     });
 
-    graph.on('nodeselectchange', (e: G6GraphEvent) => {
-      // 当前操作的 item
-      const curNode = e.target as INode;
-      this.setState({ curNode })
+    graph.on('node:mouseenter', (e: G6GraphEvent) => {
+      const { item } = e;
+      graph.setItemState(item, 'hover', true);
     });
 
-    graph.on('dragenter', (ev: any) => {
-      console.log("dragenter", ev);
+    graph.on('node:mouseleave', (e: G6GraphEvent) => {
+      const { item } = e;
+      graph.setItemState(item, 'hover', false);
+    });
+
+    graph.on('nodeselectchange', (e: G6GraphEvent) => {
+      // 当前操作的 item
+      if(this.state.curNode) {
+        graph.setItemState(this.state.curNode, 'selected', false);
+      }
+      const curNode = e.target as INode;
+      this.setState({ curNode });
+      if(this.state.curNode) {
+        graph.setItemState(this.state.curNode, 'selected', true);
+      }
+    });
+
+    graph.on('dragenter', (e: any) => {
+      console.log("dragenter", e);
     });
 
     const data: TreeGraphData = {
