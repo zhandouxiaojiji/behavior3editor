@@ -22,7 +22,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     curNode: null
   }
 
-  graph: TreeGraph;
+  private graph: TreeGraph;
+  private dragNode: INode;
 
   constructor(props: EditorProps) {
     super(props);
@@ -58,29 +59,33 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
           stroke: '#A3B1BF'
         }
       },
+      // defaultNode: {
+      //   type: 'rect',
+      //   labelCfg: {
+      //     style: {
+      //       fill: 'blue',
+      //       fontSize: 10
+      //     }
+      //   },
+      //   style: {
+      //     stroke: '#72CC4A',
+      //     width: 150
+      //   }
+      // },
+      // nodeStateStyles: {
+      //   hover: {
+      //     fill: '#d3adf7',
+      //   },
+      //   selected: {
+      //     stroke: '#000',
+      //     lineWidth: 3,
+      //   },
+      //   dragSrc: {
+      //     fill: 'gray',
+      //   }
+      // },
       defaultNode: {
-        type: 'rect',
-        labelCfg: {
-          style: {
-            fill: 'blue',
-            fontSize: 10
-          }
-        },
-        style: {
-          stroke: '#72CC4A',
-          width: 150
-        }
-      },
-      nodeStateStyles: {
-        // 鼠标 hover 上节点，即 hover 状态为 true 时的样式
-        hover: {
-          fill: '#d3adf7',
-        },
-        // 鼠标点击节点，即 click 状态为 true 时的样式
-        selected: {
-          stroke: '#000',
-          lineWidth: 3,
-        },
+        type: "TreeNode",
       },
       layout: {
         type: 'dendrogram', // 布局类型
@@ -101,19 +106,34 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     });
 
     graph.on('nodeselectchange', (e: G6GraphEvent) => {
-      // 当前操作的 item
-      if(this.state.curNode) {
+      if (this.state.curNode) {
         graph.setItemState(this.state.curNode, 'selected', false);
       }
       const curNode = e.target as INode;
       this.setState({ curNode });
-      if(this.state.curNode) {
+      if (this.state.curNode) {
         graph.setItemState(this.state.curNode, 'selected', true);
       }
     });
 
-    graph.on('dragenter', (e: any) => {
-      console.log("dragenter", e);
+    graph.on('node:dragstart', (e: G6GraphEvent) => {
+      this.dragNode = e.item as INode;
+      graph.setItemState(e.item, 'dragSrc', true);
+    });
+    graph.on('node:dragend', (e: G6GraphEvent) => {
+      graph.setItemState(e.item, 'dragSrc', false);
+    });
+
+    graph.on('node:dragover', (e: G6GraphEvent) => {
+      
+    });
+
+    graph.on('node:drop', (e: G6GraphEvent) => {
+      const srcNode = this.dragNode;
+      const dstNode = e.item as INode;
+      if (srcNode != dstNode) {
+
+      }
     });
 
     const data: TreeGraphData = {

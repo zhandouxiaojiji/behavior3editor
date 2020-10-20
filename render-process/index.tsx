@@ -32,53 +32,40 @@ export default class Main extends Component {
 
   componentWillMount() {
     G6.registerNode(
-      'tree-node',
+      'TreeNode',
       {
-        drawShape: function drawShape(cfg: any, group) {
-          const rect = group.addShape('rect', {
-            attrs: {
-              fill: '#fff',
-              stroke: '#666',
+        options: {
+          type: 'rect',
+          labelCfg: {
+            style: {
+              fill: 'blue',
+              fontSize: 10
+            }
+          },
+          style: {
+            fill: "white",
+            stroke: '#72CC4A',
+            width: 150
+          },
+          stateStyles: {
+            hover: {
+              fill: '#d3adf7',
             },
-            name: 'rect-shape',
-          });
-          const content = cfg.name.replace(/(.{19})/g, '$1\n');
-          const text = group.addShape('text', {
-            attrs: {
-              text: content,
-              x: 0,
-              y: 0,
-              textAlign: 'left',
-              textBaseline: 'middle',
-              fill: '#666',
+            selected: {
+              stroke: '#000',
+              lineWidth: 3,
             },
-            name: 'rect-shape',
-          });
-          const bbox = text.getBBox();
-          const hasChildren = cfg.children && cfg.children.length > 0;
-          if (hasChildren) {
-            group.addShape('marker', {
-              attrs: {
-                x: bbox.maxX + 12,
-                y: 0,
-                r: 6,
-                symbol: cfg.collapsed ? G6.Marker.expand : G6.Marker.collapse,
-                stroke: '#666',
-                lineWidth: 2,
-              },
-              name: 'collapse-icon',
-            });
-          }
-          rect.attr({
-            x: bbox.minX - 4,
-            y: bbox.minY - 6,
-            width: bbox.width + (hasChildren ? 26 : 8),
-            height: bbox.height + 12,
-          });
-          return rect;
+            dragSrc: {
+              fill: 'gray',
+            }
+          },
         },
+        // draw(cfg, group) { },
+
       },
-      'single-node',
+      // 继承内置节点类型的名字，例如基类 'single-node'，或 'circle', 'rect' 等
+      // 当不指定该参数则代表不继承任何内置节点类型
+      'rect',
     );
   }
 
