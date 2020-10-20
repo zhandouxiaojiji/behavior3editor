@@ -98,6 +98,48 @@ export default class Main extends Component {
             },
             name: 'title',
           });
+
+          group.addShape('rect', {
+            name: 'drag-up',
+            attrs: {
+              x: -w / 2,
+              y: -h / 2,
+              width: w * 0.6,
+              height: h / 2,
+              fill: 'blue',
+              fillOpacity: 0.5,
+              radius: r,
+            },
+            visible: false,
+          });
+
+          group.addShape('rect', {
+            name: 'drag-down',
+            attrs: {
+              x: -w / 2,
+              y: 0,
+              width: w * 0.6,
+              height: h / 2,
+              fill: 'green',
+              fillOpacity: 0.5,
+              radius: r,
+            },
+            visible: false,
+          });
+
+          group.addShape('rect', {
+            name: 'drag-right',
+            attrs: {
+              x: w * 0.1,
+              y: -h / 2,
+              width: w * 0.4,
+              height: h,
+              fill: 'yellow',
+              fillOpacity: 0.5,
+              radius: r,
+            },
+            visible: false,
+          });
           return shape;
         },
 
