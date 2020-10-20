@@ -91,7 +91,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         type: 'dendrogram', // 布局类型
         direction: 'LR',    // 自左至右布局，可选的有 H / V / LR / RL / TB / BT
         nodeSep: 50,        // 节点之间间距
-        rankSep: 200        // 每个层级之间的间距
+        rankSep: 250        // 每个层级之间的间距
       }
     });
 

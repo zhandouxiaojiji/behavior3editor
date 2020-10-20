@@ -14,6 +14,7 @@ import G6 from '@antv/g6';
 
 import 'antd/dist/antd.dark.css';
 import './index.css';
+import { ModelConfig } from "@antv/g6/lib/types";
 
 const { Header, Sider, Content, Footer } = Layout;
 const { TabPane } = Tabs;
@@ -23,6 +24,11 @@ interface MainState {
   filepaths: string[];
   curPath?: string;
 }
+
+const ICON_MAP = {
+  a: 'https://gw.alipayobjects.com/mdn/rms_8fd2eb/afts/img/A*0HC-SawWYUoAAAAAAAAAAABkARQnAQ',
+  b: 'https://gw.alipayobjects.com/mdn/rms_8fd2eb/afts/img/A*sxK0RJ1UhNkAAAAAAAAAAABkARQnAQ',
+};
 
 export default class Main extends Component {
   state: MainState = {
@@ -60,12 +66,43 @@ export default class Main extends Component {
             }
           },
         },
-        // draw(cfg, group) { },
+        draw(cfg, group) {
+          const color = cfg.error ? '#F4664A' : '#30BF78';
+          var size = cfg.size ? cfg.size as number[] : [150, 40];
+          const w = size[0];
+          const h = size[1];
+          const r = 2;
+          const shape = group.addShape('rect', {
+            attrs: {
+              x: -w / 2,
+              y: -h / 2,
+              width: w,
+              height: h,
+              stroke: color,
+              fill: 'white',
+              radius: r,
+            },
+            name: 'main-box',
+            draggable: true,
+          });
+
+          // title text
+          group.addShape('text', {
+            attrs: {
+              textBaseline: 'top',
+              x: -w / 2 + 8,
+              y: -h / 2 + 2,
+              lineHeight: 20,
+              text: cfg.id,
+              fill: 'black',
+            },
+            name: 'title',
+          });
+          return shape;
+        },
 
       },
-      // 继承内置节点类型的名字，例如基类 'single-node'，或 'circle', 'rect' 等
-      // 当不指定该参数则代表不继承任何内置节点类型
-      'rect',
+      'single-node',
     );
   }
 
