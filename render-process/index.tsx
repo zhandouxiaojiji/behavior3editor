@@ -101,7 +101,7 @@ export default class Main extends Component {
             draggable: true,
           });
 
-          // title text
+          // id text
           group.addShape('text', {
             attrs: {
               textBaseline: 'top',
@@ -111,7 +111,20 @@ export default class Main extends Component {
               text: cfg.id,
               fill: 'black',
             },
-            name: 'title',
+            name: 'id-text',
+          });
+
+          // name text
+          group.addShape('text', {
+            attrs: {
+              textBaseline: 'top',
+              x: -w / 2 + 20,
+              y: -h / 2 + 2,
+              lineHeight: 20,
+              text: cfg.name,
+              fill: 'black',
+            },
+            name: 'name-text',
           });
 
           group.addShape('rect', {

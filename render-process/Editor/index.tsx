@@ -1,4 +1,5 @@
 import * as React from 'react';
+import * as fs from 'fs';
 import { Row, Col } from 'antd';
 import NodePanel from './NodePanel';
 import { INode } from '@antv/g6/lib/interface/item';
@@ -6,7 +7,8 @@ import G6, { TreeGraph } from '@antv/g6';
 import { TreeGraphData, IG6GraphEvent } from '@antv/g6/lib/types';
 import { G6GraphEvent } from '@antv/g6/lib/interface/behavior';
 import './Editor.css';
-
+import * as Utils from '../../common/Utils';
+import { BehaviorTreeModel } from '../../common/BehaviorTreeModel';
 
 export interface EditorProps {
   filepath: string;
@@ -36,6 +38,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       container: this.ref.current,
       width: window.screen.width * 0.66,
       height: window.screen.height,
+      animate: false,
       fitView: true,
       fitViewPadding: [20, 20, 20, 20],
       modes: {
@@ -44,7 +47,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
           'zoom-canvas',
           'click-select',
           'hover',
-          'dragRight',
           {
             type: 'collapse-expand',
             trigger: 'dblclick',
@@ -66,10 +68,10 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         type: "TreeNode",
       },
       layout: {
-        type: 'dendrogram', // 布局类型
-        direction: 'LR',    // 自左至右布局，可选的有 H / V / LR / RL / TB / BT
-        nodeSep: 50,        // 节点之间间距
-        rankSep: 250        // 每个层级之间的间距
+        type: 'compactBox',
+        direction: 'LR',
+        getVGap: () => 20,
+        getHGap: () => 100,
       }
     });
 
@@ -94,80 +96,95 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       }
     });
 
-    graph.on('node:dragstart', (e: G6GraphEvent) => {
-      this.dragSrcNode = e.item as INode;
-      console.log("drag start")
-      graph.setItemState(e.item, 'dragSrc', true);
-    });
-    graph.on('node:dragend', (e: G6GraphEvent) => {
-      graph.setItemState(e.item, 'dragSrc', false);
-    });
-
-    graph.on('node:dragover', (e: G6GraphEvent) => {
+    const clearDragDstState = () => {
       if (this.dragDstNode) {
         graph.setItemState(this.dragDstNode, 'dragRight', false);
         graph.setItemState(this.dragDstNode, 'dragDown', false);
         graph.setItemState(this.dragDstNode, 'dragUp', false);
+        this.dragDstNode = null;
       }
+    }
+
+    graph.on('node:dragstart', (e: G6GraphEvent) => {
+      this.dragSrcNode = e.item as INode;
+      graph.setItemState(e.item, 'dragSrc', true);
+    });
+    graph.on('node:dragend', (e: G6GraphEvent) => {
+      graph.setItemState(e.item, 'dragSrc', false);
+      this.dragSrcNode = null;
+    });
+
+    graph.on('node:dragover', (e: G6GraphEvent) => {
+      clearDragDstState();
       const dstNode = e.item as INode;
       if (dstNode == this.dragSrcNode) {
         return;
       }
-      
+
       const box = dstNode.getBBox();
       if (e.x > box.minX + box.width * 0.6) {
-        console.log("right");
         graph.setItemState(dstNode, 'dragRight', true);
       } else if (e.y > box.minY + box.height * 0.5) {
-        console.log("down");
         graph.setItemState(dstNode, 'dragDown', true);
       } else {
-        console.log("up");
         graph.setItemState(dstNode, 'dragUp', true);
       }
       this.dragDstNode = dstNode;
     });
 
+    graph.on('node:dragleave', (e: G6GraphEvent) => {
+      clearDragDstState();
+    })
+
     graph.on('node:drop', (e: G6GraphEvent) => {
       const srcNode = this.dragSrcNode;
-      const dstNode = e.item as INode;
-      if (srcNode != dstNode) {
-
+      if (!srcNode) {
+        console.log("no drag src");
+        return;
       }
-      this.dragSrcNode = null;
-      this.dragDstNode = null;
+      const dstNode = e.item as INode;
+
+      if (srcNode == dstNode) {
+        console.log("drop same node");
+        return;
+      }
+
+      const rootData = graph.findDataById('1');
+      console.log('rootData', rootData);
+      const srcData = graph.findDataById(srcNode.getID());
+      const srcParent = Utils.findParent(rootData, srcNode.getID());
+      const dstData = graph.findDataById(dstNode.getID());
+      const dstParent = Utils.findParent(rootData, dstNode.getID());
+      console.log("srcParent", srcParent);
+      if (!srcParent) {
+        console.log("no parent!");
+        return;
+      }
+
+      const removeSrc = () => {
+        srcParent.children = srcParent.children.filter(e => e.id != srcData.id);
+      }
+      if (dstNode.hasState('dragRight')) {
+        if(Utils.findFromAllChildren(srcData, dstData.id)) {
+          console.log("cannot move to child");
+          return;
+        }
+        removeSrc();
+        if(!dstData.children) {
+          dstData.children = [];
+        }
+        dstData.children.push(srcData);
+      }
+
+      Utils.refreshNodeId(graph.findDataById('1'));
+      graph.changeData(rootData);
+      // graph.layout()
+      clearDragDstState();
     });
 
-    const data: TreeGraphData = {
-      id: 'root',
-      label: 'Root',
-      children: [
-        {
-          id: 'SubTreeNode1',
-          label: 'subroot1',
-          children: [
-            {
-              id: 'SubTreeNode1.1',
-              label: 'subroot1.1',
-            }
-          ]
-        },
-        {
-          id: 'SubTreeNode2',
-          label: 'subroot2',
-          children: [
-            {
-              id: 'SubTreeNode2.1',
-              label: 'subroot2.1',
-            },
-            {
-              id: 'SubTreeNode2.2',
-              label: 'subroot2.2',
-            }
-          ]
-        }
-      ]
-    };
+    const str = fs.readFileSync(this.props.filepath, 'utf8');
+    let tree: BehaviorTreeModel = JSON.parse(str);
+    const data = Utils.createTreeData(tree.root);
     graph.data(data);
     graph.render();
     this.graph = graph;

@@ -12,8 +12,10 @@ export interface BehaviorNodeModel {
   id: number;
   name: string;
   desc?: string;
+  children?: BehaviorNodeModel[];
 }
 
 export interface BehaviorTreeModel {
   name: string;
+  root: BehaviorNodeModel;
 }
