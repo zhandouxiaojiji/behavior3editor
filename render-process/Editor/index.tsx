@@ -161,19 +161,37 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         return;
       }
 
+      if (Utils.findFromAllChildren(srcData, dstData.id)) {
+        // 不能将父节点拖到自已的子孙节点
+        console.log("cannot move to child");
+        return;
+      }
+
       const removeSrc = () => {
         srcParent.children = srcParent.children.filter(e => e.id != srcData.id);
       }
       if (dstNode.hasState('dragRight')) {
-        if(Utils.findFromAllChildren(srcData, dstData.id)) {
-          console.log("cannot move to child");
-          return;
-        }
         removeSrc();
-        if(!dstData.children) {
+        if (!dstData.children) {
           dstData.children = [];
         }
         dstData.children.push(srcData);
+      } else if (dstNode.hasState('dragUp')) {
+        if (!dstParent) {
+          return;
+        }
+        removeSrc();
+        const idx = dstParent.children.findIndex(e => e.id == dstData.id);
+        dstParent.children.splice(idx, 0, srcData);
+      } else if (dstNode.hasState('dragDown')) {
+        if (!dstParent) {
+          return;
+        }
+        removeSrc();
+        const idx = dstParent.children.findIndex(e => e.id == dstData.id);
+        dstParent.children.splice(idx + 1, 0, srcData);
+      } else {
+        return;
       }
 
       Utils.refreshNodeId(graph.findDataById('1'));
