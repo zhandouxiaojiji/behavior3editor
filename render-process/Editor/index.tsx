@@ -39,8 +39,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       width: window.screen.width * 0.66,
       height: window.screen.height,
       animate: false,
-      fitView: true,
-      fitViewPadding: [20, 20, 20, 20],
+      // fitCenter: true,
       modes: {
         default: [
           'drag-canvas',
@@ -86,14 +85,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     });
 
     graph.on('nodeselectchange', (e: G6GraphEvent) => {
-      if (this.state.curNode) {
-        graph.setItemState(this.state.curNode, 'selected', false);
-      }
-      const curNode = e.target as INode;
-      this.setState({ curNode });
-      if (this.state.curNode) {
-        graph.setItemState(this.state.curNode, 'selected', true);
-      }
+      this.onSelectNode(e.target as INode)
     });
 
     const clearDragDstState = () => {
@@ -194,9 +186,10 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         return;
       }
 
-      Utils.refreshNodeId(graph.findDataById('1'));
+      const zoom = graph.getZoom();
       graph.changeData(rootData);
-      // graph.layout()
+      graph.focusItem(srcData.id);
+      this.onSelectNode(srcData.id);
       clearDragDstState();
     });
 
@@ -205,7 +198,28 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     const data = Utils.createTreeData(tree.root);
     graph.data(data);
     graph.render();
+    graph.fitCenter();
+
     this.graph = graph;
+  }
+
+  onSelectNode(node: string | INode) {
+    const graph = this.graph;
+    var curNode: INode;
+    if(typeof node == "string") {
+      curNode = graph.findById(node) as INode;
+    } else {
+      curNode = node;
+    }
+
+    if (this.state.curNode) {
+      graph.setItemState(this.state.curNode, 'selected', false);
+    }
+
+    this.setState({ curNode });
+    if (this.state.curNode) {
+      graph.setItemState(this.state.curNode, 'selected', true);
+    }
   }
 
   render() {
