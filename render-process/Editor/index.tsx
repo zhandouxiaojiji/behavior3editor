@@ -33,6 +33,10 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     this.ref = React.createRef();
   }
 
+  shouldComponentUpdate() {
+    return !this.graph;
+  }
+
   componentDidMount() {
     const graph = new TreeGraph({
       container: this.ref.current,
@@ -206,7 +210,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
   onSelectNode(node: string | INode) {
     const graph = this.graph;
     var curNode: INode;
-    if(typeof node == "string") {
+    if (typeof node == "string") {
       curNode = graph.findById(node) as INode;
     } else {
       curNode = node;
@@ -223,6 +227,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
   }
 
   render() {
+    console.log("render editor")
     const { curNode } = this.state;
     return (
       <div className="editor">

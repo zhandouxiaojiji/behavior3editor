@@ -245,7 +245,8 @@ export default class Main extends Component {
   }
 
   render() {
-    const { workspace, filepaths } = this.state;
+    console.log("render main");
+    const { workspace, filepaths, curPath } = this.state;
     document.title = `行为树编辑器 - ${workspace}`;
     return (
       <Layout className="body">
@@ -262,6 +263,11 @@ export default class Main extends Component {
             hideAdd
             className="tabs"
             type="editable-card"
+            defaultActiveKey={curPath}
+            activeKey={curPath}
+            onChange={activeKey => {
+              this.setState({ curPath: activeKey })
+            }}
           >
             {
               filepaths.map(filepath => {
