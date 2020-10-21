@@ -14,7 +14,7 @@ import G6 from '@antv/g6';
 
 import 'antd/dist/antd.dark.css';
 import './index.css';
-import { ModelConfig } from "@antv/g6/lib/types";
+import { ModelConfig, Item } from "@antv/g6/lib/types";
 
 const { Header, Sider, Content, Footer } = Layout;
 const { TabPane } = Tabs;
@@ -63,7 +63,22 @@ export default class Main extends Component {
             },
             dragSrc: {
               fill: 'gray',
-            }
+            },
+            dragRight: {
+              'drag-right': {
+                fillOpacity: 0.6,
+              }
+            },
+            dragUp: {
+              'drag-up': {
+                fillOpacity: 0.6,
+              }
+            },
+            dragDown: {
+              'drag-down': {
+                fillOpacity: 0.6,
+              }
+            },
           },
         },
         draw(cfg, group) {
@@ -104,13 +119,13 @@ export default class Main extends Component {
             attrs: {
               x: -w / 2,
               y: -h / 2,
-              width: w * 0.6,
+              width: w,
               height: h / 2,
               fill: 'blue',
-              fillOpacity: 0.5,
-              radius: r,
+              fillOpacity: 0,
             },
-            visible: false,
+            draggable: true,
+            // visible: false,
           });
 
           group.addShape('rect', {
@@ -118,13 +133,13 @@ export default class Main extends Component {
             attrs: {
               x: -w / 2,
               y: 0,
-              width: w * 0.6,
+              width: w,
               height: h / 2,
-              fill: 'green',
-              fillOpacity: 0.5,
-              radius: r,
+              fill: 'blue',
+              fillOpacity: 0,
             },
-            visible: false,
+            draggable: true,
+            // visible: false,
           });
 
           group.addShape('rect', {
@@ -134,15 +149,14 @@ export default class Main extends Component {
               y: -h / 2,
               width: w * 0.4,
               height: h,
-              fill: 'yellow',
-              fillOpacity: 0.5,
-              radius: r,
+              fill: 'blue',
+              fillOpacity: 0,
             },
-            visible: false,
+            draggable: true,
+            // visible: false,
           });
           return shape;
         },
-
       },
       'single-node',
     );

@@ -23,7 +23,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
   }
 
   private graph: TreeGraph;
-  private dragNode: INode;
+  private dragSrcNode: INode;
+  private dragDstNode: INode;
 
   constructor(props: EditorProps) {
     super(props);
@@ -40,8 +41,10 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       modes: {
         default: [
           'drag-canvas',
+          'zoom-canvas',
           'click-select',
           'hover',
+          'dragRight',
           {
             type: 'collapse-expand',
             trigger: 'dblclick',
@@ -59,31 +62,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
           stroke: '#A3B1BF'
         }
       },
-      // defaultNode: {
-      //   type: 'rect',
-      //   labelCfg: {
-      //     style: {
-      //       fill: 'blue',
-      //       fontSize: 10
-      //     }
-      //   },
-      //   style: {
-      //     stroke: '#72CC4A',
-      //     width: 150
-      //   }
-      // },
-      // nodeStateStyles: {
-      //   hover: {
-      //     fill: '#d3adf7',
-      //   },
-      //   selected: {
-      //     stroke: '#000',
-      //     lineWidth: 3,
-      //   },
-      //   dragSrc: {
-      //     fill: 'gray',
-      //   }
-      // },
       defaultNode: {
         type: "TreeNode",
       },
@@ -117,7 +95,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     });
 
     graph.on('node:dragstart', (e: G6GraphEvent) => {
-      this.dragNode = e.item as INode;
+      this.dragSrcNode = e.item as INode;
+      console.log("drag start")
       graph.setItemState(e.item, 'dragSrc', true);
     });
     graph.on('node:dragend', (e: G6GraphEvent) => {
@@ -125,15 +104,38 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     });
 
     graph.on('node:dragover', (e: G6GraphEvent) => {
+      if (this.dragDstNode) {
+        graph.setItemState(this.dragDstNode, 'dragRight', false);
+        graph.setItemState(this.dragDstNode, 'dragDown', false);
+        graph.setItemState(this.dragDstNode, 'dragUp', false);
+      }
+      const dstNode = e.item as INode;
+      if (dstNode == this.dragSrcNode) {
+        return;
+      }
       
+      const box = dstNode.getBBox();
+      if (e.x > box.minX + box.width * 0.6) {
+        console.log("right");
+        graph.setItemState(dstNode, 'dragRight', true);
+      } else if (e.y > box.minY + box.height * 0.5) {
+        console.log("down");
+        graph.setItemState(dstNode, 'dragDown', true);
+      } else {
+        console.log("up");
+        graph.setItemState(dstNode, 'dragUp', true);
+      }
+      this.dragDstNode = dstNode;
     });
 
     graph.on('node:drop', (e: G6GraphEvent) => {
-      const srcNode = this.dragNode;
+      const srcNode = this.dragSrcNode;
       const dstNode = e.item as INode;
       if (srcNode != dstNode) {
 
       }
+      this.dragSrcNode = null;
+      this.dragDstNode = null;
     });
 
     const data: TreeGraphData = {
