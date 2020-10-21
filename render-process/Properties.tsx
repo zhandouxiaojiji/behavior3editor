@@ -28,6 +28,14 @@ export default class Properties extends Component<PropertiesProps> {
     treeList: []
   };
 
+  curWorkspace: string = '';
+
+  shouldComponentUpdate(nextProps: PropertiesProps) {
+    const shouldUpdate = this.curWorkspace != nextProps.workspace;
+    this.curWorkspace = nextProps.workspace;
+    return shouldUpdate;
+  }
+
   componentDidMount() {
     var workspace = this.props.workspace;
     if (workspace == '') {
@@ -58,6 +66,7 @@ export default class Properties extends Component<PropertiesProps> {
   }
 
   render() {
+    console.log("render Properties");
     const { onOpenTree, workspace } = this.props;
     const treeList = this.getTreeList(workspace);
     return (
