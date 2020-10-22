@@ -268,6 +268,17 @@ export default class Main extends Component {
             onChange={activeKey => {
               this.setState({ curPath: activeKey })
             }}
+            onEdit={(targetKey, action) => {
+              if (action == 'remove') {
+                const idx = filepaths.indexOf(targetKey as string);
+                if(idx < 0) {
+                  return;
+                }
+                filepaths.splice(idx, 1);
+                const nextPath = filepaths[idx - 1];
+                this.setState({ filepaths, curPath: nextPath });
+              }
+            }}
           >
             {
               filepaths.map(filepath => {
