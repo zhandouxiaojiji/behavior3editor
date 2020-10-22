@@ -20,6 +20,7 @@
   "homepage": "https://github.com/zhandouxiaojiji/behavior3editor#readme",
   "devDependencies": {
     "css-loader": "^4.3.0",
+    "file-loader": "^6.1.1",
     "source-map-loader": "^1.1.0",
     "style-loader": "^2.0.0",
     "ts-loader": "^8.0.4",

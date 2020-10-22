@@ -14,6 +14,7 @@ import G6 from '@antv/g6';
 
 import 'antd/dist/antd.dark.css';
 import './index.css';
+import './icons/iconfont.svg';
 import { ModelConfig, Item } from "@antv/g6/lib/types";
 
 const { Header, Sider, Content, Footer } = Layout;
@@ -109,9 +110,22 @@ export default class Main extends Component {
               y: -h / 2 + 2,
               lineHeight: 20,
               text: cfg.id,
+              textAlign: 'right',
               fill: 'black',
             },
             name: 'id-text',
+          });
+
+          group.addShape('image', {
+            attrs: {
+              x: -w / 2 + 15,
+              y: -h / 2 + 2,
+              height: 16,
+              width: 16,
+              cursor: 'pointer',
+              img: './static/icons/Other.svg',
+            },
+            name: 'node-icon',
           });
 
           // name text
@@ -203,37 +217,6 @@ export default class Main extends Component {
     } else {
       this.setState({ curPath: path });
     }
-  }
-
-  loadAllTrees() {
-    const workspace = this.state.workspace
-    if (workspace == '' || !fs.existsSync(workspace)) {
-      console.log("workspace not exist", workspace);
-      return;
-    }
-
-    const files = fs.readdirSync(workspace);
-    const list = []
-    files.forEach((filename) => {
-      console.log("load path", filename);
-      const stat = fs.statSync(path.join(workspace, filename))
-      if (stat.isFile()) {
-        let tree = this.loadTree(filename.slice(0, -5));
-        list.push(tree);
-        console.log("loaded", filename);
-      }
-    })
-  }
-
-  loadTree(name: string) {
-    const filename = this.state.workspace + '/' + name + '.json';
-    if (!fs.existsSync(filename)) {
-      return;
-    }
-    const str = fs.readFileSync(filename, 'utf8');
-    let tree: BehaviorTreeModel = JSON.parse(str);
-    tree.name = name;
-    return tree;
   }
 
   renderJson() {
