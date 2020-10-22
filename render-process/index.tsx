@@ -6,15 +6,14 @@ import { Layout, Tabs } from 'antd';
 import { ipcRenderer, remote } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as Utils from '../common/Utils';
 import MainEventType from "../common/MainEventType";
 import Properties from "./Properties";
-import { BehaviorTreeModel } from "../common/BehaviorTreeModel";
 import Settings from "../main-process/Settings";
 import G6 from '@antv/g6';
 
 import 'antd/dist/antd.dark.css';
 import './index.css';
-import './icons/iconfont.svg';
 import { ModelConfig, Item } from "@antv/g6/lib/types";
 
 const { Header, Sider, Content, Footer } = Layout;
@@ -26,18 +25,17 @@ interface MainState {
   curPath?: string;
 }
 
-const ICON_MAP = {
-  a: 'https://gw.alipayobjects.com/mdn/rms_8fd2eb/afts/img/A*0HC-SawWYUoAAAAAAAAAAABkARQnAQ',
-  b: 'https://gw.alipayobjects.com/mdn/rms_8fd2eb/afts/img/A*sxK0RJ1UhNkAAAAAAAAAAABkARQnAQ',
-};
-
 export default class Main extends Component {
   state: MainState = {
     workspace: '',
     filepaths: [],
   }
 
+  settings: Settings;
+
   componentWillMount() {
+    this.updateSettings();
+    const settings = this.settings;
     G6.registerNode(
       'TreeNode',
       {
@@ -106,7 +104,7 @@ export default class Main extends Component {
           group.addShape('text', {
             attrs: {
               textBaseline: 'top',
-              x: -w / 2 + 8,
+              x: -w / 2 + 13,
               y: -h / 2 + 2,
               lineHeight: 20,
               text: cfg.id,
@@ -116,14 +114,16 @@ export default class Main extends Component {
             name: 'id-text',
           });
 
+          const classfiy = settings.getClassify(cfg.name as string) || 'Other';
+          var img = `./static/icons/${classfiy}.svg`;
+          console.log(cfg.type, classfiy);
           group.addShape('image', {
             attrs: {
               x: -w / 2 + 15,
-              y: -h / 2 + 2,
+              y: -h / 2,
               height: 16,
               width: 16,
-              cursor: 'pointer',
-              img: './static/icons/Other.svg',
+              img,
             },
             name: 'node-icon',
           });
@@ -132,7 +132,7 @@ export default class Main extends Component {
           group.addShape('text', {
             attrs: {
               textBaseline: 'top',
-              x: -w / 2 + 20,
+              x: -w / 2 + 35,
               y: -h / 2 + 2,
               lineHeight: 20,
               text: cfg.name,
@@ -204,8 +204,11 @@ export default class Main extends Component {
   }
 
   getLastWorkspace() {
-    const settings: Settings = remote.getGlobal("settings");
-    return settings.recentWorkspaces[0];
+    return this.settings.recentWorkspaces[0];
+  }
+
+  updateSettings() {
+    this.settings = Utils.getRemoteSettings();
   }
 
   openFile(path: string) {

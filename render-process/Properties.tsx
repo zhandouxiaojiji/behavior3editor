@@ -2,10 +2,6 @@ import React, { Component } from "react";
 import { Menu, Input } from "antd";
 import * as fs from 'fs';
 import * as path from 'path';
-import { BehaviorTreeModel } from "../common/BehaviorTreeModel";
-import { remote } from 'electron';
-import { MainProcess } from "../main-process/MainProcess";
-import Settings from "../main-process/Settings";
 
 const { Search } = Input;
 

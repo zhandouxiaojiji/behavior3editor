@@ -24,6 +24,7 @@ const sampleNodeClassify: BehaviorNodeClassify[] = [
 
 export default class Settings {
   private settings: SettingsModel;
+  private name2classify: { [name: string]: string } = {};
   constructor() {
     this.load();
   }
@@ -40,6 +41,10 @@ export default class Settings {
   get nodeConfig() {
     const str = fs.readFileSync(this.nodeConfigPath, 'utf8');
     const types: BehaviorNodeTypeModel[] = JSON.parse(str);
+    this.name2classify = {};
+    types.forEach(t => {
+      this.name2classify[t.name] = t.type;
+    })
     return types;
   }
   get nodeClassify() {
@@ -71,5 +76,9 @@ export default class Settings {
 
   save() {
     fs.writeFileSync(settingPath, JSON.stringify(this.settings, null, 2));
+  }
+
+  getClassify(name: string) {
+    return this.name2classify[name];
   }
 }
