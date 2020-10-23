@@ -29,6 +29,7 @@ export const createTreeData = (bNode: BehaviorNodeModel) => {
   const treeData: any = {
     id: bNode.id.toString(),
     name: bNode.name,
+    desc: bNode.desc,
   }
   if (bNode.children) {
     treeData.children = [];

@@ -80,11 +80,17 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
     graph.on('node:mouseenter', (e: G6GraphEvent) => {
       const { item } = e;
+      if(item.hasState('selected')) {
+        return;
+      }
       graph.setItemState(item, 'hover', true);
     });
 
     graph.on('node:mouseleave', (e: G6GraphEvent) => {
       const { item } = e;
+      if(item.hasState('selected')) {
+        return;
+      }
       graph.setItemState(item, 'hover', false);
     });
 

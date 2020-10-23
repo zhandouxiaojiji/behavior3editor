@@ -20,12 +20,12 @@ const { Header, Sider, Content, Footer } = Layout;
 const { TabPane } = Tabs;
 
 const NODE_COLORS: any = {
-  ['Composite'] : 'rgb(91,237,32)',
-  ['Decorator'] : 'rgb(218,167,16)',
-  ['Condition'] : 'rgb(228,20,139)',
-  ['Action'] : 'rgb(91,143,249)',
-  ['Other'] : 'rgb(112,112,112)',
-} 
+  ['Composite']: 'rgb(91,237,32)',
+  ['Decorator']: 'rgb(218,167,16)',
+  ['Condition']: 'rgb(228,20,139)',
+  ['Action']: 'rgb(91,143,249)',
+  ['Other']: 'rgb(112,112,112)',
+}
 
 interface MainState {
   workspace: string;
@@ -60,16 +60,16 @@ export default class Main extends Component {
             width: 150,
           },
           stateStyles: {
-            hover: {
-              'main-box': {
-                fill: 'gray',
-              }
-            },
             selected: {
               'main-box': {
                 stroke: 'black',
                 lineWidth: 3,
               },
+            },
+            hover: {
+              'name-text': {
+                stroke: 'white',
+              }
             },
             dragSrc: {
               fill: 'gray',
@@ -92,8 +92,9 @@ export default class Main extends Component {
           },
         },
         draw(cfg, group) {
-          const classfiy = settings.getClassify(cfg.name as string) || 'Other';
-          const color = NODE_COLORS[classfiy];
+          const nodeConf = settings.getNodeConf(cfg.name as string);
+          const classify = nodeConf.type || 'Other';
+          const color = NODE_COLORS[classify] || 'Other';
           var size = cfg.size ? cfg.size as number[] : [150, 40];
           const w = size[0];
           const h = size[1];
@@ -118,9 +119,9 @@ export default class Main extends Component {
           // name bg
           group.addShape('rect', {
             attrs: {
-              x: x0+1.5,
-              y: y0+1.5,
-              width: w-3,
+              x: x0 + 1.5,
+              y: y0 + 1.5,
+              width: w - 3,
               height: 16,
               fill: color,
               // radius: r,
@@ -144,8 +145,8 @@ export default class Main extends Component {
           });
 
           // icon
-          var img = `./static/icons/${classfiy}.svg`;
-          console.log(cfg.type, classfiy);
+          var img = `./static/icons/${classify}.svg`;
+          console.log(cfg.type, classify);
           group.addShape('image', {
             attrs: {
               x: x0 + 15,
@@ -173,20 +174,20 @@ export default class Main extends Component {
           var x = x0 + 2;
           var y = y0 + 20;
           // desc text
-          if(cfg.desc) {
+          const desc = cfg.desc || nodeConf.desc;
+          if (desc) {
             group.addShape('text', {
               attrs: {
                 textBaseline: 'top',
                 x,
                 y,
                 lineHeight: 20,
-                text: cfg.name,
+                text: `备注:${desc}`,
                 fill: 'black',
               },
-              name: 'name-text',
+              name: 'desc-text',
             });
           }
-          
 
           group.addShape('rect', {
             name: 'drag-up',
