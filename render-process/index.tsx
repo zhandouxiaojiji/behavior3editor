@@ -19,6 +19,14 @@ import { ModelConfig, Item } from "@antv/g6/lib/types";
 const { Header, Sider, Content, Footer } = Layout;
 const { TabPane } = Tabs;
 
+const NODE_COLORS: any = {
+  ['Composite'] : 'rgb(91,237,32)',
+  ['Decorator'] : 'rgb(218,167,16)',
+  ['Condition'] : 'rgb(228,20,139)',
+  ['Action'] : 'rgb(91,143,249)',
+  ['Other'] : 'rgb(112,112,112)',
+} 
+
 interface MainState {
   workspace: string;
   filepaths: string[];
@@ -49,16 +57,19 @@ export default class Main extends Component {
           },
           style: {
             fill: "white",
-            stroke: '#72CC4A',
-            width: 150
+            width: 150,
           },
           stateStyles: {
             hover: {
-              fill: '#d3adf7',
+              'main-box': {
+                fill: 'gray',
+              }
             },
             selected: {
-              stroke: '#000',
-              lineWidth: 3,
+              'main-box': {
+                stroke: 'black',
+                lineWidth: 3,
+              },
             },
             dragSrc: {
               fill: 'gray',
@@ -81,18 +92,22 @@ export default class Main extends Component {
           },
         },
         draw(cfg, group) {
-          const color = cfg.error ? '#F4664A' : '#30BF78';
+          const classfiy = settings.getClassify(cfg.name as string) || 'Other';
+          const color = NODE_COLORS[classfiy];
           var size = cfg.size ? cfg.size as number[] : [150, 40];
           const w = size[0];
           const h = size[1];
+          const x0 = -w / 2;
+          const y0 = -h / 2;
           const r = 2;
           const shape = group.addShape('rect', {
             attrs: {
-              x: -w / 2,
-              y: -h / 2,
+              x: x0,
+              y: y0,
               width: w,
               height: h,
               stroke: color,
+              lineWidth: 2,
               fill: 'white',
               radius: r,
             },
@@ -100,12 +115,26 @@ export default class Main extends Component {
             draggable: true,
           });
 
+          // name bg
+          group.addShape('rect', {
+            attrs: {
+              x: x0+1.5,
+              y: y0+1.5,
+              width: w-3,
+              height: 16,
+              fill: color,
+              // radius: r,
+            },
+            name: 'name-bg',
+            draggable: true,
+          });
+
           // id text
           group.addShape('text', {
             attrs: {
               textBaseline: 'top',
-              x: -w / 2 + 13,
-              y: -h / 2 + 2,
+              x: x0 + 13,
+              y: y0 + 4,
               lineHeight: 20,
               text: cfg.id,
               textAlign: 'right',
@@ -114,15 +143,15 @@ export default class Main extends Component {
             name: 'id-text',
           });
 
-          const classfiy = settings.getClassify(cfg.name as string) || 'Other';
+          // icon
           var img = `./static/icons/${classfiy}.svg`;
           console.log(cfg.type, classfiy);
           group.addShape('image', {
             attrs: {
-              x: -w / 2 + 15,
-              y: -h / 2,
-              height: 16,
-              width: 16,
+              x: x0 + 15,
+              y: y0 + 2,
+              height: 14,
+              width: 14,
               img,
             },
             name: 'node-icon',
@@ -132,14 +161,32 @@ export default class Main extends Component {
           group.addShape('text', {
             attrs: {
               textBaseline: 'top',
-              x: -w / 2 + 35,
-              y: -h / 2 + 2,
+              x: x0 + 35,
+              y: y0 + 4,
               lineHeight: 20,
               text: cfg.name,
               fill: 'black',
             },
             name: 'name-text',
           });
+
+          var x = x0 + 2;
+          var y = y0 + 20;
+          // desc text
+          if(cfg.desc) {
+            group.addShape('text', {
+              attrs: {
+                textBaseline: 'top',
+                x,
+                y,
+                lineHeight: 20,
+                text: cfg.name,
+                fill: 'black',
+              },
+              name: 'name-text',
+            });
+          }
+          
 
           group.addShape('rect', {
             name: 'drag-up',
@@ -257,7 +304,7 @@ export default class Main extends Component {
             onEdit={(targetKey, action) => {
               if (action == 'remove') {
                 const idx = filepaths.indexOf(targetKey as string);
-                if(idx < 0) {
+                if (idx < 0) {
                   return;
                 }
                 filepaths.splice(idx, 1);
