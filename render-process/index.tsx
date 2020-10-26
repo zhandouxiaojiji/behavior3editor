@@ -67,9 +67,8 @@ export default class Main extends Component {
               },
             },
             hover: {
-              'name-text': {
-                stroke: 'white',
-              }
+              stroke: 'white',
+              lineWidth: 3,
             },
             dragSrc: {
               fill: 'gray',
@@ -134,12 +133,15 @@ export default class Main extends Component {
           group.addShape('text', {
             attrs: {
               textBaseline: 'top',
-              x: x0 + 13,
-              y: y0 + 4,
+              x: x0 - 3,
+              y: -8,
+              fontSize: 20,
               lineHeight: 20,
               text: cfg.id,
               textAlign: 'right',
-              fill: 'black',
+              fill: 'white',
+              stroke: 'black',
+              lineWidth: 2,
             },
             name: 'id-text',
           });
@@ -149,7 +151,7 @@ export default class Main extends Component {
           console.log(cfg.type, classify);
           group.addShape('image', {
             attrs: {
-              x: x0 + 15,
+              x: x0 + 3,
               y: y0 + 2,
               height: 14,
               width: 14,
@@ -162,7 +164,7 @@ export default class Main extends Component {
           group.addShape('text', {
             attrs: {
               textBaseline: 'top',
-              x: x0 + 35,
+              x: x0 + 18,
               y: y0 + 4,
               lineHeight: 20,
               text: cfg.name,
