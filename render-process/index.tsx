@@ -239,6 +239,23 @@ export default class Main extends Component {
             });
           }
 
+          if (cfg.children) {
+            group.addShape('marker', {
+              attrs: {
+                x: w / 2,
+                y: 0,
+                r: 6,
+                cursor: 'pointer',
+                symbol: G6.Marker.collapse,
+                stroke: '#666',
+                lineWidth: 1,
+                fill: '#fff',
+              },
+              name: 'collapse-icon',
+            });
+          }
+
+
           group.addShape('rect', {
             name: 'drag-up',
             attrs: {
