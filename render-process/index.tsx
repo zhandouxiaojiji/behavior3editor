@@ -148,7 +148,6 @@ export default class Main extends Component {
 
           // icon
           var img = `./static/icons/${classify}.svg`;
-          console.log(cfg.type, classify);
           group.addShape('image', {
             attrs: {
               x: x0 + 3,
@@ -174,7 +173,7 @@ export default class Main extends Component {
           });
 
           var x = x0 + 2;
-          var y = y0 + 20;
+          var y = y0 + 23;
           // desc text
           const desc = cfg.desc || nodeConf.desc;
           if (desc) {
@@ -184,6 +183,7 @@ export default class Main extends Component {
                 x,
                 y,
                 lineHeight: 20,
+                fontWeight: 800,
                 text: `备注:${desc}`,
                 fill: 'black',
               },

@@ -8,7 +8,7 @@ import { TreeGraphData, IG6GraphEvent } from '@antv/g6/lib/types';
 import { G6GraphEvent } from '@antv/g6/lib/interface/behavior';
 import './Editor.css';
 import * as Utils from '../../common/Utils';
-import { BehaviorTreeModel } from '../../common/BehaviorTreeModel';
+import { BehaviorTreeModel, GraphNodeModel } from '../../common/BehaviorTreeModel';
 
 export interface EditorProps {
   filepath: string;
@@ -73,8 +73,18 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       layout: {
         type: 'compactBox',
         direction: 'LR',
-        getVGap: () => 20,
-        getHGap: () => 100,
+        getVGap: () => 15,
+        getHGap: () => 50,
+        getWidth: (d: GraphNodeModel) => {
+          return 150;
+        },
+        getHeight: (d: GraphNodeModel) => {
+          if(d.size) {
+            return d.size[1];
+          } else {
+            return 50;
+          }
+        }
       }
     });
 
@@ -104,7 +114,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
     const clearDragDstState = () => {
       if (this.dragDstId) {
-        console.log("clearDragDstState", this.dragDstId);
         graph.setItemState(this.dragDstId, 'dragRight', false);
         graph.setItemState(this.dragDstId, 'dragDown', false);
         graph.setItemState(this.dragDstId, 'dragUp', false);
@@ -114,7 +123,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
     const clearDragSrcState = () => {
       if (this.dragSrcId) {
-        console.log("clearDragSrcId", this.dragSrcId);
         graph.setItemState(this.dragSrcId, 'dragSrc', false);
         this.dragSrcId = null;
       }
@@ -162,8 +170,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       const srcNodeId = this.dragSrcId;
       const dstNode = e.item;
 
-      console.log("drop");
-
       var dragDir;
       if(dstNode.hasState('dragRight')) {
         dragDir = 'dragRight';
@@ -187,12 +193,10 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       }
 
       const rootData = graph.findDataById('1');
-      console.log('rootData', rootData);
       const srcData = graph.findDataById(srcNodeId);
       const srcParent = Utils.findParent(rootData, srcNodeId);
       const dstData = graph.findDataById(dstNode.getID());
       const dstParent = Utils.findParent(rootData, dstNode.getID());
-      console.log("srcParent", srcParent);
       if (!srcParent) {
         console.log("no parent!");
         return;
@@ -232,7 +236,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         return;
       }
 
-      console.log("cur data", graph.findDataById('1'));
+      // console.log("cur data", graph.findDataById('1'));
       graph.changeData();
       graph.layout();
     });

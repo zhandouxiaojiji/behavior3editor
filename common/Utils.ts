@@ -1,18 +1,17 @@
 import { TreeGraphData } from "@antv/g6/lib/types"
-import { Tree } from "antd";
-import { BehaviorNodeModel } from "./BehaviorTreeModel";
+import { BehaviorNodeModel, GraphNodeModel } from "./BehaviorTreeModel";
 import Settings from "../main-process/Settings";
 import { remote } from "electron";
 
-export const cloneNodeData = (nodeData: TreeGraphData) => {
-  const newData: TreeGraphData = {
+export const cloneNodeData = (nodeData: GraphNodeModel) => {
+  const newData: GraphNodeModel = {
     id: nodeData.id + "new",
-    label: nodeData.label,
+    name: nodeData.name,
   }
   return newData;
 }
 
-export const refreshNodeId = (nodeData: TreeGraphData, id?: number) => {
+export const refreshNodeId = (nodeData: GraphNodeModel, id?: number) => {
   if (!id) {
     id = 1;
   }
@@ -25,18 +24,36 @@ export const refreshNodeId = (nodeData: TreeGraphData, id?: number) => {
   return id;
 }
 
+export const calcTreeNodeSize = (treeNode: GraphNodeModel) => {
+  var height = 40;
+  const updateHeight = (arr: any) => {
+    if(arr && arr.length > 0) {
+      height += 30;
+    }
+  }
+  updateHeight(treeNode.args);
+  updateHeight(treeNode.input);
+  updateHeight(treeNode.output);
+  return [150, height];
+}
+
 export const createTreeData = (bNode: BehaviorNodeModel) => {
-  const treeData: any = {
+  const treeData: GraphNodeModel = {
     id: bNode.id.toString(),
     name: bNode.name,
     desc: bNode.desc,
+    args: bNode.args,
+    input: bNode.input,
+    output: bNode.output,
   }
+  treeData.size = calcTreeNodeSize(treeData);
   if (bNode.children) {
     treeData.children = [];
     bNode.children.forEach(child => {
       treeData.children.push(createTreeData(child));
     })
   }
+  calcTreeNodeSize(treeData);
   return treeData;
 }
 
