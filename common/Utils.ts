@@ -26,15 +26,15 @@ export const refreshNodeId = (nodeData: GraphNodeModel, id?: number) => {
 
 export const calcTreeNodeSize = (treeNode: GraphNodeModel) => {
   var height = 40;
-  const updateHeight = (arr: any) => {
-    if(arr && arr.length > 0) {
-      height += 30;
+  const updateHeight = (obj: any) => {
+    if (Array.isArray(obj) || (obj && Object.keys(obj).length > 0)) {
+      height += 25;
     }
   }
   updateHeight(treeNode.args);
   updateHeight(treeNode.input);
   updateHeight(treeNode.output);
-  return [150, height];
+  return [200, height];
 }
 
 export const createTreeData = (bNode: BehaviorNodeModel) => {

@@ -57,7 +57,6 @@ export default class Main extends Component {
           },
           style: {
             fill: "white",
-            width: 150,
           },
           stateStyles: {
             selected: {
@@ -165,6 +164,7 @@ export default class Main extends Component {
               textBaseline: 'top',
               x: x0 + 18,
               y: y0 + 4,
+              fontWeight: 800,
               lineHeight: 20,
               text: cfg.name,
               fill: 'black',
@@ -188,6 +188,54 @@ export default class Main extends Component {
                 fill: 'black',
               },
               name: 'desc-text',
+            });
+          }
+
+          const args: any = cfg.args;
+          if (args && Object.keys(args).length > 0) {
+            y += 20;
+            group.addShape('text', {
+              attrs: {
+                textBaseline: 'top',
+                x,
+                y,
+                lineHeight: 20,
+                text: `参数:${JSON.stringify(args)}`,
+                fill: 'black',
+              },
+              name: 'args-text',
+            });
+          }
+
+          const input: [] = cfg.input ? cfg.input as [] : [];
+          if (input.length > 0) {
+            y += 20;
+            group.addShape('text', {
+              attrs: {
+                textBaseline: 'top',
+                x,
+                y,
+                lineHeight: 20,
+                text: `输入:${JSON.stringify(input)}`,
+                fill: 'black',
+              },
+              name: 'input-text',
+            });
+          }
+
+          const output: [] = cfg.output ? cfg.output as [] : [];
+          if (output.length > 0) {
+            y += 20;
+            group.addShape('text', {
+              attrs: {
+                textBaseline: 'top',
+                x,
+                y,
+                lineHeight: 20,
+                text: `输出:${JSON.stringify(output)}`,
+                fill: 'black',
+              },
+              name: 'output-text',
             });
           }
 

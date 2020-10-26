@@ -14,7 +14,7 @@ export interface BehaviorNodeModel {
   id: number;
   name: string;
   desc?: string;
-  args?: string[][3];
+  args?: {[key: string]: any};
   input?: string[];
   output?: string;
   children?: BehaviorNodeModel[];
@@ -28,7 +28,7 @@ export interface BehaviorTreeModel {
 export interface GraphNodeModel extends TreeGraphData {
   name: string;
   desc?: string;
-  args?: string[][3];
+  args?: {[key: string]: any};
   input?: string[];
   output?: string;
   children?: GraphNodeModel[];
