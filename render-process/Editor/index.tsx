@@ -9,20 +9,20 @@ import { G6GraphEvent } from '@antv/g6/lib/interface/behavior';
 import './Editor.css';
 import * as Utils from '../../common/Utils';
 import { BehaviorTreeModel, GraphNodeModel } from '../../common/BehaviorTreeModel';
+import TreePanel from './TreePanel';
 
 export interface EditorProps {
   filepath: string;
 }
 
 interface EditorState {
-  curNodeId: string | null;
+  curNodeId?: string;
+  treeModel?: BehaviorTreeModel;
 }
 
 export default class Editor extends React.Component<EditorProps, EditorState> {
   private ref: React.RefObject<any>;
-  state: EditorState = {
-    curNodeId: null
-  }
+  state: EditorState = {}
 
   private graph: TreeGraph;
   private dragSrcId: string;
@@ -33,9 +33,9 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     this.ref = React.createRef();
   }
 
-  shouldComponentUpdate() {
-    return !this.graph;
-  }
+  // shouldComponentUpdate(nextProps: EditorProps, nextState: EditorState) {
+  //   return !this.graph || this.state.curNodeId != nextState.curNodeId;
+  // }
 
   componentDidMount() {
     const graph = new TreeGraph({
@@ -80,7 +80,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
           return 150;
         },
         getHeight: (d: GraphNodeModel) => {
-          if(d.size) {
+          if (d.size) {
             return d.size[1];
           } else {
             return 50;
@@ -106,7 +106,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     });
 
     graph.on('nodeselectchange', (e: G6GraphEvent) => {
-      if(e.target) {
+      if (e.target) {
         this.onSelectNode(e.target.getID());
       } else {
         this.onSelectNode(null);
@@ -142,7 +142,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       graph.setItemState(this.dragSrcId, 'dragSrc', true);
     });
     graph.on('node:dragend', (e: G6GraphEvent) => {
-      if(this.dragSrcId) {
+      if (this.dragSrcId) {
         graph.setItemState(this.dragSrcId, 'dragSrc', false);
         this.dragSrcId = null;
       }
@@ -153,8 +153,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       if (dstNodeId == this.dragSrcId) {
         return;
       }
-      
-      if(this.dragDstId) {
+
+      if (this.dragDstId) {
         graph.setItemState(this.dragDstId, 'dragRight', false);
         graph.setItemState(this.dragDstId, 'dragDown', false);
         graph.setItemState(this.dragDstId, 'dragUp', false);
@@ -180,11 +180,11 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       const dstNode = e.item;
 
       var dragDir;
-      if(dstNode.hasState('dragRight')) {
+      if (dstNode.hasState('dragRight')) {
         dragDir = 'dragRight';
-      } else if(dstNode.hasState('dragDown')) {
+      } else if (dstNode.hasState('dragDown')) {
         dragDir = 'dragDown';
-      } else if(dstNode.hasState('dragUp')) {
+      } else if (dstNode.hasState('dragUp')) {
         dragDir = 'dragUp';
       }
 
@@ -260,6 +260,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     graph.fitCenter();
 
     this.graph = graph;
+
+    this.setState({treeModel: tree});
   }
 
   onSelectNode(curNodeId: string | null) {
@@ -276,9 +278,17 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     }
   }
 
+  createNode(name: string) {
+
+  }
+
   render() {
     console.log("render editor")
-    const { curNodeId: curNode } = this.state;
+    const { curNodeId, treeModel } = this.state;
+    var curNode;
+    if (curNodeId) {
+      curNode = this.graph.findDataById(curNodeId);
+    }
     return (
       <div className="editor">
         <Row className="editorBd">
@@ -288,8 +298,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             ref={this.ref}
           />
           <Col span={6} className="editorSidebar">
-            <NodePanel
-            />
+            {curNode ? <NodePanel /> : <TreePanel model={treeModel}/>}
           </Col>
         </Row>
       </div>

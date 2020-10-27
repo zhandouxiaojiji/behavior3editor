@@ -10,7 +10,7 @@ interface NodePanelState {
 
 }
 
-export default class Panel extends React.Component<NodePanelProps> {
+export default class NodePanel extends React.Component<NodePanelProps> {
   componentDidMount() {
   }
 
