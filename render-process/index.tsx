@@ -86,7 +86,7 @@ export default class Main extends Component {
               'drag-down': {
                 fillOpacity: 0.6,
               }
-            },
+            }
           },
         },
         draw(cfg, group) {
@@ -298,7 +298,7 @@ export default class Main extends Component {
             // visible: false,
           });
           return shape;
-        },
+        }
       },
       'single-node',
     );

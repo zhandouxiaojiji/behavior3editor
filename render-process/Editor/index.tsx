@@ -42,7 +42,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       container: this.ref.current,
       width: window.screen.width * 0.66,
       height: window.screen.height,
-      animate: false,
+      animate: true,
       // fitCenter: true,
       modes: {
         default: [
@@ -56,6 +56,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             onChange: (item, collapsed) => {
               const data = item.getModel();
               data.collapsed = collapsed;
+              this.onSelectNode(item.getID());
               return true;
             },
           },
@@ -109,6 +110,14 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         this.onSelectNode(e.target.getID());
       } else {
         this.onSelectNode(null);
+      }
+    });
+
+    graph.on('node:click', (e: G6GraphEvent) => {
+      if (e.target.get('name') === 'collapse-icon') {
+        e.item.getModel().collapsed = !e.item.getModel().collapsed;
+        graph.setItemState(e.item, 'collapsed', e.item.getModel().collapsed as boolean);
+        graph.layout();
       }
     });
 
@@ -237,8 +246,10 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       }
 
       // console.log("cur data", graph.findDataById('1'));
+      graph.set('animate', false);
       graph.changeData();
       graph.layout();
+      graph.set('animate', true);
     });
 
     const str = fs.readFileSync(this.props.filepath, 'utf8');
@@ -255,6 +266,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     const graph = this.graph;
 
     if (this.state.curNodeId) {
+      console.log("unselect", this.state.curNodeId);
       graph.setItemState(this.state.curNodeId, 'selected', false);
     }
 
