@@ -54,9 +54,13 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             type: 'collapse-expand',
             trigger: 'dblclick',
             onChange: (item, collapsed) => {
+              this.onSelectNode(item.getID());
               const data = item.getModel();
               data.collapsed = collapsed;
-              this.onSelectNode(item.getID());
+              graph.setItemState(item, 'collapsed', data.collapsed as boolean);
+              const icon = data.collapsed ? G6.Marker.expand : G6.Marker.collapse;
+              const marker = item.get('group').find((ele: any) => ele.get('name') === 'collapse-icon');
+              marker.attr('symbol', icon);
               return true;
             },
           },
@@ -110,14 +114,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         this.onSelectNode(e.target.getID());
       } else {
         this.onSelectNode(null);
-      }
-    });
-
-    graph.on('node:click', (e: G6GraphEvent) => {
-      if (e.target.get('name') === 'collapse-icon') {
-        e.item.getModel().collapsed = !e.item.getModel().collapsed;
-        graph.setItemState(e.item, 'collapsed', e.item.getModel().collapsed as boolean);
-        graph.layout();
       }
     });
 
@@ -261,7 +257,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
     this.graph = graph;
 
-    this.setState({treeModel: tree});
+    this.setState({ treeModel: tree });
   }
 
   onSelectNode(curNodeId: string | null) {
@@ -298,7 +294,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             ref={this.ref}
           />
           <Col span={6} className="editorSidebar">
-            {curNode ? <NodePanel /> : <TreePanel model={treeModel}/>}
+            {curNode ? <NodePanel /> : <TreePanel model={treeModel} />}
           </Col>
         </Row>
       </div>

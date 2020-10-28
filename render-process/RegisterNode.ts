@@ -11,6 +11,12 @@ const NODE_COLORS: any = {
 
 
 export default function (settings: Settings) {
+  const collapseStyle: any = {
+    'collapse-icon': {
+      // symbol: G6.Marker.expand,
+      fill: 'blue',
+    }
+  };
   G6.registerNode(
     'TreeNode',
     {
@@ -206,13 +212,12 @@ export default function (settings: Settings) {
           });
         }
 
-        if (cfg.children) {
+        if (Array.isArray(cfg.children) && cfg.children.length > 0) {
           group.addShape('marker', {
             attrs: {
               x: w / 2,
               y: 0,
               r: 6,
-              cursor: 'pointer',
               symbol: G6.Marker.collapse,
               stroke: '#666',
               lineWidth: 1,
