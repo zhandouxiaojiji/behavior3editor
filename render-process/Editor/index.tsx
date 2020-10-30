@@ -42,7 +42,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       container: this.ref.current,
       width: window.screen.width * 0.66,
       height: window.screen.height,
-      animate: true,
+      animate: false,
       // fitCenter: true,
       modes: {
         default: [
@@ -254,6 +254,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     graph.data(data);
     graph.render();
     graph.fitCenter();
+    graph.set('animate', true);
 
     this.graph = graph;
 
