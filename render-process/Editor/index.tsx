@@ -279,6 +279,11 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
   }
 
+  updateNode(id: string) {
+    this.graph.changeData();
+    this.graph.layout();
+  }
+
   render() {
     console.log("render editor")
     const { curNodeId, treeModel, settings } = this.state;
@@ -295,7 +300,21 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             ref={this.ref}
           />
           <Col span={6} className="editorSidebar">
-            {curNode ? <NodePanel model={curNode} settings={settings} /> : <TreePanel model={treeModel} />}
+            {
+              curNode ?
+                <NodePanel
+                  model={curNode}
+                  settings={settings}
+                  updateNode={id => {
+                    const item = this.graph.findById(id);
+                    item.draw();
+                  }}
+                />
+                :
+                <TreePanel
+                  model={treeModel}
+                />
+            }
           </Col>
         </Row>
       </div>

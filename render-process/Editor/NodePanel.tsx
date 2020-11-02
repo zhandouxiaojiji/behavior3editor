@@ -10,6 +10,7 @@ const { Item } = Form;
 interface NodePanelProps {
   model: BehaviorNodeModel;
   settings: Settings;
+  updateNode: (id: string) => void;
 }
 
 interface NodePanelState {
@@ -23,29 +24,35 @@ export default class NodePanel extends React.Component<NodePanelProps> {
     const { model, settings } = this.props;
     this.formRef.current.setFieldsValue({
       name: model.name,
+      desc: model.desc,
     });
   }
 
   onFinish = (values: any) => {
     console.log('Success:', values);
+    const { updateNode, model } = this.props;
+    model.desc = values.desc;
+    updateNode(model.id.toString());
   };
 
   onFinishFailed = (errorInfo: any) => {
     console.log('Failed:', errorInfo);
   };
 
+  handleSubmit = () => {
+    console.log("handleSubmit");
+    this.formRef.current.submit();
+  }
+
   render() {
     const { model, settings } = this.props;
     const conf = settings.getNodeConf(model.name);
-    console.log("model", model, conf);
     const title = conf.desc;
 
-    const names: string[] = [];
+    const options: any = [];
     settings.nodeConfig.map((e) => {
-      names.push(e.name);
+      options.push({ label: `${e.name}(${e.desc})`, value: e.name });
     })
-
-    const name = model.name;
 
     const layout = {
       labelCol: { span: 4 },
@@ -57,6 +64,10 @@ export default class NodePanel extends React.Component<NodePanelProps> {
           {...layout}
           name="basic"
           onFinish={this.onFinish}
+          initialValues={{
+            name: model.name,
+            desc: model.desc,
+          }}
           ref={this.formRef}
         >
           <Item
@@ -69,13 +80,18 @@ export default class NodePanel extends React.Component<NodePanelProps> {
             name="name"
           >
             <AutoComplete
-              dataSource={names}
-              filterOption={(inputValue, option: any) =>
-                option.props.children.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
-              }
-              onChange={this.onFinish}
-              defaultValue={name}
+              options={options}
+              onBlur={this.handleSubmit}
+              filterOption={(inputValue: string, option: any) => {
+                return option.label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
+              }}
             />
+          </Item>
+          <Item
+            label="节点说明"
+            name="desc"
+          >
+            <Input onBlur={this.handleSubmit} />
           </Item>
         </Form>
       </Card>
