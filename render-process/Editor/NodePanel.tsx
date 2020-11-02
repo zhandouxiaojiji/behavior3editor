@@ -23,6 +23,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
 
   componentDidUpdate() {
     const { model, settings } = this.props;
+    this.formRef.current.resetFields();
     this.formRef.current.setFieldsValue(this.getInitialValues());
   }
 
@@ -36,8 +37,18 @@ export default class NodePanel extends React.Component<NodePanelProps> {
     };
     if (model.args) {
       for (let k in model.args) {
-        initialValues[`args.${k}`] = model.args[k]
+        initialValues[`args.${k}`] = model.args[k];
       }
+    }
+    if (model.input) {
+      model.input.forEach((v, i) => {
+        initialValues[`input.${i}`] = v;
+      })
+    }
+    if (model.output) {
+      model.output.forEach((v, i) => {
+        initialValues[`output.${i}`] = v;
+      })
     }
     return initialValues;
   }
@@ -113,15 +124,15 @@ export default class NodePanel extends React.Component<NodePanelProps> {
             <Switch onChange={this.handleSubmit} />
           </Item>
           <Markdown source={conf.doc} />
-          {this.renderInputs(model, conf)}
-          {this.renderArgs(model, conf)}
-          {this.renderOutputs(model, conf)}
+          {this.renderInputs(conf)}
+          {this.renderArgs(conf)}
+          {this.renderOutputs(conf)}
         </Form>
       </Card >
     )
   }
 
-  renderArgs(model: BehaviorNodeModel, conf: BehaviorNodeTypeModel) {
+  renderArgs(conf: BehaviorNodeTypeModel) {
     if (!conf || !conf.args || conf.args.length == 0) {
       return null;
     }
@@ -158,12 +169,16 @@ export default class NodePanel extends React.Component<NodePanelProps> {
       <div>
         <Divider orientation="left"><h3>常量参数</h3></Divider>
         {conf && conf.args && conf.args.map((e, i: number) => {
+          const required = e.type.indexOf("?") == -1;
           return (
             <Item
               name={`args.${e.name}`}
               label={e.desc}
               key={i}
               valuePropName={e.type.indexOf("boolean") >= 0 ? 'checked' : undefined}
+              rules={[
+                { required, message: `${e.desc}(${e.name})为必填字段` }
+              ]}
             >
               {normalArgs(e)}
             </Item>
@@ -175,18 +190,49 @@ export default class NodePanel extends React.Component<NodePanelProps> {
   }
 
 
-  renderInputs(model: BehaviorNodeModel, conf: BehaviorNodeTypeModel) {
+  renderInputs(conf: BehaviorNodeTypeModel) {
+    if (!conf.input || !conf.input || conf.input.length == 0) {
+      return null;
+    }
+
     return (
       <div>
         <Divider orientation="left"><h3>输入变量</h3></Divider>
+        {
+          conf.input.map((e, i) => {
+            return (
+              <Item
+                label={e}
+                name={`input.${i}`}
+              >
+                <Input onBlur={this.handleSubmit} />
+              </Item>
+            )
+          })
+        }
       </div>
     )
   }
 
-  renderOutputs(model: BehaviorNodeModel, conf: BehaviorNodeTypeModel) {
+  renderOutputs(conf: BehaviorNodeTypeModel) {
+    if (!conf.output || !conf.output || conf.output.length == 0) {
+      return null;
+    }
     return (
       <div>
         <Divider orientation="left"><h3>输出变量</h3></Divider>
+        {
+          conf.output.map((e, i) => {
+            return (
+              <Item
+                label={e}
+                name={`output.${i}`}
+              >
+                <Input onBlur={this.handleSubmit} />
+              </Item>
+            )
+          })
+        }
       </div>
     )
   }

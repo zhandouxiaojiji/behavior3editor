@@ -34,8 +34,8 @@ export default function (settings: Settings) {
         stateStyles: {
           selected: {
             'main-box': {
-              stroke: 'black',
-              lineWidth: 3,
+              stroke: 'yellow',
+              lineWidth: 5,
             },
           },
           hover: {
