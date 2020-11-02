@@ -8,8 +8,9 @@ import { TreeGraphData, IG6GraphEvent } from '@antv/g6/lib/types';
 import { G6GraphEvent } from '@antv/g6/lib/interface/behavior';
 import './Editor.css';
 import * as Utils from '../../common/Utils';
-import { BehaviorTreeModel, GraphNodeModel } from '../../common/BehaviorTreeModel';
+import { BehaviorTreeModel, GraphNodeModel, BehaviorNodeModel } from '../../common/BehaviorTreeModel';
 import TreePanel from './TreePanel';
+import Settings from '../../main-process/Settings';
 
 export interface EditorProps {
   filepath: string;
@@ -18,11 +19,12 @@ export interface EditorProps {
 interface EditorState {
   curNodeId?: string;
   treeModel?: BehaviorTreeModel;
+  settings?: Settings;
 }
 
 export default class Editor extends React.Component<EditorProps, EditorState> {
   private ref: React.RefObject<any>;
-  state: EditorState = {}
+  state: EditorState = {};
 
   private graph: TreeGraph;
   private dragSrcId: string;
@@ -32,10 +34,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     super(props);
     this.ref = React.createRef();
   }
-
-  // shouldComponentUpdate(nextProps: EditorProps, nextState: EditorState) {
-  //   return !this.graph || this.state.curNodeId != nextState.curNodeId;
-  // }
 
   componentDidMount() {
     const graph = new TreeGraph({
@@ -258,7 +256,9 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
     this.graph = graph;
 
-    this.setState({ treeModel: tree });
+    const settings = Utils.getRemoteSettings();
+
+    this.setState({ treeModel: tree, settings });
   }
 
   onSelectNode(curNodeId: string | null) {
@@ -281,8 +281,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
   render() {
     console.log("render editor")
-    const { curNodeId, treeModel } = this.state;
-    var curNode;
+    const { curNodeId, treeModel, settings } = this.state;
+    var curNode: any;
     if (curNodeId) {
       curNode = this.graph.findDataById(curNodeId);
     }
@@ -295,7 +295,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             ref={this.ref}
           />
           <Col span={6} className="editorSidebar">
-            {curNode ? <NodePanel /> : <TreePanel model={treeModel} />}
+            {curNode ? <NodePanel model={curNode} settings={settings} /> : <TreePanel model={treeModel} />}
           </Col>
         </Row>
       </div>
