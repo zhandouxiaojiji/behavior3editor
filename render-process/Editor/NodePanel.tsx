@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Divider, Form, Input, AutoComplete, Select, Switch, InputNumber } from 'antd';
+import { Card, Divider, Form, Input, AutoComplete, Select, Switch, InputNumber, notification } from 'antd';
 import { INode } from '@antv/g6/lib/interface/item';
 import { BehaviorNodeModel, BehaviorNodeTypeModel, ArgsDefType } from '../../common/BehaviorTreeModel';
 import Settings from '../../main-process/Settings';
@@ -22,7 +22,6 @@ export default class NodePanel extends React.Component<NodePanelProps> {
   formRef = React.createRef<FormInstance>();
 
   componentDidUpdate() {
-    const { model, settings } = this.props;
     this.formRef.current.resetFields();
     this.formRef.current.setFieldsValue(this.getInitialValues());
   }
@@ -55,9 +54,15 @@ export default class NodePanel extends React.Component<NodePanelProps> {
 
   onFinish = (values: any) => {
     console.log('Success:', values);
-    const { updateNode, model } = this.props;
+    const { updateNode, model, settings } = this.props;
+    if(!settings.getNodeConf(values.name)) {
+      notification.warn({message:`节点${values.name}未定义`});
+      return;
+    }
+    model.name = values.name;
     model.desc = values.desc;
     updateNode(model.id.toString());
+    this.forceUpdate();
   };
 
   onFinishFailed = (errorInfo: any) => {
@@ -174,7 +179,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
             <Item
               name={`args.${e.name}`}
               label={e.desc}
-              key={i}
+              key={`args.${e.name}`}
               valuePropName={e.type.indexOf("boolean") >= 0 ? 'checked' : undefined}
               rules={[
                 { required, message: `${e.desc}(${e.name})为必填字段` }
@@ -204,6 +209,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
               <Item
                 label={e}
                 name={`input.${i}`}
+                key={`input.${i}`}
               >
                 <Input onBlur={this.handleSubmit} />
               </Item>
@@ -227,6 +233,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
               <Item
                 label={e}
                 name={`output.${i}`}
+                key={`output.${i}`}
               >
                 <Input onBlur={this.handleSubmit} />
               </Item>
