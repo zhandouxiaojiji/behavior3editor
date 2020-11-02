@@ -1,9 +1,10 @@
 import React from 'react';
-import { Card, Divider, Form, Input, AutoComplete, Select } from 'antd';
+import { Card, Divider, Form, Input, AutoComplete, Select, Switch } from 'antd';
 import { INode } from '@antv/g6/lib/interface/item';
 import { BehaviorNodeModel } from '../../common/BehaviorTreeModel';
 import Settings from '../../main-process/Settings';
 import { FormInstance } from 'antd/lib/form';
+import Markdown from 'react-markdown';
 
 const { Item } = Form;
 
@@ -25,6 +26,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
     this.formRef.current.setFieldsValue({
       name: model.name,
       desc: model.desc,
+      debug: model.debug,
     });
   }
 
@@ -67,6 +69,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
           initialValues={{
             name: model.name,
             desc: model.desc,
+            debug: model.debug,
           }}
           ref={this.formRef}
         >
@@ -93,6 +96,13 @@ export default class NodePanel extends React.Component<NodePanelProps> {
           >
             <Input onBlur={this.handleSubmit} />
           </Item>
+          <Item
+            label="调试开关"
+            name="debug"
+          >
+            <Switch onChange={this.handleSubmit} />
+          </Item>
+          <Markdown source={conf.doc} />
         </Form>
       </Card>
     )

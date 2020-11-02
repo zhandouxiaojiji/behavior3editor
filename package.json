@@ -36,6 +36,7 @@
     "electron": "^10.1.3",
     "electron-packager": "^15.1.0",
     "react": "^16.13.1",
-    "react-dom": "^16.13.1"
+    "react-dom": "^16.13.1",
+    "react-markdown": "^5.0.2"
   }
 }

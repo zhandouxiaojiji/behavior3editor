@@ -18,6 +18,7 @@ export interface BehaviorNodeModel {
   input?: string[];
   output?: string;
   children?: BehaviorNodeModel[];
+  debug?: boolean;
 }
 
 export interface BehaviorTreeModel {
