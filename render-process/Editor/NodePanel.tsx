@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card, Divider, Form, Input, AutoComplete, Select, Switch } from 'antd';
+import { Card, Divider, Form, Input, AutoComplete, Select, Switch, InputNumber } from 'antd';
 import { INode } from '@antv/g6/lib/interface/item';
-import { BehaviorNodeModel } from '../../common/BehaviorTreeModel';
+import { BehaviorNodeModel, BehaviorNodeTypeModel, ArgsDefType } from '../../common/BehaviorTreeModel';
 import Settings from '../../main-process/Settings';
 import { FormInstance } from 'antd/lib/form';
 import Markdown from 'react-markdown';
@@ -23,11 +23,23 @@ export default class NodePanel extends React.Component<NodePanelProps> {
 
   componentDidUpdate() {
     const { model, settings } = this.props;
-    this.formRef.current.setFieldsValue({
+    this.formRef.current.setFieldsValue(this.getInitialValues());
+  }
+
+  getInitialValues() {
+    const { model } = this.props;
+    const initialValues: any = {
       name: model.name,
       desc: model.desc,
       debug: model.debug,
-    });
+      customArgs: model.args ? JSON.stringify(model.args, null, " ") : '',
+    };
+    if (model.args) {
+      for (let k in model.args) {
+        initialValues[`args.${k}`] = model.args[k]
+      }
+    }
+    return initialValues;
   }
 
   onFinish = (values: any) => {
@@ -47,6 +59,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
   }
 
   render() {
+    console.log("render nodePanel");
     const { model, settings } = this.props;
     const conf = settings.getNodeConf(model.name);
     const title = conf.desc;
@@ -57,20 +70,16 @@ export default class NodePanel extends React.Component<NodePanelProps> {
     })
 
     const layout = {
-      labelCol: { span: 4 },
-      wrapperCol: { span: 20 },
+      labelCol: { span: 6 },
+      wrapperCol: { span: 18 },
     };
     return (
-      <Card title={title} style={{ height: "100%" }}>
+      <Card title={title} style={{ height: window.screen.height - 100, overflow: 'auto' }}>
         <Form
           {...layout}
           name="basic"
           onFinish={this.onFinish}
-          initialValues={{
-            name: model.name,
-            desc: model.desc,
-            debug: model.debug,
-          }}
+          initialValues={this.getInitialValues()}
           ref={this.formRef}
         >
           <Item
@@ -99,12 +108,86 @@ export default class NodePanel extends React.Component<NodePanelProps> {
           <Item
             label="调试开关"
             name="debug"
+            valuePropName='checked'
           >
             <Switch onChange={this.handleSubmit} />
           </Item>
           <Markdown source={conf.doc} />
+          {this.renderInputs(model, conf)}
+          {this.renderArgs(model, conf)}
+          {this.renderOutputs(model, conf)}
         </Form>
-      </Card>
+      </Card >
+    )
+  }
+
+  renderArgs(model: BehaviorNodeModel, conf: BehaviorNodeTypeModel) {
+    if (!conf || !conf.args || conf.args.length == 0) {
+      return null;
+    }
+
+    // 普通参数
+    const normalArgs = (e: ArgsDefType) => {
+      const required = e.type.indexOf("?") == -1;
+      if (e.type.indexOf("string") >= 0) {
+        return <Input onBlur={this.handleSubmit} />;
+      } else if (e.type.indexOf("int") >= 0) {
+        return <InputNumber style={{ width: '100%' }} onBlur={this.handleSubmit} />;
+      } else if (e.type.indexOf("boolean") >= 0) {
+        return <Switch onChange={this.handleSubmit} />;
+      } else if (e.type.indexOf("lua") >= 0) {
+        return <Input onBlur={this.handleSubmit} placeholder={'公式'} />;
+      }
+    }
+
+    // 自定义参数
+    const customArgs = () => {
+      return (
+        <Item
+          name='customArgs'
+          label='自定义'
+          key='customArgs'
+        >
+          <Input.TextArea onBlur={this.handleSubmit} style={{ minHeight: 100 }} />
+        </Item>
+      )
+
+    }
+
+    return (
+      <div>
+        <Divider orientation="left"><h3>常量参数</h3></Divider>
+        {conf && conf.args && conf.args.map((e, i: number) => {
+          return (
+            <Item
+              name={`args.${e.name}`}
+              label={e.desc}
+              key={i}
+              valuePropName={e.type.indexOf("boolean") >= 0 ? 'checked' : undefined}
+            >
+              {normalArgs(e)}
+            </Item>
+          )
+        })}
+        {customArgs()}
+      </div >
+    );
+  }
+
+
+  renderInputs(model: BehaviorNodeModel, conf: BehaviorNodeTypeModel) {
+    return (
+      <div>
+        <Divider orientation="left"><h3>输入变量</h3></Divider>
+      </div>
+    )
+  }
+
+  renderOutputs(model: BehaviorNodeModel, conf: BehaviorNodeTypeModel) {
+    return (
+      <div>
+        <Divider orientation="left"><h3>输出变量</h3></Divider>
+      </div>
     )
   }
 

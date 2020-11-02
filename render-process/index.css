@@ -1,5 +1,6 @@
 body {
-  background-color: #242424;
+  /* background-color: #242424; */
+  background-color: rgb(20, 20, 20);
   padding         : 0px;
 }
 
@@ -22,7 +23,9 @@ body {
   width  : 100%;
   height : 100%;
   display: flex;
-  background-color: #242424;
+  /* background-color: #242424; */
+  background-color: rgb(20, 20, 20);
+
 }
 
 .tabs {

@@ -285,12 +285,13 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
   }
 
   render() {
-    console.log("render editor")
     const { curNodeId, treeModel, settings } = this.state;
     var curNode: any;
     if (curNodeId) {
       curNode = this.graph.findDataById(curNodeId);
     }
+    console.log("render editor", curNodeId);
+
     return (
       <div className="editor">
         <Row className="editorBd">
