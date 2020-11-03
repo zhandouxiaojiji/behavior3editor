@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Divider, Form, Input, AutoComplete, Select, Switch, InputNumber, notification } from 'antd';
+import { Card, Divider, Form, Input, AutoComplete, Select, Switch, InputNumber, notification, message } from 'antd';
 import { INode } from '@antv/g6/lib/interface/item';
 import { BehaviorNodeModel, BehaviorNodeTypeModel, ArgsDefType } from '../../common/BehaviorTreeModel';
 import Settings from '../../main-process/Settings';
@@ -55,14 +55,64 @@ export default class NodePanel extends React.Component<NodePanelProps> {
   onFinish = (values: any) => {
     console.log('Success:', values);
     const { updateNode, model, settings } = this.props;
-    if(!settings.getNodeConf(values.name)) {
-      notification.warn({message:`节点${values.name}未定义`});
+    const conf = settings.getNodeConf(values.name)
+    if (!conf) {
+      notification.warn({ message: `节点${values.name}未定义` });
       return;
     }
-    model.name = values.name;
+    var forceUpdate = false;
+    if (model.name != values.name) {
+      model.name = values.name;
+      forceUpdate = true;
+    }
     model.desc = values.desc;
+
+    var args: any = {};
+    if (values.customArgs) {
+      try {
+        args = JSON.parse(values.customArgs);
+      } catch (e) {
+        message.warn(`您输入的自定义参数不符合json格式${values.customArgs}`);
+        return;
+      }
+    }
+
+    if (conf.args) {
+      conf.args.forEach(e => {
+        const k = 'args.' + e.name;
+        if (e.type.indexOf('number') > 0) {
+          args[e.name] = Number(values[k]);
+        } else {
+          args[e.name] = values[k];
+        }
+      })
+    }
+
+    model.args = args;
+    this.formRef.current.setFieldsValue({ customArgs: model.args ? JSON.stringify(model.args, null, " ") : '' });
+
+    if (conf.input) {
+      model.input = [];
+      conf.input.forEach((e, i) => {
+        model.input.push(values['input.' + i] || '');
+      })
+    } else {
+      model.input = null;
+    }
+
+    if (conf.output) {
+      model.output = [];
+      conf.output.forEach((e, i) => {
+        model.output.push(values['output.' + i] || '');
+      })
+    } else {
+      model.output = null;
+    }
+
     updateNode(model.id.toString());
-    this.forceUpdate();
+    if (forceUpdate) {
+      this.forceUpdate();
+    }
   };
 
   onFinishFailed = (errorInfo: any) => {

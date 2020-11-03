@@ -246,17 +246,17 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       graph.set('animate', true);
     });
 
+    const settings = Utils.getRemoteSettings();
+
     const str = fs.readFileSync(this.props.filepath, 'utf8');
     let tree: BehaviorTreeModel = JSON.parse(str);
-    const data = Utils.createTreeData(tree.root);
+    const data = Utils.createTreeData(tree.root, settings);
     graph.data(data);
     graph.render();
     graph.fitCenter();
     graph.set('animate', true);
 
     this.graph = graph;
-
-    const settings = Utils.getRemoteSettings();
 
     this.setState({ treeModel: tree, settings });
   }

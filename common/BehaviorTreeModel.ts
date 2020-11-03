@@ -38,6 +38,7 @@ export interface GraphNodeModel extends TreeGraphData {
   input?: string[];
   output?: string[];
   children?: GraphNodeModel[];
+  conf: BehaviorNodeTypeModel;
 
   size?: number[];
 }

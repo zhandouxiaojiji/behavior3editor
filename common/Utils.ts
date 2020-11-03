@@ -7,6 +7,7 @@ export const cloneNodeData = (nodeData: GraphNodeModel) => {
   const newData: GraphNodeModel = {
     id: nodeData.id + "new",
     name: nodeData.name,
+    conf: nodeData.conf,
   }
   return newData;
 }
@@ -31,13 +32,13 @@ export const calcTreeNodeSize = (treeNode: GraphNodeModel) => {
       height += 25;
     }
   }
-  updateHeight(treeNode.args);
-  updateHeight(treeNode.input);
-  updateHeight(treeNode.output);
+  updateHeight(treeNode.conf.args);
+  updateHeight(treeNode.conf.input);
+  updateHeight(treeNode.conf.output);
   return [200, height];
 }
 
-export const createTreeData = (bNode: BehaviorNodeModel) => {
+export const createTreeData = (bNode: BehaviorNodeModel, settings: Settings) => {
   const treeData: GraphNodeModel = {
     id: bNode.id.toString(),
     name: bNode.name,
@@ -45,12 +46,13 @@ export const createTreeData = (bNode: BehaviorNodeModel) => {
     args: bNode.args,
     input: bNode.input,
     output: bNode.output,
+    conf: settings.getNodeConf(bNode.name),
   }
   treeData.size = calcTreeNodeSize(treeData);
   if (bNode.children) {
     treeData.children = [];
     bNode.children.forEach(child => {
-      treeData.children.push(createTreeData(child));
+      treeData.children.push(createTreeData(child, settings));
     })
   }
   calcTreeNodeSize(treeData);
