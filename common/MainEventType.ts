@@ -1,4 +1,5 @@
 export default {
   OPEN_FILE: "OPEN_FILE",
   OPEN_WORKSPACE: "OPEN_WORKSPACE",
+  CREATE_NODE: 'CREATE_NODE',
 }

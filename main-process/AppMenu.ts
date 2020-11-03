@@ -190,6 +190,7 @@ export default class AppMenu {
         label: `${node.name}(${node.desc})`,
         click: () => {
           console.log("create node", node.name);
+          this.webContents.send(MainEventType.CREATE_NODE, node.name);
         }
       }
       let typeItem = map[node.type];
@@ -207,6 +208,14 @@ export default class AppMenu {
     if(hasOther) {
       classifyItems.push(other);
     }
+
+    const unknonwItem: MenuItemConstructorOptions = {
+      label: '空白节点',
+      click: () => {
+        this.webContents.send(MainEventType.CREATE_NODE, 'unknow');
+      }
+    } 
+    classifyItems.push(unknonwItem);
     
     return new MenuItem({
       label: "新建节点",

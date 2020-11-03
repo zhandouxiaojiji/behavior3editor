@@ -5,14 +5,9 @@ import React, { Component } from "react";
 import { Layout, Tabs } from 'antd';
 import { ipcRenderer, remote } from 'electron';
 import * as path from 'path';
-import * as fs from 'fs';
-import * as Utils from '../common/Utils';
-import MainEventType from "../common/MainEventType";
-import Properties from "./Properties";
-import Settings from "../main-process/Settings";
-import G6 from '@antv/g6';
 
 import 'antd/dist/antd.dark.css';
+import MainEventType from "../common/MainEventType";
 
 const { Header, Sider, Content, Footer } = Layout;
 const { TabPane } = Tabs;
@@ -30,10 +25,20 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
     filepaths: [],
   }
 
+  editors: { [path: string]: Editor } = {}
+
   componentWillMount() {
   }
 
   componentDidMount() {
+    ipcRenderer.on(MainEventType.CREATE_NODE, (event: any, name: any) => {
+      const {curPath} = this.state;
+      if(!curPath) {
+        return;
+      }
+      const editor = this.editors[curPath];
+      editor.createNode(name);
+    });
   }
 
   openFile(path: string) {
@@ -79,7 +84,14 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
           filepaths.map(filepath => {
             return (
               <TabPane tab={path.basename(filepath)} key={filepath}>
-                <Editor filepath={filepath} />
+                <Editor
+                  filepath={filepath}
+                  ref={
+                    ref => {
+                      this.editors[filepath] = ref;
+                    }
+                  }
+                />
               </TabPane>
             );
           })

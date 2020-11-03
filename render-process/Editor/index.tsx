@@ -1,9 +1,9 @@
 import * as React from 'react';
 import * as fs from 'fs';
-import { Row, Col } from 'antd';
+import { Row, Col, message } from 'antd';
 import NodePanel from './NodePanel';
 import { INode } from '@antv/g6/lib/interface/item';
-import G6, { TreeGraph } from '@antv/g6';
+import G6, { TreeGraph, Util } from '@antv/g6';
 import { TreeGraphData, IG6GraphEvent } from '@antv/g6/lib/types';
 import { G6GraphEvent } from '@antv/g6/lib/interface/behavior';
 import './Editor.css';
@@ -29,6 +29,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
   private graph: TreeGraph;
   private dragSrcId: string;
   private dragDstId: string;
+  private autoId: number;
 
   constructor(props: EditorProps) {
     super(props);
@@ -76,7 +77,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       layout: {
         type: 'compactBox',
         direction: 'LR',
-        getVGap: () => 15,
         getHGap: () => 50,
         getWidth: (d: GraphNodeModel) => {
           return 150;
@@ -240,10 +240,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       }
 
       // console.log("cur data", graph.findDataById('1'));
-      graph.set('animate', false);
-      graph.changeData();
-      graph.layout();
-      graph.set('animate', true);
+      this.changeWithoutAnim();
     });
 
     const settings = Utils.getRemoteSettings();
@@ -251,6 +248,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     const str = fs.readFileSync(this.props.filepath, 'utf8');
     let tree: BehaviorTreeModel = JSON.parse(str);
     const data = Utils.createTreeData(tree.root, settings);
+    this.autoId = Utils.refreshNodeId(data);
     graph.data(data);
     graph.render();
     graph.fitCenter();
@@ -265,7 +263,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     const graph = this.graph;
 
     if (this.state.curNodeId) {
-      console.log("unselect", this.state.curNodeId);
       graph.setItemState(this.state.curNodeId, 'selected', false);
     }
 
@@ -276,12 +273,34 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
   }
 
   createNode(name: string) {
-
+    console.log("editor create node", name);
+    const { curNodeId, settings } = this.state;
+    if (!curNodeId) {
+      message.warn("未选中节点");
+      return;
+    }
+    const curNodeData = this.graph.findDataById(curNodeId);
+    const newNodeData: BehaviorNodeModel = {
+      id: this.autoId++,
+      name: name,
+    }
+    if (!curNodeData.children) {
+      curNodeData.children = [];
+    }
+    curNodeData.children.push(Utils.createTreeData(newNodeData, settings));
+    this.changeWithoutAnim();
   }
 
   updateNode(id: string) {
     this.graph.changeData();
     this.graph.layout();
+  }
+
+  changeWithoutAnim() {
+    this.graph.set('animate', false);
+    this.graph.changeData();
+    this.graph.layout();
+    this.graph.set('animate', true);
   }
 
   render() {
@@ -290,7 +309,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     if (curNodeId) {
       curNode = this.graph.findDataById(curNodeId);
     }
-    console.log("render editor", curNodeId);
 
     return (
       <div className="editor">
@@ -311,10 +329,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                       const data: any = this.graph.findDataById(id);
                       data.conf = settings.getNodeConf(data.name);
                       data.size = Utils.calcTreeNodeSize(data);
-                      this.graph.changeData();
-                      this.graph.layout();
+                      this.changeWithoutAnim();
                     }
-
                     const item = this.graph.findById(id);
                     item.draw();
                   }}

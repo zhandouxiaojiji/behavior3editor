@@ -125,7 +125,6 @@ export default class NodePanel extends React.Component<NodePanelProps> {
   }
 
   render() {
-    console.log("render nodePanel");
     const { model, settings } = this.props;
     const conf = settings.getNodeConf(model.name);
     const title = conf.desc;
