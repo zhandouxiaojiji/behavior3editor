@@ -22,6 +22,12 @@ const sampleNodeClassify: BehaviorNodeClassify[] = [
   { classify: "Action", desc: "行为节点" },
 ]
 
+const unknowNodeType: BehaviorNodeTypeModel = {
+  name: 'unknow',
+  desc: '新建节点',
+  type: 'Action',
+}
+
 export default class Settings {
   private settings: SettingsModel;
   private name2conf: { [name: string]: BehaviorNodeTypeModel } = {};
@@ -79,6 +85,6 @@ export default class Settings {
   }
 
   getNodeConf(name: string) {
-    return this.name2conf[name];
+    return this.name2conf[name] || unknowNodeType;
   }
 }

@@ -165,7 +165,7 @@ export default function (settings: Settings) {
         }
 
         const args: any = cfg.args;
-        if (args && Object.keys(args).length > 0) {
+        if (nodeConf.args && args && Object.keys(args).length > 0) {
           y += 20;
           group.addShape('text', {
             attrs: {
@@ -181,7 +181,7 @@ export default function (settings: Settings) {
         }
 
         const input: [] = cfg.input ? cfg.input as [] : [];
-        if (input.length > 0) {
+        if (nodeConf.input && input.length > 0) {
           y += 20;
           group.addShape('text', {
             attrs: {
@@ -197,7 +197,7 @@ export default function (settings: Settings) {
         }
 
         const output: [] = cfg.output ? cfg.output as [] : [];
-        if (output.length > 0) {
+        if (nodeConf.output && output.length > 0) {
           y += 20;
           group.addShape('text', {
             attrs: {

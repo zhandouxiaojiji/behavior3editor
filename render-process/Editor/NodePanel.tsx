@@ -11,7 +11,7 @@ const { Item } = Form;
 interface NodePanelProps {
   model: BehaviorNodeModel;
   settings: Settings;
-  updateNode: (id: string) => void;
+  updateNode: (id: string, forceUpdate:boolean) => void;
 }
 
 interface NodePanelState {
@@ -109,10 +109,10 @@ export default class NodePanel extends React.Component<NodePanelProps> {
       model.output = null;
     }
 
-    updateNode(model.id.toString());
     if (forceUpdate) {
       this.forceUpdate();
     }
+    updateNode(model.id.toString(), forceUpdate);
   };
 
   onFinishFailed = (errorInfo: any) => {

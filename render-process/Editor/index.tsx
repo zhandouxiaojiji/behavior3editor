@@ -306,7 +306,15 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                 <NodePanel
                   model={curNode}
                   settings={settings}
-                  updateNode={id => {
+                  updateNode={(id, forceUpdate) => {
+                    if (forceUpdate) {
+                      const data: any = this.graph.findDataById(id);
+                      data.conf = settings.getNodeConf(data.name);
+                      data.size = Utils.calcTreeNodeSize(data);
+                      this.graph.changeData();
+                      this.graph.layout();
+                    }
+
                     const item = this.graph.findById(id);
                     item.draw();
                   }}
