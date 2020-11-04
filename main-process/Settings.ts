@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import { BehaviorNodeTypeModel } from '../common/BehaviorTreeModel';
+import Workspace from './Workspace';
 
 export interface BehaviorNodeClassify {
   classify: string;
@@ -9,7 +10,6 @@ export interface BehaviorNodeClassify {
 export interface SettingsModel {
   recentWorkspaces?: string[];
   recentFiles?: string[];
-  nodeConfigPath?: string; // 节点配置路径
   nodeClassify?: BehaviorNodeClassify[];
 }
 
@@ -22,21 +22,18 @@ const sampleNodeClassify: BehaviorNodeClassify[] = [
   { classify: "Action", desc: "行为节点" },
 ]
 
-const unknowNodeType: BehaviorNodeTypeModel = {
-  name: 'unknow',
-  desc: '新建节点',
-  type: 'Action',
-}
+
 
 export default class Settings {
   private settings: SettingsModel;
-  private name2conf: { [name: string]: BehaviorNodeTypeModel } = {};
+  curWorkspace?: Workspace;
+  
   constructor() {
     this.load();
   }
 
-  get nodeConfigPath() {
-    return this.settings.nodeConfigPath;
+  get nodeConfPath() {
+    return this.curWorkspace.getNodeConfPath();
   }
   get recentWorkspaces() {
     return this.settings.recentWorkspaces;
@@ -45,13 +42,7 @@ export default class Settings {
     return this.settings.recentFiles;
   }
   get nodeConfig() {
-    const str = fs.readFileSync(this.nodeConfigPath, 'utf8');
-    const types: BehaviorNodeTypeModel[] = JSON.parse(str);
-    this.name2conf = {};
-    types.forEach(t => {
-      this.name2conf[t.name] = t;
-    })
-    return types;
+    return this.curWorkspace.nodeConf;
   }
   get nodeClassify() {
     return this.settings.nodeClassify;
@@ -73,11 +64,12 @@ export default class Settings {
       this.settings = {
         recentWorkspaces: [],
         recentFiles: [],
-        nodeConfigPath: sampleNodeConfig,
         nodeClassify: sampleNodeClassify,
       };
       this.save();
     }
+    this.curWorkspace = new Workspace(this.settings.recentWorkspaces[0]);
+    this.curWorkspace.load();
   }
 
   save() {
@@ -85,6 +77,13 @@ export default class Settings {
   }
 
   getNodeConf(name: string) {
-    return this.name2conf[name] || unknowNodeType;
+    return this.curWorkspace.getNodeConf(name);
+  }
+
+  pushRecentWorkspace(path: string) {
+    if (this.settings.recentWorkspaces.indexOf(path) < 0) {
+      this.settings.recentWorkspaces.unshift(path);
+    }
+    this.save();
   }
 }

@@ -23,12 +23,12 @@ const { TabPane } = Tabs;
 
 
 interface MainState {
-  workspace: string;
+  workdir: string;
 }
 
 export default class Main extends Component {
   state: MainState = {
-    workspace: '',
+    workdir: '',
   }
 
   settings: Settings;
@@ -44,17 +44,14 @@ export default class Main extends Component {
       this.setState({ curPath: path });
     });
 
-    ipcRenderer.on(MainEventType.OPEN_WORKSPACE, (event: any, workspace: any) => {
-      console.log("on open workspace", workspace);
-      document.title = workspace;
-      this.setState({ workspace });
+    ipcRenderer.on(MainEventType.OPEN_DIR, (event: any, workdir: any) => {
+      console.log("on open workspace", workdir);
+      document.title = workdir;
+      this.setState({ workdir });
     });
 
-    this.setState({ workspace: this.getLastWorkspace() });
-  }
-
-  getLastWorkspace() {
-    return this.settings.recentWorkspaces[0];
+    console.log("workdir", this.settings.curWorkspace.getWorkdir());
+    this.setState({ workdir: this.settings.curWorkspace.getWorkdir() });
   }
 
   updateSettings() {
@@ -63,13 +60,13 @@ export default class Main extends Component {
 
   render() {
     console.log("render main");
-    const { workspace } = this.state;
-    document.title = `行为树编辑器 - ${workspace}`;
+    const { workdir } = this.state;
+    document.title = `行为树编辑器 - ${workdir}`;
     return (
       <Layout className="body">
         <Sider className="sider" width={250}>
           <Properties
-            workspace={this.state.workspace}
+            workspace={this.state.workdir}
             onOpenTree={(path) => {
               this.tabs.openFile(path);
             }}
@@ -77,7 +74,7 @@ export default class Main extends Component {
         </Sider>
         <Content className="content">
           <TreeTabs
-            ref = {ref => {
+            ref={ref => {
               this.tabs = ref;
             }}
           />

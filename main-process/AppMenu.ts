@@ -18,9 +18,9 @@ export default class AppMenu {
 
   createMenu() {
     const menu: Menu = new Menu();
+    menu.append(this.createWorkspaceMenu());
     menu.append(this.createFileMenu());
     menu.append(this.createNodeMenu());
-    menu.append(this.createSettingsMenu());
     menu.append(this.createToolsMenu());
     return menu;
   }
@@ -35,15 +35,7 @@ export default class AppMenu {
         }
       })
     }
-    const workspaceItems: MenuItemConstructorOptions[] = [];
-    for (let path of this.settings.recentWorkspaces) {
-      workspaceItems.push({
-        label: path,
-        click: () => {
-          console.log("open recent workspace", path);
-        }
-      })
-    }
+
 
     return new MenuItem({
       label: "行为树",
@@ -71,35 +63,12 @@ export default class AppMenu {
             })();
           }
         },
-        {
-          label: "打开目录",
-          accelerator: "Ctrl+Shift+O",
-          click: () => {
-            (async () => {
-              const res = await dialog.showOpenDialog({
-                properties: ['openDirectory']
-              });
-              if (res.filePaths.length > 0) {
-                const path = res.filePaths[0];
-                if (this.settings.recentWorkspaces.indexOf(path) < 0) {
-                  this.settings.recentWorkspaces.unshift(path);
-                  this.settings.save();
-                  this.mainProcess.rebuildMenu();
-                }
-                this.webContents.send(MainEventType.OPEN_WORKSPACE, path);
-              }
-            })();
-          }
-        },
         { type: 'separator' },
         {
           label: "最近打开",
           submenu: fileItems,
         },
-        {
-          label: "最近目录",
-          submenu: workspaceItems,
-        },
+
         { type: 'separator' },
         {
           label: "保存",
@@ -113,21 +82,95 @@ export default class AppMenu {
             this.webContents.send(MainEventType.SAVE_ALL);
           },
         },
-        { type: 'separator' },
-        {
-          label: "关闭",
-          click: () => {
-            app.quit();
-          }
-        }
       ]
     });
   }
 
-  private createSettingsMenu() {
+  private createWorkspaceMenu() {
+    const openWorkspace = (path: string) => {
+      this.settings.curWorkspace.setFilepath(path);
+      this.settings.curWorkspace.load();
+      this.settings.pushRecentWorkspace(path);
+      this.mainProcess.rebuildMenu();
+      this.webContents.send(MainEventType.OPEN_DIR, this.settings.curWorkspace.getWorkdir());
+    };
+    const recentItems: MenuItemConstructorOptions[] = [];
+    for (let path of this.settings.recentWorkspaces) {
+      recentItems.push({
+        label: path,
+        click: () => {
+          console.log("open recent workspace", path);
+          openWorkspace(path);
+        }
+      })
+    }
     return new MenuItem({
-      label: "设置",
+      label: "工作区",
       submenu: [
+        {
+          label: "打开",
+          click: () => {
+            (async () => {
+              const res = await dialog.showOpenDialog({
+                properties: ['openFile'],
+                filters: [
+                  { name: "Json", extensions: ['json'] }
+                ]
+              });
+              if (res.filePaths.length > 0) {
+                openWorkspace(res.filePaths[0]);
+              }
+            })();
+          }
+        },
+        {
+          label: "保存",
+          click: () => {
+            if (this.settings.curWorkspace.getFilepath()) {
+              this.settings.curWorkspace.save();
+            } else {
+              (async () => {
+                const res = await dialog.showSaveDialog({
+                  properties: ['showOverwriteConfirmation'],
+                  filters: [
+                    { name: "Json", extensions: ['json'] }
+                  ]
+                });
+                if (!res.canceled) {
+                  this.settings.curWorkspace.setFilepath(res.filePath);
+                  this.settings.curWorkspace.save();
+
+                }
+              })();
+            }
+          }
+        },
+        {
+          label: "最近打开",
+          submenu: recentItems,
+        },
+        { type: 'separator' },
+        {
+          label: "打开目录",
+          accelerator: "Ctrl+Shift+O",
+          click: () => {
+            if (!this.settings.curWorkspace.getNodeConfPath()) {
+              dialog.showErrorBox("警告", "请先指定节点定义配置!");
+              return;
+            }
+            (async () => {
+              const res = await dialog.showOpenDialog({
+                properties: ['openDirectory']
+              });
+              if (res.filePaths.length > 0) {
+                const path = res.filePaths[0];
+                this.settings.curWorkspace.setWorkdir(path);
+                this.settings.curWorkspace.save();
+                this.webContents.send(MainEventType.OPEN_DIR, path);
+              }
+            })();
+          }
+        },
         {
           label: "节点定义",
           submenu: [
@@ -143,15 +186,22 @@ export default class AppMenu {
                   });
                   if (res.filePaths.length > 0) {
                     const nodeConfigPath = res.filePaths[0];
-                    this.settings.set({ nodeConfigPath });
+                    this.settings.curWorkspace.setNodeConfPath(nodeConfigPath);
                     this.mainProcess.rebuildMenu();
                   }
                 })();
               }
             },
             { type: 'separator' },
-            { label: this.settings.nodeConfigPath, }
+            { label: this.settings.nodeConfPath, }
           ]
+        },
+        { type: 'separator' },
+        {
+          label: "关闭",
+          click: () => {
+            app.quit();
+          }
         }
       ]
     });
@@ -207,7 +257,7 @@ export default class AppMenu {
         }
       }
       let typeItem = map[node.type];
-      if(!typeItem) {
+      if (!typeItem) {
         typeItem = other;
         hasOther = true;
       }
@@ -218,7 +268,7 @@ export default class AppMenu {
       }
     }
 
-    if(hasOther) {
+    if (hasOther) {
       classifyItems.push(other);
     }
 
@@ -227,9 +277,9 @@ export default class AppMenu {
       click: () => {
         this.webContents.send(MainEventType.CREATE_NODE, 'unknow');
       }
-    } 
+    }
     classifyItems.push(unknonwItem);
-    
+
     return new MenuItem({
       label: "新建节点",
       submenu: classifyItems

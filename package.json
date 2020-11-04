@@ -1,6 +1,6 @@
 {
   "name": "behavior3editor",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "行为树编辑器",
   "main": "./dist/main.js",
   "scripts": {
