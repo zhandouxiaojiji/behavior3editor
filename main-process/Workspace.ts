@@ -20,16 +20,18 @@ export default class Workspace {
   }
 
   load() {
-    if(!this.filepath) {
+    if (!this.filepath) {
       return;
     }
-
-    const str = fs.readFileSync(this.filepath, 'utf8');
-    const data = JSON.parse(str);
-    this.nodeConfPath = data.nodeConfPath;
-    this.workdir = data.workdir;
-
-    this.initNodeConf();
+    try {
+      const str = fs.readFileSync(this.filepath, 'utf8');
+      const data = JSON.parse(str);
+      this.nodeConfPath = data.nodeConfPath;
+      this.workdir = data.workdir;
+      this.initNodeConf();
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   private initNodeConf() {
