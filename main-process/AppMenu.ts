@@ -102,6 +102,19 @@ export default class AppMenu {
         },
         { type: 'separator' },
         {
+          label: "保存",
+          click: () => {
+            this.webContents.send(MainEventType.SAVE);
+          },
+        },
+        {
+          label: "全部保存",
+          click: () => {
+            this.webContents.send(MainEventType.SAVE_ALL);
+          },
+        },
+        { type: 'separator' },
+        {
           label: "关闭",
           click: () => {
             app.quit();

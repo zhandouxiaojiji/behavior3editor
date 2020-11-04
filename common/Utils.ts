@@ -59,6 +59,24 @@ export const createTreeData = (bNode: BehaviorNodeModel, settings: Settings) => 
   return treeData;
 }
 
+export const createFileData = (gNode: GraphNodeModel) => {
+  const nodeData: BehaviorNodeModel = {
+    id: Number(gNode.id),
+    name: gNode.name,
+    desc: gNode.desc || undefined,
+    args: gNode.args || undefined,
+    input: gNode.input || undefined,
+    output: gNode.output || undefined,
+  }
+  if (gNode.children) {
+    nodeData.children = [];
+    gNode.children.forEach(child => {
+      nodeData.children.push(createFileData(child));
+    })
+  }
+  return nodeData;
+}
+
 export const findParent = (node: TreeGraphData, id: string): TreeGraphData | null => {
   if (node.children) {
     for (let child of node.children) {

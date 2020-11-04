@@ -2,7 +2,7 @@
 import * as ReactDOM from "react-dom";
 import Editor from "./Editor";
 import React, { Component } from "react";
-import { Layout, Tabs } from 'antd';
+import { Layout, Tabs, message } from 'antd';
 import { ipcRenderer, remote } from 'electron';
 import * as path from 'path';
 
@@ -38,6 +38,24 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
       }
       const editor = this.editors[curPath];
       editor.createNode(name);
+    });
+
+    ipcRenderer.on(MainEventType.SAVE, (event: any) => {
+      const {curPath} = this.state;
+      if(!curPath) {
+        return;
+      }
+      const editor = this.editors[curPath];
+      editor.save();
+      message.success("已保存");
+    });
+
+    ipcRenderer.on(MainEventType.SAVE_ALL, (event: any) => {
+      for(let k in this.editors){
+        let editor = this.editors[k];
+        editor.save();
+      }
+      message.success("已保存所有行为树");
     });
   }
 

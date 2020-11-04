@@ -1,16 +1,16 @@
 import * as React from 'react';
 import * as fs from 'fs';
+import * as path from 'path';
 import { Row, Col, message } from 'antd';
 import NodePanel from './NodePanel';
-import { INode } from '@antv/g6/lib/interface/item';
-import G6, { TreeGraph, Util } from '@antv/g6';
-import { TreeGraphData, IG6GraphEvent } from '@antv/g6/lib/types';
+import G6, { TreeGraph } from '@antv/g6';
 import { G6GraphEvent } from '@antv/g6/lib/interface/behavior';
-import './Editor.css';
 import * as Utils from '../../common/Utils';
 import { BehaviorTreeModel, GraphNodeModel, BehaviorNodeModel } from '../../common/BehaviorTreeModel';
 import TreePanel from './TreePanel';
 import Settings from '../../main-process/Settings';
+
+import './Editor.css';
 
 export interface EditorProps {
   filepath: string;
@@ -301,6 +301,16 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     this.graph.changeData();
     this.graph.layout();
     this.graph.set('animate', true);
+  }
+
+  save() {
+    const { filepath } = this.props;
+    const root = Utils.createFileData(this.graph.findDataById('1') as GraphNodeModel);
+    fs.writeFileSync(filepath, JSON.stringify({
+      name: path.basename(filepath).slice(0, -5),
+      root,
+      desc: root.desc,
+    }));
   }
 
   render() {
