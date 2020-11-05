@@ -22,7 +22,6 @@ const sampleNodeClassify: BehaviorNodeClassify[] = [
 ]
 
 
-
 export default class Settings {
   private settings: SettingsModel;
   curWorkspace?: Workspace;
@@ -61,7 +60,7 @@ export default class Settings {
       this.settings = JSON.parse(str);
     } else {
       this.settings = {
-        recentWorkspaces: [],
+        recentWorkspaces: ['sample/workspace.json'],
         recentFiles: [],
         nodeClassify: sampleNodeClassify,
       };

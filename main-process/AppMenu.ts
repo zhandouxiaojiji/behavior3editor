@@ -1,4 +1,6 @@
 import { Menu, app, dialog, BrowserWindow, MenuItem, WebContents, MenuItemConstructorOptions } from 'electron';
+import * as fs from 'fs';
+import * as Utils from '../common/Utils';
 import MainEventType from '../common/MainEventType';
 import { MainProcess } from './MainProcess';
 import Settings from './Settings';
@@ -40,6 +42,24 @@ export default class AppMenu {
     return new MenuItem({
       label: "行为树",
       submenu: [
+        {
+          label: "新建",
+          click: () => {
+            (async () => {
+              const res = await dialog.showSaveDialog({
+                properties: ['showOverwriteConfirmation'],
+                filters: [
+                  { name: "Json", extensions: ['json'] }
+                ]
+              });
+              if (!res.canceled) {
+                const path = res.filePath;
+                fs.writeFileSync(path, JSON.stringify(Utils.createNewTree(path), null, 2));
+                this.webContents.send(MainEventType.CREATE_TREE, path);
+              }
+            })();
+          },
+        },
         {
           label: "打开文件",
           accelerator: "Ctrl+O",

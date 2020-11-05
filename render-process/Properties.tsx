@@ -2,6 +2,8 @@ import React, { Component } from "react";
 import { Menu, Input } from "antd";
 import * as fs from 'fs';
 import * as path from 'path';
+import { ipcRenderer } from "electron";
+import MainEventType from "../common/MainEventType";
 
 const { Search } = Input;
 
@@ -33,6 +35,12 @@ export default class Properties extends Component<PropertiesProps> {
   }
 
   componentDidMount() {
+    ipcRenderer.on(MainEventType.CREATE_TREE, (event: any, path: string) => {
+      console.log("on Create tree", path);
+      this.props.onOpenTree(path);
+      this.forceUpdate();
+    });
+
     var workspace = this.props.workspace;
     if (workspace == '') {
       return;
