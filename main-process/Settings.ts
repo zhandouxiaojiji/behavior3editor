@@ -14,7 +14,6 @@ export interface SettingsModel {
 }
 
 const settingPath = 'settings.json';
-const sampleNodeConfig = 'sample-node-config.json';
 const sampleNodeClassify: BehaviorNodeClassify[] = [
   { classify: "Composite", desc: "复合节点" },
   { classify: "Decorator", desc: "修饰节点" },
@@ -83,6 +82,9 @@ export default class Settings {
   pushRecentWorkspace(path: string) {
     if (this.settings.recentWorkspaces.indexOf(path) < 0) {
       this.settings.recentWorkspaces.unshift(path);
+      console.log("push", path);
+    } else {
+      console.log("already in path", this.settings.recentWorkspaces, path);
     }
     this.save();
   }

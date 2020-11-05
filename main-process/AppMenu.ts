@@ -94,6 +94,20 @@ export default class AppMenu {
       this.mainProcess.rebuildMenu();
       this.webContents.send(MainEventType.OPEN_DIR, this.settings.curWorkspace.getWorkdir());
     };
+    const saveToNewPath = () => {
+      (async () => {
+        const res = await dialog.showSaveDialog({
+          properties: ['showOverwriteConfirmation'],
+          filters: [
+            { name: "Json", extensions: ['json'] }
+          ]
+        });
+        if (!res.canceled) {
+          this.settings.curWorkspace.setFilepath(res.filePath);
+          this.settings.curWorkspace.save();
+        }
+      })();
+    }
     const recentItems: MenuItemConstructorOptions[] = [];
     for (let path of this.settings.recentWorkspaces) {
       recentItems.push({
@@ -129,21 +143,15 @@ export default class AppMenu {
             if (this.settings.curWorkspace.getFilepath()) {
               this.settings.curWorkspace.save();
             } else {
-              (async () => {
-                const res = await dialog.showSaveDialog({
-                  properties: ['showOverwriteConfirmation'],
-                  filters: [
-                    { name: "Json", extensions: ['json'] }
-                  ]
-                });
-                if (!res.canceled) {
-                  this.settings.curWorkspace.setFilepath(res.filePath);
-                  this.settings.curWorkspace.save();
-
-                }
-              })();
+              saveToNewPath();
             }
           }
+        },
+        {
+          label: '另存为',
+          click: () => {
+            saveToNewPath();
+          },
         },
         {
           label: "最近打开",
