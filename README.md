@@ -31,7 +31,7 @@ interface BehaviorNodeTypeModel {
   doc?: string;         //文档说明(markdown格式)
 }
 ```
-节点定义也是json格式，参照[sample/node-config.json](sample/node-config.json)，编辑器不提供节点定义的编辑，强烈建议节点定义文件由代码生成。
+节点定义也是json格式，参照[sample/node-config.json](sample/node-config.json)，编辑器不提供节点定义的编辑，强烈建议节点定义文件由代码生成 (参照示例项目[behavior3lua](https://github.com/zhandouxiaojiji/behavior3lua))。
 
 ## 编译与构建
 ```shell
@@ -45,6 +45,10 @@ npm run build # 编译exe可执行文件
 + g6
 + antd
 + electron
+
+## 示例项目
++ lua版本 [behavior3lua](https://github.com/zhandouxiaojiji/behavior3lua)
++ js/ts版本 计划中。
 
 ## TODO
 + 复制粘贴功能(跨工作区)
