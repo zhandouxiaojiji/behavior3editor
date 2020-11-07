@@ -1,5 +1,3 @@
-
-import * as ReactDOM from "react-dom";
 import Editor from "./Editor";
 import React, { Component } from "react";
 import { Layout, Tabs, message } from 'antd';
@@ -9,7 +7,6 @@ import * as path from 'path';
 import 'antd/dist/antd.dark.css';
 import MainEventType from "../common/MainEventType";
 
-const { Header, Sider, Content, Footer } = Layout;
 const { TabPane } = Tabs;
 
 interface TreeTabsProps {
@@ -32,17 +29,18 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
 
   componentDidMount() {
     ipcRenderer.on(MainEventType.CREATE_NODE, (event: any, name: any) => {
-      const {curPath} = this.state;
-      if(!curPath) {
-        return;
-      }
-      const editor = this.editors[curPath];
-      editor.createNode(name);
+      const editor = this.getCurEditor();
+      editor?.createNode(name);
     });
 
+    ipcRenderer.on(MainEventType.DELETE_NODE, () => {
+      const editor = this.getCurEditor();
+      editor?.deleteNode();
+    })
+
     ipcRenderer.on(MainEventType.SAVE, (event: any) => {
-      const {curPath} = this.state;
-      if(!curPath) {
+      const { curPath } = this.state;
+      if (!curPath) {
         return;
       }
       const editor = this.editors[curPath];
@@ -51,12 +49,20 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
     });
 
     ipcRenderer.on(MainEventType.SAVE_ALL, (event: any) => {
-      for(let k in this.editors){
+      for (let k in this.editors) {
         let editor = this.editors[k];
         editor.save();
       }
       message.success("已保存所有行为树");
     });
+  }
+
+  getCurEditor() {
+    const { curPath } = this.state;
+    if (!curPath) {
+      return;
+    }
+    return this.editors[curPath];
   }
 
   openFile(path: string) {

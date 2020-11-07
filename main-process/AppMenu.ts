@@ -102,6 +102,21 @@ export default class AppMenu {
             this.webContents.send(MainEventType.SAVE_ALL);
           },
         },
+        { type: 'separator' },
+        {
+          label: '新建节点',
+          accelerator: 'insert',
+          click: () => {
+            this.webContents.send(MainEventType.CREATE_NODE, 'unknow');
+          }
+        },
+        {
+          label: '删除节点',
+          accelerator: 'delete',
+          click: () => {
+            this.webContents.send(MainEventType.DELETE_NODE);
+          }
+        },
       ]
     });
   }
@@ -299,14 +314,6 @@ export default class AppMenu {
     if (hasOther) {
       classifyItems.push(other);
     }
-
-    const unknonwItem: MenuItemConstructorOptions = {
-      label: '空白节点',
-      click: () => {
-        this.webContents.send(MainEventType.CREATE_NODE, 'unknow');
-      }
-    }
-    classifyItems.push(unknonwItem);
 
     return new MenuItem({
       label: "新建节点",

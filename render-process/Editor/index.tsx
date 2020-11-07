@@ -291,6 +291,25 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     this.changeWithoutAnim();
   }
 
+  deleteNode() {
+    console.log("editor delete node");
+    const { curNodeId } = this.state;
+    if (!curNodeId) {
+      return;
+    }
+
+    if(curNodeId == '1') {
+      message.warn("根节点不能删除!");
+      return;
+    }
+
+    this.onSelectNode(null);
+    const rootData = this.graph.findDataById('1');
+    const parentData = Utils.findParent(rootData, curNodeId);
+    parentData.children = parentData.children.filter(e => e.id != curNodeId);
+    this.changeWithoutAnim();
+  }
+
   updateNode(id: string) {
     this.graph.changeData();
     this.graph.layout();
