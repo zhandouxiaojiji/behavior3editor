@@ -117,6 +117,22 @@ export default class AppMenu {
             this.webContents.send(MainEventType.DELETE_NODE);
           }
         },
+        { type: 'separator' },
+        {
+          label: '复制节点',
+          accelerator: 'ctrl+shift+c',
+          role: 'copy',
+          click: () => {
+            this.webContents.send(MainEventType.COPY_NODE);
+          }
+        },
+        {
+          label: '粘贴节点',
+          accelerator: 'ctrl+shift+v',
+          click: () => {
+            this.webContents.send(MainEventType.PASTE_NODE);
+          }
+        }
       ]
     });
   }

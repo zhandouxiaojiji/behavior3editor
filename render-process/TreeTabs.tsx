@@ -36,7 +36,17 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
     ipcRenderer.on(MainEventType.DELETE_NODE, () => {
       const editor = this.getCurEditor();
       editor?.deleteNode();
-    })
+    });
+
+    ipcRenderer.on(MainEventType.COPY_NODE, () => {
+      const editor = this.getCurEditor();
+      editor?.copyNode();
+    });
+
+    ipcRenderer.on(MainEventType.PASTE_NODE, () => {
+      const editor = this.getCurEditor();
+      editor?.pasteNode();
+    });
 
     ipcRenderer.on(MainEventType.SAVE, (event: any) => {
       const { curPath } = this.state;

@@ -11,6 +11,7 @@ import TreePanel from './TreePanel';
 import Settings from '../../main-process/Settings';
 
 import './Editor.css';
+import { clipboard } from 'electron';
 
 export interface EditorProps {
   filepath: string;
@@ -330,6 +331,40 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
       root,
       desc: root.desc,
     }));
+  }
+
+  copyNode() {
+    console.log("editor copy node");
+    const { curNodeId } = this.state;
+    if (!curNodeId) {
+      return;
+    }
+    const data = this.graph.findDataById(curNodeId);
+    clipboard.writeText(JSON.stringify(data, null, 2));
+  }
+
+  pasteNode() {
+    const { curNodeId } = this.state;
+    if (!curNodeId) {
+      message.warn("未选中节点");
+      return;
+    }
+    const curNodeData = this.graph.findDataById(curNodeId);
+    try {
+      const str = clipboard.readText();
+      if(!str || str == '') {
+        return;
+      }
+      const data = JSON.parse(str);
+      if(!curNodeData.children) {
+        curNodeData.children = [];
+      }
+      curNodeData.children.push(data);
+      this.autoId = Utils.refreshNodeId(this.graph.findDataById('1') as GraphNodeModel);
+      this.changeWithoutAnim();
+    } catch (error) {
+      message.error("粘贴数据有误");
+    }
   }
 
   render() {
