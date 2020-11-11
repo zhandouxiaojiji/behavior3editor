@@ -3,6 +3,8 @@ import AppMenu from './AppMenu'
 import Settings from './Settings';
 import MainEventType from '../common/MainEventType';
 
+const electronLocalshortcut = require('electron-localshortcut');
+
 // 一些暴露给render-process的全局变量
 export interface Global {
   settings: Settings
@@ -17,6 +19,12 @@ export class MainProcess {
     nativeTheme.themeSource = 'dark';
     app.on('ready', () => {
       this.createWindow();
+      electronLocalshortcut.register(this.mainWindow, 'Ctrl+C', () => {
+        this.mainWindow.webContents.send(MainEventType.COPY_NODE);
+      });
+      electronLocalshortcut.register(this.mainWindow, 'Ctrl+V', () => {
+        this.mainWindow.webContents.send(MainEventType.PASTE_NODE);
+      });
     })
     app.on('window-all-closed', () => {
       if (process.platform !== 'darwin') {
@@ -33,7 +41,7 @@ export class MainProcess {
   createWindow() {
     this.settings = new Settings();
     global.settings = this.settings;
-    
+
     this.mainWindow = new BrowserWindow({
       width: 1280,
       height: 800,

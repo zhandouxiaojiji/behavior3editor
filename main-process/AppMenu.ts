@@ -44,6 +44,7 @@ export default class AppMenu {
       submenu: [
         {
           label: "新建",
+          accelerator: 'ctrl+n',
           click: () => {
             (async () => {
               const res = await dialog.showSaveDialog({
@@ -92,12 +93,14 @@ export default class AppMenu {
         { type: 'separator' },
         {
           label: "保存",
+          accelerator: 'ctrl+s',
           click: () => {
             this.webContents.send(MainEventType.SAVE);
           },
         },
         {
           label: "全部保存",
+          accelerator: 'ctrl+shift+s',
           click: () => {
             this.webContents.send(MainEventType.SAVE_ALL);
           },
@@ -120,7 +123,7 @@ export default class AppMenu {
         { type: 'separator' },
         {
           label: '复制节点',
-          accelerator: 'ctrl+shift+c',
+          accelerator: 'ctrl+c',
           role: 'copy',
           click: () => {
             this.webContents.send(MainEventType.COPY_NODE);
@@ -128,7 +131,7 @@ export default class AppMenu {
         },
         {
           label: '粘贴节点',
-          accelerator: 'ctrl+shift+v',
+          accelerator: 'ctrl+v',
           click: () => {
             this.webContents.send(MainEventType.PASTE_NODE);
           }
