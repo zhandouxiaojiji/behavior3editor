@@ -14,6 +14,8 @@
 + 节点定义: sample/sample-node-config.json
 + 行为树目录: sample/sample-workdir
 
+Tips: workspace.json也可以手动编辑,加上isRelative可以让配置中的路径变成相对路径，这样就不需要团队中每个人在使用前都必须先创建工作区
+
 ## 节点定义
 ```typescript
 interface ArgsDefType {
@@ -46,7 +48,7 @@ npm run build # 编译exe可执行文件
 + antd
 + electron
 
-## 示例项目
+## 示例行为树框架
 + lua版本 [behavior3lua](https://github.com/zhandouxiaojiji/behavior3lua)
 + js/ts版本 计划中。
 

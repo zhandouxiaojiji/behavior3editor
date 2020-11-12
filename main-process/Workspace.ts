@@ -1,5 +1,12 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import { BehaviorNodeTypeModel } from '../common/BehaviorTreeModel';
+
+export interface WorkspaceModel {
+  isRelative?: boolean;
+  nodeConfPath: string;
+  workdir: string;
+}
 
 const unknowNodeType: BehaviorNodeTypeModel = {
   name: 'unknow',
@@ -25,9 +32,16 @@ export default class Workspace {
     }
     try {
       const str = fs.readFileSync(this.filepath, 'utf8');
-      const data = JSON.parse(str);
-      this.nodeConfPath = data.nodeConfPath;
-      this.workdir = data.workdir;
+      const model = JSON.parse(str) as WorkspaceModel;
+      if (model.isRelative) {
+        const root = path.dirname(this.filepath);
+        this.nodeConfPath = root + '/' + model.nodeConfPath;
+        this.workdir = root + '/' + model.workdir;
+      } else {
+        this.nodeConfPath = model.nodeConfPath;
+        this.workdir = model.workdir;
+      }
+
       this.initNodeConf();
     } catch (error) {
       console.log(error);

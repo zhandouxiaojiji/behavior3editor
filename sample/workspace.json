@@ -1,4 +1,5 @@
 {
-  "nodeConfPath": "sample\\node-config.json",
-  "workdir": "E:\\code\\behavior3editor\\sample\\workdir"
+  "isRelative": true,
+  "nodeConfPath": "node-config.json",
+  "workdir": "workdir"
 }
