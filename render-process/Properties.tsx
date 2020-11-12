@@ -13,7 +13,7 @@ export interface TreeFile {
 }
 
 export interface PropertiesProps {
-  workspace: string;
+  workdir: string;
   onOpenTree: (path: string) => void;
 }
 
@@ -26,11 +26,11 @@ export default class Properties extends Component<PropertiesProps> {
     treeList: []
   };
 
-  curWorkspace: string = '';
+  curWorkdir: string = '';
 
   shouldComponentUpdate(nextProps: PropertiesProps) {
-    const shouldUpdate = this.curWorkspace != nextProps.workspace;
-    this.curWorkspace = nextProps.workspace;
+    const shouldUpdate = this.curWorkdir != nextProps.workdir;
+    this.curWorkdir = nextProps.workdir;
     return shouldUpdate;
   }
 
@@ -41,28 +41,28 @@ export default class Properties extends Component<PropertiesProps> {
       this.forceUpdate();
     });
 
-    var workspace = this.props.workspace;
-    if (workspace == '') {
+    var workdir = this.props.workdir;
+    if (workdir == '') {
       return;
     }
-    this.setState({ treeList: this.getTreeList(workspace) });
+    this.setState({ treeList: this.getTreeList(workdir) });
   }
 
-  getTreeList(workspace: string) {
-    if (workspace == '' || !fs.existsSync(workspace)) {
-      console.log("workspace not exist", workspace);
+  getTreeList(workdir: string) {
+    if (workdir == '' || !fs.existsSync(workdir)) {
+      console.log("workdir not exist", workdir);
       return [];
     }
 
-    const files = fs.readdirSync(workspace);
+    const files = fs.readdirSync(workdir);
     const list: TreeFile[] = [];
     files.forEach((filename) => {
-      const stat = fs.statSync(path.join(workspace, filename))
+      const stat = fs.statSync(path.join(workdir, filename))
       if (stat.isFile()) {
         var name = filename.slice(0, -5)
         list.push({
           name,
-          path: workspace + '/' + name + '.json'
+          path: workdir + '/' + name + '.json'
         });
       }
     })
@@ -71,8 +71,8 @@ export default class Properties extends Component<PropertiesProps> {
 
   render() {
     console.log("render Properties");
-    const { onOpenTree, workspace } = this.props;
-    const treeList = this.getTreeList(workspace);
+    const { onOpenTree, workdir } = this.props;
+    const treeList = this.getTreeList(workdir);
     return (
       <div>
         <Search

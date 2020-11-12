@@ -142,11 +142,12 @@ export default class AppMenu {
 
   private createWorkspaceMenu() {
     const openWorkspace = (path: string) => {
-      this.settings.curWorkspace.setFilepath(path);
-      this.settings.curWorkspace.load();
+      const curWorkspace = this.settings.curWorkspace;
+      curWorkspace.setFilepath(path);
+      curWorkspace.load();
       this.settings.pushRecentWorkspace(path);
       this.mainProcess.rebuildMenu();
-      this.webContents.send(MainEventType.OPEN_DIR, this.settings.curWorkspace.getWorkdir());
+      this.webContents.send(MainEventType.OPEN_DIR, curWorkspace.getWorkdir(), curWorkspace.getFilepath());
     };
     const saveToNewPath = () => {
       (async () => {
@@ -159,6 +160,7 @@ export default class AppMenu {
         if (!res.canceled) {
           this.settings.curWorkspace.setFilepath(res.filePath);
           this.settings.curWorkspace.save();
+          openWorkspace(res.filePath);
         }
       })();
     }
@@ -225,10 +227,11 @@ export default class AppMenu {
                 properties: ['openDirectory']
               });
               if (res.filePaths.length > 0) {
+                const curWorkspace = this.settings.curWorkspace;
                 const path = res.filePaths[0];
-                this.settings.curWorkspace.setWorkdir(path);
-                this.settings.curWorkspace.save();
-                this.webContents.send(MainEventType.OPEN_DIR, path);
+                curWorkspace.setWorkdir(path);
+                curWorkspace.save();
+                this.webContents.send(MainEventType.OPEN_DIR, path, curWorkspace.getFilepath());
               }
             })();
           }
