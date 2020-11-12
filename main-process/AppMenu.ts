@@ -121,13 +121,13 @@ export default class AppMenu {
                             });
                             if (res.filePath) {
                                 const curWorkspace = this.settings.curWorkspace;
-                                curWorkspace.writeAllTrees(res.filePath,(err)=>{
-                                    const msg = err?err:"导出成功";
+                                curWorkspace.writeAllTrees(res.filePath, (err) => {
+                                    const msg = err ? err : "导出成功";
                                     dialog.showMessageBox({
-                                        type:"info",
-                                        buttons:["ok"],
-                                        message:msg
-                                    })
+                                        type: "info",
+                                        buttons: ["ok"],
+                                        message: msg,
+                                    });
                                 });
                             }
                         })();

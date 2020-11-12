@@ -4,9 +4,9 @@ import * as glob from "glob";
 import * as path from "path";
 
 export interface WorkspaceModel {
-  isRelative?: boolean;
-  nodeConfPath: string;
-  workdir: string;
+    isRelative?: boolean;
+    nodeConfPath: string;
+    workdir: string;
 }
 
 const unknowNodeType: BehaviorNodeTypeModel = {
@@ -32,17 +32,17 @@ export default class Workspace {
             return;
         }
         try {
-            const str = fs.readFileSync(this.filepath, 'utf8');
+            const str = fs.readFileSync(this.filepath, "utf8");
             const model = JSON.parse(str) as WorkspaceModel;
             if (model.isRelative) {
-              const root = path.dirname(this.filepath);
-              this.nodeConfPath = root + '/' + model.nodeConfPath;
-              this.workdir = root + '/' + model.workdir;
+                const root = path.dirname(this.filepath);
+                this.nodeConfPath = root + "/" + model.nodeConfPath;
+                this.workdir = root + "/" + model.workdir;
             } else {
-              this.nodeConfPath = model.nodeConfPath;
-              this.workdir = model.workdir;
+                this.nodeConfPath = model.nodeConfPath;
+                this.workdir = model.workdir;
             }
-      
+
             this.initNodeConf();
         } catch (error) {
             console.log(error);
@@ -52,14 +52,16 @@ export default class Workspace {
     private initNodeConf() {
         if (!this.nodeConfPath) {
             return;
-          }
-      
-          const types: BehaviorNodeTypeModel[] = JSON.parse(fs.readFileSync(this.nodeConfPath, 'utf8'));
-          this.name2conf = {};
-          types.forEach(t => {
+        }
+
+        const types: BehaviorNodeTypeModel[] = JSON.parse(
+            fs.readFileSync(this.nodeConfPath, "utf8")
+        );
+        this.name2conf = {};
+        types.forEach((t) => {
             this.name2conf[t.name] = t;
-          })
-          this.types = types;
+        });
+        this.types = types;
     }
 
     getNodeConfPath() {
