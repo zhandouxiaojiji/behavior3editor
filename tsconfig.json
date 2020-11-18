@@ -11,7 +11,8 @@
   "include": [
     "./common/**/*",
     "./main-process/**/*",
-    "./render-process/**/*"
+    "./render-process/**/*",
+    "./fs-tree-view/**/*",
   ],
   "exclude": [
     "node_modules",

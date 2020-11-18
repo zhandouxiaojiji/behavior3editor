@@ -23,8 +23,6 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
 
     editors: { [path: string]: Editor } = {};
 
-    componentWillMount() {}
-
     componentDidMount() {
         ipcRenderer.on(MainEventType.CREATE_NODE, (event: any, name: any) => {
             const editor = this.getCurEditor();
@@ -74,7 +72,6 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
     }
 
     openFile(path: string) {
-        console.log("on open file", path);
         if (this.state.filepaths.indexOf(path) < 0) {
             const filepaths = this.state.filepaths;
             filepaths.push(path);
@@ -82,6 +79,16 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
         } else {
             this.setState({ curPath: path });
         }
+    }
+
+    closeFile(path: string) {
+        const index = this.state.filepaths.indexOf(path);
+        if (index >= 0) {
+            const filepaths = this.state.filepaths;
+            filepaths.splice(index,1);
+            const length = filepaths.length;
+            this.setState({ filepaths, curPath: length>0?filepaths[length-1]:null });
+        } 
     }
 
     render() {

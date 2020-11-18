@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { ipcRenderer } from "electron";
 import MainEventType from "../common/MainEventType";
+import Tree from "../fs-tree-view";
 
 const { Search } = Input;
 
@@ -15,6 +16,7 @@ export interface TreeFile {
 export interface PropertiesProps {
     workdir: string;
     onOpenTree: (path: string) => void;
+    onDeleteTree: (path: string) => void;
 }
 
 interface PropertiesState {
@@ -71,19 +73,32 @@ export default class Properties extends Component<PropertiesProps> {
 
     render() {
         console.log("render Properties");
-        const { onOpenTree, workdir } = this.props;
-        const treeList = this.getTreeList(workdir);
-        return (
-            <div>
-                <Search placeholder="Search" onChange={() => {}} />
-                <Menu mode="inline">
-                    {treeList.map((tree) => (
-                        <Menu.Item key={tree.name} onClick={() => onOpenTree(tree.path)}>
-                            {tree.name}
-                        </Menu.Item>
-                    ))}
-                </Menu>
-            </div>
-        );
+        const { onOpenTree, onDeleteTree, workdir } = this.props;
+        //const treeList = this.getTreeList(workdir);
+
+        if (!fs.existsSync(workdir)) {
+            return <div></div>;
+        } else {
+            return (
+                <Tree
+                    className={""}
+                    basePath={workdir || "/"}
+                    disableContextMenu={false}
+                    filter={(path) => {
+                        return path.endsWith(".json");
+                    }}
+                    onItemSelected={(item) => {
+                        if (item.type == "file") {
+                            onOpenTree(item.path);
+                        }
+                    }}
+                    onItemDeleted={(item) => {
+                        if (item.type == "file") {
+                            onDeleteTree(item.path);
+                        }
+                    }}
+                ></Tree>
+            );
+        }
     }
 }

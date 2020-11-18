@@ -36,8 +36,8 @@ export default class Workspace {
             const model = JSON.parse(str) as WorkspaceModel;
             if (model.isRelative) {
                 const root = path.dirname(this.filepath);
-                this.nodeConfPath = root + "/" + model.nodeConfPath;
-                this.workdir = root + "/" + model.workdir;
+                this.nodeConfPath = path.join(root,model.nodeConfPath);
+                this.workdir = path.join(root,model.workdir);
             } else {
                 this.nodeConfPath = model.nodeConfPath;
                 this.workdir = model.workdir;

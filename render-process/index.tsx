@@ -34,12 +34,10 @@ export default class Main extends Component {
     settings: Settings;
     tabs: TreeTabs;
 
-    componentWillMount() {
+    componentDidMount() {
         this.updateSettings();
         RegisterNode(this.settings);
-    }
 
-    componentDidMount() {
         ipcRenderer.on(MainEventType.OPEN_FILE, (event: any, path: any) => {
             this.setState({ curPath: path });
         });
@@ -72,6 +70,9 @@ export default class Main extends Component {
                         workdir={workdir}
                         onOpenTree={(path) => {
                             this.tabs.openFile(path);
+                        }}
+                        onDeleteTree={(path) => {
+                            this.tabs.closeFile(path);
                         }}
                     />
                 </Sider>
