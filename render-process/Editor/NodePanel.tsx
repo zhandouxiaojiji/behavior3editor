@@ -10,7 +10,6 @@ import {
     InputNumber,
     notification,
     message,
-    Tooltip,
 } from "antd";
 import { INode } from "@antv/g6/lib/interface/item";
 import {
@@ -231,19 +230,17 @@ export default class NodePanel extends React.Component<NodePanelProps> {
                     conf.args.map((e, i: number) => {
                         const required = e.type.indexOf("?") == -1;
                         return (
-                            <Tooltip title={`${e.desc}`}>
-                                <Item
-                                    name={`args.${e.name}`}
-                                    label={e.name}
-                                    key={`args.${e.name}`}
-                                    valuePropName={
-                                        e.type.indexOf("boolean") >= 0 ? "checked" : undefined
-                                    }
-                                    rules={[{ required, message: `${e.desc}(${e.name})为必填字段` }]}
-                                >
-                                    {normalArgs(e)}
-                                </Item>
-                            </Tooltip>
+                            <Item
+                                name={`args.${e.name}`}
+                                label={e.desc}
+                                key={`args.${e.name}`}
+                                valuePropName={
+                                    e.type.indexOf("boolean") >= 0 ? "checked" : undefined
+                                }
+                                rules={[{ required, message: `${e.desc}(${e.name})为必填字段` }]}
+                            >
+                                {normalArgs(e)}
+                            </Item>
                         );
                     })}
                 {customArgs()}
