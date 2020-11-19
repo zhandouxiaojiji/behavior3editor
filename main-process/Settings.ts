@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import { BehaviorNodeTypeModel } from "../common/BehaviorTreeModel";
 import Workspace from "./Workspace";
 
 export interface BehaviorNodeClassify {
@@ -10,6 +9,7 @@ export interface BehaviorNodeClassify {
 export interface SettingsModel {
     recentWorkspaces?: string[];
     recentFiles?: string[];
+    serverName?: string;
     nodeClassify?: BehaviorNodeClassify[];
 }
 
@@ -22,7 +22,7 @@ const sampleNodeClassify: BehaviorNodeClassify[] = [
 ];
 
 export default class Settings {
-    private settings: SettingsModel;
+    private model: SettingsModel;
     curWorkspace?: Workspace;
 
     constructor() {
@@ -33,21 +33,52 @@ export default class Settings {
         return this.curWorkspace.getNodeConfPath();
     }
     get recentWorkspaces() {
-        return this.settings.recentWorkspaces;
+        return this.model.recentWorkspaces;
     }
     get recentFiles() {
-        return this.settings.recentFiles;
+        return this.model.recentFiles;
     }
     get nodeConfig() {
         return this.curWorkspace.nodeConf;
     }
     get nodeClassify() {
-        return this.settings.nodeClassify;
+        return this.model.nodeClassify;
+    }
+    get serverModel() {
+        const servers = this.curWorkspace.getServers()
+        if (!servers) {
+            return;
+        }
+        for (let server of servers) {
+            if (server.name == this.model.serverName) {
+                return server;
+            }
+        }
+        return servers[0];
+    }
+    get serverName() {
+        const servers = this.curWorkspace.getServers()
+        if (!servers) {
+            return "";
+        }
+        for (let server of servers) {
+            if (server.name == this.model.serverName) {
+                return this.model.serverName;
+            }
+        }
+        if(servers[0]) {
+            return servers[0].name;
+        } else {
+            return ''
+        }
+    }
+    set serverName(name: string) {
+        this.model.serverName = name;
     }
 
     set(config: SettingsModel) {
-        this.settings = {
-            ...this.settings,
+        this.model = {
+            ...this.model,
             ...config,
         };
         this.save();
@@ -56,21 +87,21 @@ export default class Settings {
     load() {
         if (fs.existsSync(settingPath)) {
             const str = fs.readFileSync(settingPath, "utf8");
-            this.settings = JSON.parse(str);
+            this.model = JSON.parse(str);
         } else {
-            this.settings = {
+            this.model = {
                 recentWorkspaces: ["sample/workspace.json"],
                 recentFiles: [],
                 nodeClassify: sampleNodeClassify,
             };
             this.save();
         }
-        this.curWorkspace = new Workspace(this.settings.recentWorkspaces[0]);
+        this.curWorkspace = new Workspace(this.model.recentWorkspaces[0]);
         this.curWorkspace.load();
     }
 
     save() {
-        fs.writeFileSync(settingPath, JSON.stringify(this.settings, null, 2));
+        fs.writeFileSync(settingPath, JSON.stringify(this.model, null, 2));
     }
 
     getNodeConf(name: string) {
@@ -78,12 +109,9 @@ export default class Settings {
     }
 
     pushRecentWorkspace(path: string) {
-        if (this.settings.recentWorkspaces.indexOf(path) < 0) {
-            this.settings.recentWorkspaces.unshift(path);
-            console.log("push", path);
-        } else {
-            console.log("already in path", this.settings.recentWorkspaces, path);
+        if (this.model.recentWorkspaces.indexOf(path) < 0) {
+            this.model.recentWorkspaces.unshift(path);
+            this.save();
         }
-        this.save();
     }
 }

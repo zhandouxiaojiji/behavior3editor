@@ -3,10 +3,16 @@ import { BehaviorNodeTypeModel } from "../common/BehaviorTreeModel";
 import * as glob from "glob";
 import * as path from "path";
 
+export interface ServerModel {
+    name: string;
+    host: string;
+}
+
 export interface WorkspaceModel {
     isRelative?: boolean;
     nodeConfPath: string;
     workdir: string;
+    servers?: ServerModel[];
 }
 
 const unknowNodeType: BehaviorNodeTypeModel = {
@@ -19,6 +25,7 @@ export default class Workspace {
     private filepath: string;
     private nodeConfPath: string;
     private workdir: string;
+    private model: WorkspaceModel;
 
     private name2conf: { [name: string]: BehaviorNodeTypeModel } = {};
     private types: BehaviorNodeTypeModel[] = [];
@@ -42,6 +49,7 @@ export default class Workspace {
                 this.nodeConfPath = model.nodeConfPath;
                 this.workdir = model.workdir;
             }
+            this.model = model;
 
             this.initNodeConf();
         } catch (error) {
@@ -76,6 +84,12 @@ export default class Workspace {
     }
     setWorkdir(workdir: string) {
         this.workdir = workdir;
+    }
+    getServers() {
+        return this.model.servers || [];
+    }
+    getModel() {
+        return this.model;
     }
 
     writeAllTrees(outFilePath: string, cb?: (err: string) => void) {

@@ -303,9 +303,26 @@ export default class AppMenu {
     }
 
     private createToolsMenu() {
+        const serverItems: MenuItemConstructorOptions[] = [];
+        const curServerName = this.settings.serverName;
+        for (let model of this.settings.curWorkspace.getServers()) {
+            serverItems.push({
+                label: `${model.name} ${model.host}`,
+                type: 'checkbox',
+                checked: curServerName == model.name,
+                click: () => {
+                    this.settings.serverName = model.name;
+                    this.mainProcess.rebuildMenu();
+                }
+            })
+        }
         return new MenuItem({
             label: "开发工具",
             submenu: [
+                {
+                    label: "联调服务器",
+                    submenu: serverItems,
+                },
                 {
                     label: "打开控制台",
                     accelerator: "Ctrl+Shift+I",
