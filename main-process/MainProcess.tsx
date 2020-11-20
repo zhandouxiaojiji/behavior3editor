@@ -5,9 +5,6 @@ import MainEventType from "../common/MainEventType";
 
 import electronLocalshortcut from "electron-localshortcut";
 
-//launch fs server listen port 5000
-require("../fs-tree-view/server/server");
-
 // 一些暴露给render-process的全局变量
 export interface Global {
     settings: Settings;

@@ -81,15 +81,19 @@ export default class Main extends Component {
         return (
             <Layout className="body">
                 <Sider className="sider" width={250}>
-                    <Properties
-                        workdir={workdir}
-                        onOpenTree={(path) => {
-                            this.tabs.openFile(path);
-                        }}
-                        onDeleteTree={(path) => {
-                            this.tabs.closeFile(path);
-                        }}
-                    />
+                    {workdir !== "" ? (
+                        <Properties
+                            workdir={workdir}
+                            onOpenTree={(path) => {
+                                this.tabs.openFile(path);
+                            }}
+                            onDeleteTree={(path) => {
+                                this.tabs.closeFile(path);
+                            }}
+                        />
+                    ) : (
+                        "Please Open Workspace"
+                    )}
                 </Sider>
                 <Content className="content">
                     <TreeTabs
