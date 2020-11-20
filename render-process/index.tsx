@@ -1,24 +1,19 @@
 import * as ReactDOM from "react-dom";
-import Editor from "./Editor";
+import SyncRequest from "sync-request";
 import React, { Component } from "react";
-import { Layout, Tabs } from "antd";
+import { Layout, message, Tabs } from "antd";
 import { ipcRenderer, remote } from "electron";
-import * as path from "path";
-import * as fs from "fs";
 import * as Utils from "../common/Utils";
 import MainEventType from "../common/MainEventType";
 import Properties from "./Properties";
 import Settings from "../main-process/Settings";
-import G6 from "@antv/g6";
 
 import "antd/dist/antd.dark.css";
 import "./index.css";
-import { ModelConfig, Item } from "@antv/g6/lib/types";
 import RegisterNode from "./RegisterNode";
 import TreeTabs from "./TreeTabs";
 
-const { Header, Sider, Content, Footer } = Layout;
-const { TabPane } = Tabs;
+const { Sider, Content } = Layout;
 
 interface MainState {
     workdir: string;
@@ -33,6 +28,7 @@ export default class Main extends Component {
 
     settings: Settings;
     tabs: TreeTabs;
+    session = 0;
 
     componentDidMount() {
         this.updateSettings();
@@ -47,6 +43,25 @@ export default class Main extends Component {
             document.title = workspace;
             this.setState({ workdir, workspace });
         });
+
+        ipcRenderer.on(MainEventType.RELOAD_SERVER, () => {
+            const serverModel = this.settings.serverModel;
+            if (!serverModel) {
+                message.warning("没有配置服务器");
+                return;
+            }
+            SyncRequest("POST", serverModel.host, {
+                body: JSON.stringify({
+                    cmd:"btree.reload",
+                    data: {
+                        trees: this.tabs.getOpenTreesModel()
+                    },
+                    session: this.session++,
+                    timestamp: Date.now(),
+                })
+            });
+            message.success("服务器已更新");
+        })
 
         console.log("workdir", this.settings.curWorkspace.getWorkdir());
         this.setState({

@@ -6,6 +6,7 @@ import * as path from "path";
 
 import "antd/dist/antd.dark.css";
 import MainEventType from "../common/MainEventType";
+import { BehaviorTreeModel } from "../common/BehaviorTreeModel";
 
 const { TabPane } = Tabs;
 
@@ -61,6 +62,15 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
             }
             message.success("已保存所有行为树");
         });
+    }
+
+    getOpenTreesModel() {
+        const trees: BehaviorTreeModel[] = []
+        for (let k in this.editors) {
+            let editor = this.editors[k];
+            trees.push(editor.save());
+        }
+        return trees;
     }
 
     getCurEditor() {

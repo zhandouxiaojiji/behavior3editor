@@ -332,14 +332,16 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     save() {
         const { filepath } = this.props;
         const root = Utils.createFileData(this.graph.findDataById("1") as GraphNodeModel);
+        const treeModel = {
+            name: path.basename(filepath).slice(0, -5),
+            root,
+            desc: root.desc,
+        } as BehaviorTreeModel;
         fs.writeFileSync(
             filepath,
-            JSON.stringify({
-                name: path.basename(filepath).slice(0, -5),
-                root,
-                desc: root.desc,
-            })
+            JSON.stringify(treeModel)
         );
+        return treeModel;
     }
 
     copyNode() {

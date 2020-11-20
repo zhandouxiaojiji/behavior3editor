@@ -61,6 +61,7 @@
     "react-dom": "^16.13.1",
     "react-markdown": "^5.0.2",
     "rimraf": "^3.0.2",
-    "sanitize-filename": "^1.6.3"
+    "sanitize-filename": "^1.6.3",
+    "sync-request": "^6.1.0"
   }
 }

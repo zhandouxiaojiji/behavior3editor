@@ -9,4 +9,5 @@ export default {
     PASTE_NODE: "PASTE_NODE",
     SAVE: "SAVE",
     SAVE_ALL: "SAVE_ALL",
+    RELOAD_SERVER: "RELOAD_SERVER",
 };

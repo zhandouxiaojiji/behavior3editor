@@ -324,6 +324,16 @@ export default class AppMenu {
                     submenu: serverItems,
                 },
                 {
+                    label: "热更",
+                    accelerator: "Ctrl+R",
+                    click: () => {
+                        this.webContents.send(MainEventType.RELOAD_SERVER);
+                    }
+                },
+                {
+                    type: 'separator',
+                },
+                {
                     label: "打开控制台",
                     accelerator: "Ctrl+Shift+I",
                     click: (_, browserWindow) => {
@@ -331,8 +341,7 @@ export default class AppMenu {
                     },
                 },
                 {
-                    label: "重载",
-                    accelerator: "Ctrl+R",
+                    label: "重载编辑器",
                     click: (_, browserWindow) => {
                         browserWindow.reload();
                     },
