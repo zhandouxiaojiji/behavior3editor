@@ -176,7 +176,7 @@ export default class Properties extends Component<PropertiesProps> {
         });
 
         var workdir = this.props.workdir;
-        if (workdir == "") {
+        if (!workdir || workdir === "") {
             return;
         }
         const root = this.getRootNode(workdir);
@@ -274,6 +274,22 @@ export default class Properties extends Component<PropertiesProps> {
           );
     }
 
+    handleOnLoadData(loadNode:EventDataNode) {
+        return new Promise((resolve) => {
+          const root = this.state.root;
+
+          const node = root.findChild(loadNode.key as string);
+          if (node) {
+              node.expandSelf();
+              this.setState({ root: root });
+              this.forceUpdate();
+          }
+
+          resolve();
+          return;
+        });
+      }
+
     render() {
         console.log("render Properties");
         const { onOpenTree, onDeleteTree, workdir } = this.props;
@@ -309,16 +325,17 @@ export default class Properties extends Component<PropertiesProps> {
                             expandedKeys:keys,
                             autoExpandParent:false
                         })
-                        if (info.expanded && !info.node.expanded) {
-                            //let newRoot = _.cloneDeep(root);
-                            const node = root.findChild(info.node.key as string);
-                            if (node) {
-                                node.expandSelf();
-                                this.setState({ root: root });
-                            }
-                        }
+                        // if (info.expanded && !info.node.expanded) {
+                        //     //let newRoot = _.cloneDeep(root);
+                        //     const node = root.findChild(info.node.key as string);
+                        //     if (node) {
+                        //         node.expandSelf();
+                        //         this.setState({ root: root });
+                        //     }
+                        // }
                         this.forceUpdate();
                     }}
+                    loadData={this.handleOnLoadData.bind(this)}
                 ></DirectoryTree>
             </div>
         ) : (
