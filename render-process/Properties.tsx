@@ -1,14 +1,14 @@
-import React, { Component } from "react";
-import { Menu, Input, Tree ,Dropdown} from "antd";
+import React, { ChangeEvent, Component } from "react";
+import { Input, Tree, Dropdown } from "antd";
 import * as fs from "fs";
 import * as path from "path";
 import { ipcRenderer } from "electron";
 import MainEventType from "../common/MainEventType";
 import { DataNode } from "antd/lib/tree";
-import { IconType } from "rc-tree/lib/interface";
+import { EventDataNode, IconType } from "rc-tree/lib/interface";
 
 const { Search } = Input;
-const { DirectoryTree } = Tree;
+const { DirectoryTree, TreeNode } = Tree;
 
 export interface PropertiesProps {
     workdir: string;
@@ -67,9 +67,9 @@ class FileDataNode implements DataNode {
                 parent: this,
             });
 
-            node.children = isFolder&&recursive ? (node.loadChilds(recursive) as FileDataNode[]) : [],
-
-            list.push(node);
+            (node.children =
+                isFolder && recursive ? (node.loadChilds(recursive) as FileDataNode[]) : []),
+                list.push(node);
         });
         return list;
     }
@@ -112,6 +112,15 @@ class FileDataNode implements DataNode {
         return null;
     }
 
+    getList(): FileDataNode[] {
+        let ret = new Array<FileDataNode>(this);
+        for (const child of this.children) {
+            const childList = child.getList();
+            ret.push(...childList);
+        }
+        return ret;
+    }
+
     // name:string;
     // path: string;
     // isFolder : boolean;
@@ -121,6 +130,15 @@ class FileDataNode implements DataNode {
 
 interface PropertiesState {
     root: FileDataNode;
+    searchKey: string;
+    defaultExpandedKeys:string[];
+    expandedKeys: string[];
+    autoExpandParent: boolean;
+    rightClickNode: {
+        pageX: number;
+        pageY: number;
+        key: string;
+    };
 }
 
 const NodeActions: { [x: string]: string } = {
@@ -134,6 +152,11 @@ const NodeActions: { [x: string]: string } = {
 export default class Properties extends Component<PropertiesProps> {
     state: PropertiesState = {
         root: null,
+        searchKey: "",
+        rightClickNode: null,
+        expandedKeys: [],
+        defaultExpandedKeys:[],
+        autoExpandParent: true,
     };
 
     curWorkdir: string = "";
@@ -158,7 +181,11 @@ export default class Properties extends Component<PropertiesProps> {
         }
         const root = this.getRootNode(workdir);
         root.expandSelf();
-        this.setState({ root: root });
+        this.setState({ 
+            root: root ,
+            expandedKeys : [root.key],
+            defaultExpandedKeys: [root.key]
+        });
     }
 
     getRootNode(workdir: string) {
@@ -191,14 +218,61 @@ export default class Properties extends Component<PropertiesProps> {
     //     );
     // }
 
-    // renderNode(node:FileDataNode){
-    //     return (<Dropdown
-    //         overlay={this.renderContextMeun(node)}
-    //         trigger={["contextMenu"]}
-    //     >
-    //         <div>{node.title}</div>
-    //     </Dropdown>)
-    // }
+    handleOnSearch(value: string, event: ChangeEvent) {
+        const expandedKeys = this.state.root
+            .getList()
+            .map((item) => {
+                if(!item.isLeaf)
+                    return null;
+                const title = item.title as string;
+                if (title.includes(value) && item.parent) {
+                    return item.parent.key;
+                }
+                return null;
+            })
+            .filter((item, i, self) => item && self.indexOf(item) === i);
+        if (value && value.length>0) {
+            this.setState({
+                searchKey: value,
+                expandedKeys: expandedKeys,
+                autoExpandParent: true,
+            });
+        } else {
+            this.setState({
+                searchKey: "",
+                expandedKeys: this.state.defaultExpandedKeys,
+                autoExpandParent: false,
+            });
+        }
+
+        this.forceUpdate();
+    }
+
+    filterNode(node: EventDataNode): boolean {
+        const searchKey = this.state.searchKey;
+        const nodeKey = node.title as string;
+
+        return nodeKey.includes(searchKey);
+    }
+
+    titleRender(node:DataNode):React.ReactNode{
+        const titleStr = node.title as string;
+        const searchKey = this.state.searchKey;
+        const index = titleStr.indexOf(searchKey);
+        const beforeStr = titleStr.substr(0, index);
+        const afterStr = titleStr.substr(index + searchKey.length);
+
+        //return (<span>{titleStr}</span>)
+        return index > -1 ? (
+            <span>
+              {beforeStr}
+              <span className="site-tree-search-value">{searchKey}</span>
+              {afterStr}
+            </span>
+          ) : (
+            <span>{titleStr}</span>
+          );
+    }
 
     render() {
         console.log("render Properties");
@@ -206,34 +280,47 @@ export default class Properties extends Component<PropertiesProps> {
         const root = this.state.root;
         const nodes = root ? [root] : [];
         return nodes.length ? (
-            <DirectoryTree
-                selectable
-                showLine
-                expandAction="click"
-                treeData={nodes}
-                defaultExpandedKeys={[root.key]}
-                onCheck={(node) => console.log("onCheck")}
-                onSelect={(keys, info) => {
-                    console.log("onSelect", keys, info);
-                    if (info.node.isLeaf) {
-                        onOpenTree(keys[0] as string);
-                    }
-                }}
-                onExpand={(keys, info) => {
-                    console.log("onExpand", info);
-                    if (info.expanded && !info.node.expanded) {
-                        //let newRoot = _.cloneDeep(root);
-                        const node = root.findChild(info.node.key as string);
-                        if (node) {
-                            node.expandSelf();
-                            this.setState({ root: root });
-                            this.forceUpdate();
+            <div>
+                <Search
+                    allowClear
+                    placeholder="Search"
+                    onSearch={this.handleOnSearch.bind(this)}
+                />
+                <DirectoryTree
+                    selectable
+                    // showLine
+                    checkStrictly
+                    expandAction="click"
+                    expandedKeys={this.state.expandedKeys}
+                    autoExpandParent={this.state.autoExpandParent}
+                    titleRender={this.titleRender.bind(this)}
+                    treeData={nodes}
+                    filterTreeNode={this.filterNode.bind(this)}
+                    defaultExpandedKeys={[root.key]}
+                    onSelect={(keys, info) => {
+                        console.log("onSelect", keys, info);
+                        if (info.node.isLeaf) {
+                            onOpenTree(keys[0] as string);
                         }
-                    }
-                }}
-                onLoad={(keys, info) => console.log("onLoad", keys, info)}
-                onRightClick={(event) => console.log("onRightClick", event)}
-            ></DirectoryTree>
+                    }}
+                    onExpand={(keys, info) => {
+                        console.log("onExpand", info);
+                        this.setState({
+                            expandedKeys:keys,
+                            autoExpandParent:false
+                        })
+                        if (info.expanded && !info.node.expanded) {
+                            //let newRoot = _.cloneDeep(root);
+                            const node = root.findChild(info.node.key as string);
+                            if (node) {
+                                node.expandSelf();
+                                this.setState({ root: root });
+                            }
+                        }
+                        this.forceUpdate();
+                    }}
+                ></DirectoryTree>
+            </div>
         ) : (
             `Work Dir (${workdir}) Empty`
         );

@@ -41,3 +41,11 @@ body {
   height          : 50px;
   background-color: #818181;
 }
+
+.site-tree-search-value {
+    color: #f50;
+}
+
+[data-theme="dark"] .site-tree-search-value {
+    color: #d84a1b;
+  }
