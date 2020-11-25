@@ -39,7 +39,7 @@ interface BehaviorNodeTypeModel {
 ```shell
 npm install # 安装依赖
 npm start # 运行测试
-npm run build # 编译exe可执行文件
+npm run dist # 编译exe可执行文件
 ```
 
 ## 技术栈
@@ -53,12 +53,9 @@ npm run build # 编译exe可执行文件
 + js/ts版本 计划中。
 
 ## TODO
-+ 复制粘贴功能(跨工作区)
 + 历史记录(撤销/恢复)
 + 资源面板支持树型结构
-+ 快捷键功能
 + 右键菜单
-+ 联调功能
 
 ## About
 目前编辑器还处于非常简陋的阶段，有问题可以联系作者(QQ1013299930)，本项目将长期维护，望前端大佬们多提点~

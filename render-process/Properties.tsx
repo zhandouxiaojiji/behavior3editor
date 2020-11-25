@@ -131,7 +131,7 @@ class FileDataNode implements DataNode {
 interface PropertiesState {
     root: FileDataNode;
     searchKey: string;
-    defaultExpandedKeys:string[];
+    defaultExpandedKeys: string[];
     expandedKeys: string[];
     autoExpandParent: boolean;
     rightClickNode: {
@@ -155,7 +155,7 @@ export default class Properties extends Component<PropertiesProps> {
         searchKey: "",
         rightClickNode: null,
         expandedKeys: [],
-        defaultExpandedKeys:[],
+        defaultExpandedKeys: [],
         autoExpandParent: true,
     };
 
@@ -175,15 +175,25 @@ export default class Properties extends Component<PropertiesProps> {
             this.forceUpdate();
         });
 
+        ipcRenderer.on(MainEventType.OPEN_DIR, (event: any, workdir: any, workspace: string) => {
+            console.log("prop on open workspace", workspace);
+            this.updateRoot();
+            this.forceUpdate();
+        });
+
+        this.updateRoot();
+    }
+
+    updateRoot() {
         var workdir = this.props.workdir;
         if (!workdir || workdir === "") {
             return;
         }
         const root = this.getRootNode(workdir);
         root.expandSelf();
-        this.setState({ 
-            root: root ,
-            expandedKeys : [root.key],
+        this.setState({
+            root: root,
+            expandedKeys: [root.key],
             defaultExpandedKeys: [root.key]
         });
     }
@@ -222,7 +232,7 @@ export default class Properties extends Component<PropertiesProps> {
         const expandedKeys = this.state.root
             .getList()
             .map((item) => {
-                if(!item.isLeaf)
+                if (!item.isLeaf)
                     return null;
                 const title = item.title as string;
                 if (title.includes(value) && item.parent) {
@@ -231,7 +241,7 @@ export default class Properties extends Component<PropertiesProps> {
                 return null;
             })
             .filter((item, i, self) => item && self.indexOf(item) === i);
-        if (value && value.length>0) {
+        if (value && value.length > 0) {
             this.setState({
                 searchKey: value,
                 expandedKeys: expandedKeys,
@@ -255,7 +265,7 @@ export default class Properties extends Component<PropertiesProps> {
         return nodeKey.includes(searchKey);
     }
 
-    titleRender(node:DataNode):React.ReactNode{
+    titleRender(node: DataNode): React.ReactNode {
         const titleStr = node.title as string;
         const searchKey = this.state.searchKey;
         const index = titleStr.indexOf(searchKey);
@@ -265,30 +275,30 @@ export default class Properties extends Component<PropertiesProps> {
         //return (<span>{titleStr}</span>)
         return index > -1 ? (
             <span>
-              {beforeStr}
-              <span className="site-tree-search-value">{searchKey}</span>
-              {afterStr}
+                {beforeStr}
+                <span className="site-tree-search-value">{searchKey}</span>
+                {afterStr}
             </span>
-          ) : (
-            <span>{titleStr}</span>
-          );
+        ) : (
+                <span>{titleStr}</span>
+            );
     }
 
-    handleOnLoadData(loadNode:EventDataNode) {
+    handleOnLoadData(loadNode: EventDataNode) {
         return new Promise((resolve) => {
-          const root = this.state.root;
+            const root = this.state.root;
 
-          const node = root.findChild(loadNode.key as string);
-          if (node) {
-              node.expandSelf();
-              this.setState({ root: root });
-              this.forceUpdate();
-          }
+            const node = root.findChild(loadNode.key as string);
+            if (node) {
+                node.expandSelf();
+                this.setState({ root: root });
+                this.forceUpdate();
+            }
 
-          resolve();
-          return;
+            resolve();
+            return;
         });
-      }
+    }
 
     render() {
         console.log("render Properties");
@@ -322,8 +332,8 @@ export default class Properties extends Component<PropertiesProps> {
                     onExpand={(keys, info) => {
                         console.log("onExpand", info);
                         this.setState({
-                            expandedKeys:keys,
-                            autoExpandParent:false
+                            expandedKeys: keys,
+                            autoExpandParent: false
                         })
                         // if (info.expanded && !info.node.expanded) {
                         //     //let newRoot = _.cloneDeep(root);
@@ -339,7 +349,7 @@ export default class Properties extends Component<PropertiesProps> {
                 ></DirectoryTree>
             </div>
         ) : (
-            `Work Dir (${workdir}) Empty`
-        );
+                `Work Dir (${workdir}) Empty`
+            );
     }
 }
