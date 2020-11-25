@@ -86,7 +86,11 @@ export default class Workspace {
         this.workdir = workdir;
     }
     getServers() {
-        return this.model.servers || [];
+        if(this.model && this.model.servers) {
+            return this.model.servers;
+        } else {
+            return [];
+        }
     }
     getModel() {
         return this.model;
