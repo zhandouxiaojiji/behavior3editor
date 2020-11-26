@@ -68,7 +68,9 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
         const trees: BehaviorTreeModel[] = []
         for (let k in this.editors) {
             let editor = this.editors[k];
-            trees.push(editor.save());
+            if(editor) {
+                trees.push(editor.save());
+            }
         }
         return trees;
     }
@@ -107,6 +109,7 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
         if (!curPath) {
             return <div />;
         }
+        this.editors = {};
         return (
             <Tabs
                 hideAdd

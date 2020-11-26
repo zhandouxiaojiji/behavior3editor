@@ -366,6 +366,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             if (!str || str == "") {
                 return;
             }
+            this.onSelectNode(null);
             const data = JSON.parse(str);
             if (!curNodeData.children) {
                 curNodeData.children = [];
