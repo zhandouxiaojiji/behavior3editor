@@ -94,7 +94,7 @@ class FileDataNode implements DataNode {
         }
     }
 
-    expandSelf(recursive?: boolean) {
+    expandSelf(recursive: boolean = true) {
         if (this.isFolder) this.children = this.loadChilds(recursive);
     }
 
@@ -119,6 +119,20 @@ class FileDataNode implements DataNode {
             ret.push(...childList);
         }
         return ret;
+    }
+
+    removeChilds(exclude:string){
+        for (let i = 0;i < this.children.length;++i) {
+            const child = this.children[i];
+            if (child.isLeaf) {
+                const keyStr = child.key as string;
+                if(!keyStr.includes(exclude)){
+                    this.children.splice(i,1);
+                }
+            } else {
+                child.removeChilds(exclude);
+            }
+        }
     }
 
     // name:string;
@@ -242,13 +256,20 @@ export default class Properties extends Component<PropertiesProps> {
             })
             .filter((item, i, self) => item && self.indexOf(item) === i);
         if (value && value.length > 0) {
+            
+            const root = this.state.root;
+            root.removeChilds(value);
             this.setState({
+                root:root,
                 searchKey: value,
                 expandedKeys: expandedKeys,
                 autoExpandParent: true,
             });
         } else {
+            const root = this.getRootNode(this.props.workdir);
+            root.expandSelf();
             this.setState({
+                root:root,
                 searchKey: "",
                 expandedKeys: this.state.defaultExpandedKeys,
                 autoExpandParent: false,
@@ -261,7 +282,6 @@ export default class Properties extends Component<PropertiesProps> {
     filterNode(node: EventDataNode): boolean {
         const searchKey = this.state.searchKey;
         const nodeKey = node.title as string;
-
         return nodeKey.includes(searchKey);
     }
 
@@ -324,13 +344,12 @@ export default class Properties extends Component<PropertiesProps> {
                     filterTreeNode={this.filterNode.bind(this)}
                     defaultExpandedKeys={[root.key]}
                     onSelect={(keys, info) => {
-                        console.log("onSelect", keys, info);
+                        //console.log("onSelect", keys, info);
                         if (info.node.isLeaf) {
                             onOpenTree(keys[0] as string);
                         }
                     }}
                     onExpand={(keys, info) => {
-                        console.log("onExpand", info);
                         this.setState({
                             expandedKeys: keys,
                             autoExpandParent: false
