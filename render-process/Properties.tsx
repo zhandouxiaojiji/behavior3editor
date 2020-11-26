@@ -122,7 +122,7 @@ class FileDataNode implements DataNode {
     }
 
     removeChilds(exclude:string){
-        for (let i = 0;i < this.children.length;++i) {
+        for (let i = this.children.length-1;i >= 0;--i) {
             const child = this.children[i];
             if (child.isLeaf) {
                 const keyStr = child.key as string;
@@ -130,9 +130,13 @@ class FileDataNode implements DataNode {
                     this.children.splice(i,1);
                 }
             } else {
-                child.removeChilds(exclude);
+                const childLen = child.removeChilds(exclude);
+                if(childLen==0){
+                    this.children.splice(i,1);
+                }
             }
         }
+        return this.children.length;
     }
 
     // name:string;
