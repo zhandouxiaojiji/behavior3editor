@@ -109,9 +109,15 @@ export default class Settings {
     }
 
     pushRecentWorkspace(path: string) {
-        if (this.model.recentWorkspaces.indexOf(path) < 0) {
-            this.model.recentWorkspaces.unshift(path);
-            this.save();
+        var list = this.model.recentWorkspaces;
+        if (list.indexOf(path) >= 0) {
+            list = list.filter((value) => value !== path);
         }
+        list.unshift(path);
+        while(list.length > 10) {
+            list.pop();
+        }
+        this.model.recentWorkspaces = list;
+        this.save();
     }
 }

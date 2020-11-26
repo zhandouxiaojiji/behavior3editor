@@ -344,10 +344,10 @@ export default class Properties extends Component<PropertiesProps> {
                 <Search
                     allowClear
                     placeholder="Search"
-                    onChange={(e)=>{
-                        const value = e.target.value?.toLowerCase();
-                        this.handleOnSearch(value);
-                    }}
+                    // onChange={(e)=>{
+                    //     const value = e.target.value?.toLowerCase();
+                    //     this.handleOnSearch(value);
+                    // }}
                     onSearch={
                         (value,event)=>{
                             this.handleOnSearch(value?.toLowerCase());
