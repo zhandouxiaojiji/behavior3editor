@@ -31,6 +31,7 @@ class FileDataNode implements DataNode {
     style?: React.CSSProperties;
 
     parent: FileDataNode;
+    visible: boolean = true;
 
     public constructor(init?: Partial<FileDataNode>) {
         Object.assign(this, init);
@@ -46,6 +47,26 @@ class FileDataNode implements DataNode {
 
     get path() {
         return this.key as string;
+    }
+
+    public getRenderData() {
+        if(!this.visible){
+            return null;
+        }
+        let ret = {
+            title: this.title,
+            key: this.key,
+            isLeaf: this.isLeaf,
+            children: new Array()
+        };
+
+        for (const child of this.children) {
+            const data = child.getRenderData();
+            if(data){
+                ret.children.push(data);
+            }
+        }
+        return ret;
     }
 
     loadChilds(recursive?: boolean) {
@@ -121,22 +142,19 @@ class FileDataNode implements DataNode {
         return ret;
     }
 
-    removeChilds(exclude:string){
-        for (let i = this.children.length-1;i >= 0;--i) {
+    setVisible(keyWord:string){
+        let ret = false;
+        for (let i = this.children.length-1;i >= 0;i--) {
             const child = this.children[i];
             if (child.isLeaf) {
-                const keyStr = child.key as string;
-                if(!keyStr.includes(exclude)){
-                    this.children.splice(i,1);
-                }
+                const keyStr = child.title as string;
+                child.visible = keyStr.includes(keyWord);
             } else {
-                const childLen = child.removeChilds(exclude);
-                if(childLen==0){
-                    this.children.splice(i,1);
-                }
+                child.visible = child.setVisible(keyWord);
             }
+            ret = child.visible || ret;
         }
-        return this.children.length;
+        return ret;
     }
 
     // name:string;
@@ -246,7 +264,7 @@ export default class Properties extends Component<PropertiesProps> {
     //     );
     // }
 
-    handleOnSearch(value: string, event: ChangeEvent) {
+    handleOnSearch(value: string) {
         const expandedKeys = this.state.root
             .getList()
             .map((item) => {
@@ -259,10 +277,10 @@ export default class Properties extends Component<PropertiesProps> {
                 return null;
             })
             .filter((item, i, self) => item && self.indexOf(item) === i);
+
+        const root = this.state.root;
+        root.setVisible(value||"");
         if (value && value.length > 0) {
-            
-            const root = this.state.root;
-            root.removeChilds(value);
             this.setState({
                 root:root,
                 searchKey: value,
@@ -270,8 +288,6 @@ export default class Properties extends Component<PropertiesProps> {
                 autoExpandParent: true,
             });
         } else {
-            const root = this.getRootNode(this.props.workdir);
-            root.expandSelf();
             this.setState({
                 root:root,
                 searchKey: "",
@@ -283,12 +299,6 @@ export default class Properties extends Component<PropertiesProps> {
         this.forceUpdate();
     }
 
-    filterNode(node: EventDataNode): boolean {
-        const searchKey = this.state.searchKey;
-        const nodeKey = node.title as string;
-        return nodeKey.includes(searchKey);
-    }
-
     titleRender(node: DataNode): React.ReactNode {
         const titleStr = node.title as string;
         const searchKey = this.state.searchKey;
@@ -297,7 +307,7 @@ export default class Properties extends Component<PropertiesProps> {
         const afterStr = titleStr.substr(index + searchKey.length);
 
         //return (<span>{titleStr}</span>)
-        return index > -1 ? (
+        return node.isLeaf && index > -1 ? (
             <span>
                 {beforeStr}
                 <span className="site-tree-search-value">{searchKey}</span>
@@ -328,13 +338,21 @@ export default class Properties extends Component<PropertiesProps> {
         console.log("render Properties");
         const { onOpenTree, onDeleteTree, workdir } = this.props;
         const root = this.state.root;
-        const nodes = root ? [root] : [];
+        const nodes = root ? [root.getRenderData()] : [];
         return nodes.length ? (
             <div>
                 <Search
                     allowClear
                     placeholder="Search"
-                    onSearch={this.handleOnSearch.bind(this)}
+                    onChange={(e)=>{
+                        const value = e.target.value?.toLowerCase();
+                        this.handleOnSearch(value);
+                    }}
+                    onSearch={
+                        (value,event)=>{
+                            this.handleOnSearch(value?.toLowerCase());
+                        }
+                    }
                 />
                 <DirectoryTree
                     selectable
@@ -345,7 +363,6 @@ export default class Properties extends Component<PropertiesProps> {
                     autoExpandParent={this.state.autoExpandParent}
                     titleRender={this.titleRender.bind(this)}
                     treeData={nodes}
-                    filterTreeNode={this.filterNode.bind(this)}
                     defaultExpandedKeys={[root.key]}
                     onSelect={(keys, info) => {
                         //console.log("onSelect", keys, info);
