@@ -350,8 +350,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         if (!curNodeId) {
             return;
         }
-        const data = this.graph.findDataById(curNodeId);
-        clipboard.writeText(JSON.stringify(data, null, 2));
+        const data = this.graph.findDataById(curNodeId) as GraphNodeModel;
+        clipboard.writeText(JSON.stringify(Utils.cloneNodeData(data), null, 2));
     }
 
     pasteNode() {
@@ -367,15 +367,17 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                 return;
             }
             this.onSelectNode(null);
-            const data = JSON.parse(str);
+            const data  = Utils.createTreeData(JSON.parse(str), this.state.settings);
+            this.autoId = Utils.refreshNodeId(data, this.autoId);
             if (!curNodeData.children) {
                 curNodeData.children = [];
             }
             curNodeData.children.push(data);
-            this.autoId = Utils.refreshNodeId(this.graph.findDataById("1") as GraphNodeModel);
+            // this.autoId = Utils.refreshNodeId(this.graph.findDataById("1") as GraphNodeModel);
             this.changeWithoutAnim();
         } catch (error) {
             message.error("粘贴数据有误");
+            console.error("paste error", error);
         }
     }
 
@@ -407,8 +409,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                                 }}
                             />
                         ) : (
-                            <TreePanel model={treeModel} />
-                        )}
+                                <TreePanel model={treeModel} />
+                            )}
                     </Col>
                 </Row>
             </div>

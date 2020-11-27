@@ -5,11 +5,35 @@ import { remote } from "electron";
 import * as path from "path";
 
 export const cloneNodeData = (nodeData: GraphNodeModel) => {
-    const newData: GraphNodeModel = {
-        id: nodeData.id + "new",
+    const newData: BehaviorNodeModel = {
+        id: Number(nodeData.id),
         name: nodeData.name,
-        conf: nodeData.conf,
     };
+    if(nodeData.input) {
+        newData.input = [];
+        for(let v of nodeData.input){
+            newData.input.push(v || "");
+        }
+    }
+    if(nodeData.output) {
+        newData.output = [];
+        for(let v of nodeData.output){
+            newData.output.push(v || "");
+        }
+    }
+    if(nodeData.args) {
+        newData.args = {};
+        for(let k in nodeData.args) {
+            let v = nodeData.args[k];
+            newData.args[k] = v;
+        }
+    }
+    if(nodeData.children) {
+        newData.children = []
+        for(let child of nodeData.children) {
+            newData.children.push(cloneNodeData(child));
+        }
+    }
     return newData;
 };
 
