@@ -366,9 +366,9 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             if (!str || str == "") {
                 return;
             }
-            this.onSelectNode(null);
             const data  = Utils.createTreeData(JSON.parse(str), this.state.settings);
             this.autoId = Utils.refreshNodeId(data, this.autoId);
+            this.onSelectNode(null);
             if (!curNodeData.children) {
                 curNodeData.children = [];
             }
@@ -376,8 +376,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             // this.autoId = Utils.refreshNodeId(this.graph.findDataById("1") as GraphNodeModel);
             this.changeWithoutAnim();
         } catch (error) {
-            message.error("粘贴数据有误");
-            console.error("paste error", error);
+            // message.error("粘贴数据有误");
+            console.log("paste error");
         }
     }
 

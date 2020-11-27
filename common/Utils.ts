@@ -71,6 +71,7 @@ export const createTreeData = (bNode: BehaviorNodeModel, settings: Settings) => 
         args: bNode.args,
         input: bNode.input,
         output: bNode.output,
+        debug: bNode.debug,
         conf: settings.getNodeConf(bNode.name),
     };
     treeData.size = calcTreeNodeSize(treeData);
@@ -92,6 +93,7 @@ export const createFileData = (gNode: GraphNodeModel) => {
         args: gNode.args || undefined,
         input: gNode.input || undefined,
         output: gNode.output || undefined,
+        debug: gNode.debug,
     };
     if (gNode.children) {
         nodeData.children = [];
