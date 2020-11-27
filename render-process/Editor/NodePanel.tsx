@@ -79,6 +79,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
             forceUpdate = true;
         }
         model.desc = values.desc;
+        model.debug = values.debug;
 
         var args: any = {};
         if (values.customArgs) {
