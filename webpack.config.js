@@ -23,15 +23,16 @@ module.exports = {
       { test: /\.(jpe?g|png|gif|svg)$/i, loader: "file-loader" },
       { enforce: "pre", test: /\.js$/, loader: "source-map-loader" },
       {
-        test: /\.css$/,
-        loaders: ['style-loader', 'css-loader']
+        test: /\.(sass|less|css)$/,
+        loaders: ['style-loader', 'css-loader', 'less-loader']
       },
       {//https://github.com/ashtuchkin/iconv-lite/issues/205
         test: /node_modules[\/\\](iconv-lite)[\/\\].+/,
         resolve: {
           aliasFields: ['main']
         }
-      }
+      },
+     
     ]
   },
 

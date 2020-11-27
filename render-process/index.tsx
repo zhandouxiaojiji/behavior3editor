@@ -5,13 +5,13 @@ import { Layout, message, Tabs } from "antd";
 import { ipcRenderer, remote } from "electron";
 import * as Utils from "../common/Utils";
 import MainEventType from "../common/MainEventType";
-import Properties from "./Properties";
 import Settings from "../main-process/Settings";
 
 import "antd/dist/antd.dark.css";
 import "./index.css";
 import RegisterNode from "./RegisterNode";
 import TreeTabs from "./TreeTabs";
+import Explorer from "./Explorer";
 
 const { Sider, Content } = Layout;
 
@@ -82,7 +82,7 @@ export default class Main extends Component {
             <Layout className="body">
                 <Sider className="sider" width={250}>
                     {workdir !== "" ? (
-                        <Properties
+                        <Explorer
                             workdir={workdir}
                             onOpenTree={(path) => {
                                 this.tabs.openFile(path);

@@ -1,68 +1,55 @@
 import React, { ChangeEvent, Component } from "react";
-import { Input, Tree, Dropdown } from "antd";
+import { Input } from "antd";
+import { Tree } from "shineout";
+import {FolderOutlined ,FileOutlined,FolderOpenOutlined} from "@ant-design/icons";
 import * as fs from "fs";
 import * as path from "path";
 import { ipcRenderer } from "electron";
 import MainEventType from "../common/MainEventType";
-import { DataNode } from "antd/lib/tree";
-import { EventDataNode, IconType } from "rc-tree/lib/interface";
 
-const { Search } = Input;
-const { DirectoryTree, TreeNode } = Tree;
+const {Search} = Input;
+const DirectoryTree = Tree;
 
-export interface PropertiesProps {
-    workdir: string;
-    onOpenTree: (path: string) => void;
-    onDeleteTree: (path: string) => void;
-}
 
-class FileDataNode implements DataNode {
-    checkable?: boolean;
-    children?: FileDataNode[];
-    disabled?: boolean;
-    disableCheckbox?: boolean;
-    icon?: IconType;
-    isLeaf?: boolean;
-    key: React.ReactText;
-    title?: React.ReactNode;
-    selectable?: boolean;
-    switcherIcon?: IconType;
-    className?: string;
-    style?: React.CSSProperties;
+class FileDataNode {
+    name: string; //display name
+    filepath: string; //file full path
+    isFolder: boolean;
 
     parent: FileDataNode;
     visible: boolean = true;
+    children: FileDataNode[];
 
     public constructor(init?: Partial<FileDataNode>) {
         Object.assign(this, init);
     }
 
-    get isFolder() {
-        return this.isLeaf !== void 0 && !this.isLeaf;
+    get id() {
+        return this.filepath;
     }
 
-    get name() {
-        return this.title as string;
+    get text() {
+        return this.name;
     }
 
     get path() {
-        return this.key as string;
+        return this.filepath;
     }
 
     public getRenderData() {
-        if(!this.visible){
+        if (!this.visible) {
             return null;
         }
-        let ret = {
-            title: this.title,
-            key: this.key,
-            isLeaf: this.isLeaf,
-            children: new Array()
-        };
+        let ret = new FileDataNode({
+            name: this.name,
+            filepath: this.filepath,
+            isFolder: this.isFolder,
+            children: new Array(),
+        });
 
         for (const child of this.children) {
             const data = child.getRenderData();
-            if(data){
+            if (data) {
                 ret.children.push(data);
             }
         }
@@ -70,7 +57,7 @@ class FileDataNode implements DataNode {
     }
 
     loadChilds(recursive?: boolean) {
-        const folder = this.key as string;
+        const folder = this.path;
         if (folder == "" || !fs.existsSync(folder)) {
             return [];
         }
@@ -82,9 +69,9 @@ class FileDataNode implements DataNode {
             const isFolder = stat.isDirectory();
             const name = isFolder ? filename : filename.slice(0, -5);
             const node = new FileDataNode({
-                title: name,
-                key: fullPath,
-                isLeaf: !isFolder,
+                name: name,
+                filepath: fullPath,
+                isFolder: isFolder,
                 parent: this,
             });
 
@@ -92,15 +79,60 @@ class FileDataNode implements DataNode {
                 isFolder && recursive ? (node.loadChilds(recursive) as FileDataNode[]) : []),
                 list.push(node);
         });
+        list.sort((a, b) => {
+            const av = a.isFolder ? 100 : 0;
+            const bv = b.isFolder ? 100 : 0;
+            return bv - av;
+        });
         return list;
     }
+
+
+    // async updateChilds(recursive?: boolean): Promise<FileDataNode[]> {
+    //     const folder = this.path;
+    //     if (folder == "" || !fs.existsSync(folder)) {
+    //         return [];
+    //     }
+    //     this.loading = true;
+    //     await fs.promises.readdir(folder).then((files) => {
+    //         this.loading = false;
+    //         let list = new Array<FileDataNode>();
+    //         files.forEach((filename) => {
+    //             const fullPath = path.join(folder, filename);
+    //             const stat = fs.statSync(fullPath);
+    //             const isFolder = stat.isDirectory();
+    //             const name = isFolder ? filename : filename.slice(0, -5);
+    //             const node = new FileDataNode({
+    //                 name: name,
+    //                 filepath: fullPath,
+    //                 isFolder: isFolder,
+    //                 parent: this,
+    //                 children: [],
+    //             });
+
+    //             if (isFolder && recursive) {
+    //                 node.updateChilds(recursive).then((children)=>{
+    //                     node.children = children;
+    //                 });
+    //             }
+    //             list.push(node);
+    //         });
+    //         list.sort((a, b) => {
+    //             const av = a.isFolder ? 100 : 0;
+    //             const bv = b.isFolder ? 100 : 0;
+    //             return bv - av;
+    //         });
+    //         this.children = list;
+    //     });
+    //     return this.children;
+    // }
 
     addChild(filePath: string) {
         const isDir = fs.statSync(filePath).isDirectory();
         const newNode = new FileDataNode({
-            title: path.basename(filePath),
-            key: filePath,
-            isLeaf: !isDir,
+            name: path.basename(filePath),
+            filepath: filePath,
+            isFolder: isDir,
             parent: this,
             children: [],
         });
@@ -116,15 +148,17 @@ class FileDataNode implements DataNode {
     }
 
     expandSelf(recursive: boolean = true) {
-        if (this.isFolder) this.children = this.loadChilds(recursive);
+        if (this.isFolder) {
+            this.children = this.loadChilds(recursive);
+        }
     }
 
-    findChild(key: string): FileDataNode {
+    findChild(id: string): FileDataNode {
         for (const child of this.children) {
-            if (child.key == key) {
+            if (child.id == id) {
                 return child;
             } else {
-                const ret = child.findChild(key);
+                const ret = child.findChild(id);
                 if (ret) {
                     return ret;
                 }
@@ -142,12 +176,12 @@ class FileDataNode implements DataNode {
         return ret;
     }
 
-    setVisible(keyWord:string){
+    setVisible(keyWord: string) {
         let ret = false;
-        for (let i = this.children.length-1;i >= 0;i--) {
+        for (let i = this.children.length - 1; i >= 0; i--) {
             const child = this.children[i];
-            if (child.isLeaf) {
-                const keyStr = child.title as string;
+            if (!child.isFolder) {
+                const keyStr = child.id;
                 child.visible = keyStr.includes(keyWord);
             } else {
                 child.visible = child.setVisible(keyWord);
@@ -164,9 +198,17 @@ class FileDataNode implements DataNode {
     // children?: NodeData[];
 }
 
-interface PropertiesState {
+export interface ExplorerProps {
+    workdir: string;
+    onOpenTree: (path: string) => void;
+    onDeleteTree: (path: string) => void;
+}
+
+
+interface ExplorerState {
     root: FileDataNode;
     searchKey: string;
+    selectedKey: string;
     defaultExpandedKeys: string[];
     expandedKeys: string[];
     autoExpandParent: boolean;
@@ -185,10 +227,11 @@ const NodeActions: { [x: string]: string } = {
     ["reveal_in_explorer"]: "Reveal In File Explorer",
 };
 
-export default class Properties extends Component<PropertiesProps> {
-    state: PropertiesState = {
-        root: null,
+export default class Explorer extends Component<ExplorerProps> {
+    state: ExplorerState = {
+        root: this.getRootNode(this.props.workdir),
         searchKey: "",
+        selectedKey: "",
         rightClickNode: null,
         expandedKeys: [],
         defaultExpandedKeys: [],
@@ -197,7 +240,7 @@ export default class Properties extends Component<PropertiesProps> {
 
     curWorkdir: string = "";
 
-    shouldComponentUpdate(nextProps: PropertiesProps) {
+    shouldComponentUpdate(nextProps: ExplorerProps) {
         const shouldUpdate = this.curWorkdir != nextProps.workdir;
         this.curWorkdir = nextProps.workdir;
         return shouldUpdate;
@@ -226,21 +269,23 @@ export default class Properties extends Component<PropertiesProps> {
             return;
         }
         const root = this.getRootNode(workdir);
-        root.expandSelf();
+        root.expandSelf()
         this.setState({
             root: root,
-            expandedKeys: [root.key],
-            defaultExpandedKeys: [root.key]
+            expandedKeys: [root.id],
+            defaultExpandedKeys: [root.id],
         });
+
+        this.forceUpdate();
     }
 
     getRootNode(workdir: string) {
         return new FileDataNode({
-            title: path.basename(workdir),
-            key: workdir,
-            isLeaf: false,
+            name: path.basename(workdir),
+            filepath: workdir,
+            isFolder: true,
             parent: null,
-            children: [],
+            children: []
         });
     }
 
@@ -268,28 +313,27 @@ export default class Properties extends Component<PropertiesProps> {
         const expandedKeys = this.state.root
             .getList()
             .map((item) => {
-                if (!item.isLeaf)
-                    return null;
-                const title = item.title as string;
+                if (item.isFolder) return null;
+                const title = item.text;
                 if (title.includes(value) && item.parent) {
-                    return item.parent.key;
+                    return item.parent.id;
                 }
                 return null;
             })
             .filter((item, i, self) => item && self.indexOf(item) === i);
 
         const root = this.state.root;
-        root.setVisible(value||"");
+        root.setVisible(value || "");
         if (value && value.length > 0) {
             this.setState({
-                root:root,
+                root: root,
                 searchKey: value,
                 expandedKeys: expandedKeys,
                 autoExpandParent: true,
             });
         } else {
             this.setState({
-                root:root,
+                root: root,
                 searchKey: "",
                 expandedKeys: this.state.defaultExpandedKeys,
                 autoExpandParent: false,
@@ -299,97 +343,86 @@ export default class Properties extends Component<PropertiesProps> {
         this.forceUpdate();
     }
 
-    titleRender(node: DataNode): React.ReactNode {
-        const titleStr = node.title as string;
+    renderItem(node: FileDataNode) {
+        if(!node.visible){
+            return null;
+        }
+        const titleStr = node.text;
         const searchKey = this.state.searchKey;
         const index = titleStr.indexOf(searchKey);
         const beforeStr = titleStr.substr(0, index);
         const afterStr = titleStr.substr(index + searchKey.length);
+        const expended = this.state.expandedKeys.includes(node.id );
 
-        //return (<span>{titleStr}</span>)
-        return node.isLeaf && index > -1 ? (
-            <span>
-                {beforeStr}
-                <span className="site-tree-search-value">{searchKey}</span>
-                {afterStr}
-            </span>
-        ) : (
-                <span>{titleStr}</span>
-            );
-    }
-
-    handleOnLoadData(loadNode: EventDataNode) {
-        return new Promise((resolve) => {
-            const root = this.state.root;
-
-            const node = root.findChild(loadNode.key as string);
-            if (node) {
-                node.expandSelf();
-                this.setState({ root: root });
-                this.forceUpdate();
-            }
-
-            resolve();
-            return;
-        });
+        return (
+            <div
+                className="explorer-node"
+                key={node.id}
+                onMouseMove={() => {}}
+            >
+                {node.isFolder?(expended?<FolderOpenOutlined />:<FolderOutlined />):<FileOutlined />}
+                {!node.isFolder && index > -1 ? (
+                    <span className="explorer-node-title">
+                        {beforeStr}
+                        <span className="explorer-node-search-value">{searchKey}</span>
+                        {afterStr}
+                    </span>
+                ) : (
+                    <span className="explorer-node-title">{titleStr}</span>
+                )}
+            </div>
+        );
     }
 
     render() {
-        console.log("render Properties");
+        console.log("render Explorer");
         const { onOpenTree, onDeleteTree, workdir } = this.props;
+
         const root = this.state.root;
+        if (!workdir || workdir === "") {
+            return `请打开workspace.json文件`;
+        }
+
         const nodes = root ? [root.getRenderData()] : [];
-        return nodes.length ? (
+
+        return (
             <div>
                 <Search
                     allowClear
                     placeholder="Search"
-                    // onChange={(e)=>{
+                    // onChange={(e) => {
                     //     const value = e.target.value?.toLowerCase();
                     //     this.handleOnSearch(value);
                     // }}
-                    onSearch={
-                        (value,event)=>{
-                            this.handleOnSearch(value?.toLowerCase());
-                        }
-                    }
-                />
+                    onSearch={(value, event) => {
+                        this.handleOnSearch(value?.toLowerCase());
+                    }}
+                /> 
+
                 <DirectoryTree
-                    selectable
-                    // showLine
-                    checkStrictly
-                    expandAction="click"
-                    expandedKeys={this.state.expandedKeys}
-                    autoExpandParent={this.state.autoExpandParent}
-                    titleRender={this.titleRender.bind(this)}
-                    treeData={nodes}
-                    defaultExpandedKeys={[root.key]}
-                    onSelect={(keys, info) => {
-                        //console.log("onSelect", keys, info);
-                        if (info.node.isLeaf) {
-                            onOpenTree(keys[0] as string);
+                    keygen="id"
+                    data={nodes}
+                    line={true}
+                    doubleClickExpand
+                    // expandIcons={[<DownOutlined />, <RightOutlined />]}
+                    //defaultValue={[root.id]}
+                    defaultExpanded={[root.id]}
+                    expanded={this.state.expandedKeys}
+                    value={[this.state.selectedKey]}
+                    onExpand={(expanded)=>{
+                        this.setState({ expandedKeys: expanded })
+                    }}
+                    renderItem={this.renderItem.bind(this)}
+                    onClick={(node: FileDataNode) => {
+                        if (!node.isFolder) {
+                            onOpenTree(node.path);
+                            this.setState({
+                                selectedKey:node.id
+                            })
                         }
                     }}
-                    onExpand={(keys, info) => {
-                        this.setState({
-                            expandedKeys: keys,
-                            autoExpandParent: false
-                        })
-                        // if (info.expanded && !info.node.expanded) {
-                        //     //let newRoot = _.cloneDeep(root);
-                        //     const node = root.findChild(info.node.key as string);
-                        //     if (node) {
-                        //         node.expandSelf();
-                        //         this.setState({ root: root });
-                        //     }
-                        // }
-                        this.forceUpdate();
-                    }}
-                    loadData={this.handleOnLoadData.bind(this)}
                 ></DirectoryTree>
             </div>
-        ) : (
-                `Work Dir (${workdir}) Empty`
-            );
+        );
     }
 }

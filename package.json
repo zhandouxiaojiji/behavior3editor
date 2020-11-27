@@ -36,6 +36,8 @@
     "electron-localshortcut": "^3.2.1",
     "electron-packager": "^15.1.0",
     "file-loader": "^6.1.1",
+    "less": "^3.12.2",
+    "less-loader": "^7.1.0",
     "source-map-loader": "^1.1.0",
     "style-loader": "^2.0.0",
     "ts-loader": "^8.0.4",
@@ -56,6 +58,7 @@
     "react-markdown": "^5.0.2",
     "rimraf": "^3.0.2",
     "sanitize-filename": "^1.6.3",
+    "shineout": "^1.6.1",
     "sync-request": "^6.1.0"
   }
 }
