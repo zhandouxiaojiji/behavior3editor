@@ -10,4 +10,6 @@ export default {
     SAVE: "SAVE",
     SAVE_ALL: "SAVE_ALL",
     RELOAD_SERVER: "RELOAD_SERVER",
+    UNDO: "UNDO",
+    REDO: "REDO",
 };

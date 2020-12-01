@@ -28,9 +28,10 @@ export default class AppMenu {
 
     createMenu() {
         const menu: Menu = new Menu();
-        menu.append(this.createWorkspaceMenu());
         menu.append(this.createFileMenu());
+        menu.append(this.createEditMenu());
         menu.append(this.createNodeMenu());
+        menu.append(this.createWorkspaceMenu());
         menu.append(this.createToolsMenu());
         return menu;
     }
@@ -133,6 +134,28 @@ export default class AppMenu {
                         })();
                     },
                 },
+            ],
+        });
+    }
+
+    private createEditMenu() {
+        return new MenuItem({
+            label: "编辑",
+            submenu: [
+                {
+                    label: "撤销",
+                    accelerator: "ctrl+z",
+                    click: () => {
+                        this.webContents.send(MainEventType.UNDO);
+                    }
+                },
+                {
+                    label: "恢复",
+                    accelerator: "ctrl+y",
+                    click: () => {
+                        this.webContents.send(MainEventType.REDO);
+                    }
+                },
                 { type: "separator" },
                 {
                     label: "新建节点",
@@ -164,8 +187,8 @@ export default class AppMenu {
                         this.webContents.send(MainEventType.PASTE_NODE);
                     },
                 },
-            ],
-        });
+            ]
+        })
     }
 
     private createWorkspaceMenu() {

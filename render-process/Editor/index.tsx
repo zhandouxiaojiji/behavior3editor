@@ -16,6 +16,7 @@ import Settings from "../../main-process/Settings";
 
 import "./Editor.css";
 import { clipboard } from "electron";
+import { TreeGraphData } from "@antv/g6/lib/types";
 
 export interface EditorProps {
     filepath: string;
@@ -35,6 +36,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     private dragSrcId: string;
     private dragDstId: string;
     private autoId: number;
+    private undoStack: BehaviorNodeModel[] = [];
+    private redoStack: BehaviorNodeModel[] = [];
 
     constructor(props: EditorProps) {
         super(props);
@@ -219,6 +222,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             }
 
             const removeSrc = () => {
+                this.pushUndoStack();
                 srcParent.children = srcParent.children.filter((e) => e.id != srcData.id);
             };
             console.log("dstNode", dstNode);
@@ -286,6 +290,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             message.warn("未选中节点");
             return;
         }
+        this.pushUndoStack();
         const curNodeData = this.graph.findDataById(curNodeId);
         const newNodeData: BehaviorNodeModel = {
             id: this.autoId++,
@@ -311,15 +316,17 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         }
 
         this.onSelectNode(null);
+        this.pushUndoStack();
         const rootData = this.graph.findDataById("1");
         const parentData = Utils.findParent(rootData, curNodeId);
         parentData.children = parentData.children.filter((e) => e.id != curNodeId);
         this.changeWithoutAnim();
     }
 
-    updateNode(id: string) {
-        this.graph.changeData();
-        this.graph.layout();
+    pushUndoStack() {
+        this.undoStack.push(Utils.cloneNodeData(this.graph.findDataById('1') as GraphNodeModel));
+        console.log("push", this.undoStack);
+        this.redoStack = [];
     }
 
     changeWithoutAnim() {
@@ -366,7 +373,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             if (!str || str == "") {
                 return;
             }
-            const data  = Utils.createTreeData(JSON.parse(str), this.state.settings);
+            this.pushUndoStack();
+            const data = Utils.createTreeData(JSON.parse(str), this.state.settings);
             this.autoId = Utils.refreshNodeId(data, this.autoId);
             this.onSelectNode(null);
             if (!curNodeData.children) {
@@ -379,6 +387,30 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             // message.error("粘贴数据有误");
             console.log("paste error");
         }
+    }
+
+    undo() {
+        if (this.undoStack.length == 0) {
+            return;
+        }
+        const data = this.undoStack.pop();
+        this.graph.set("animate", false);
+        this.graph.changeData(Utils.createTreeData(data, this.state.settings));
+        this.graph.layout();
+        this.graph.set("animate", true);
+        this.redoStack.push(data);
+    }
+
+    redo() {
+        if (this.redoStack.length == 0) {
+            return;
+        }
+        const data = this.redoStack.pop();
+        this.graph.set("animate", false);
+        this.graph.changeData(Utils.createTreeData(data, this.state.settings));
+        this.graph.layout();
+        this.graph.set("animate", true);
+        this.undoStack.push(data);
     }
 
     render() {
@@ -399,6 +431,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                                 settings={settings}
                                 updateNode={(id, forceUpdate) => {
                                     if (forceUpdate) {
+                                        this.pushUndoStack();
                                         const data: any = this.graph.findDataById(id);
                                         data.conf = settings.getNodeConf(data.name);
                                         data.size = Utils.calcTreeNodeSize(data);

@@ -62,6 +62,16 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
             }
             message.success("已保存所有行为树");
         });
+
+        ipcRenderer.on(MainEventType.UNDO, () => {
+            const editor = this.getCurEditor();
+            editor?.undo();
+        });
+
+        ipcRenderer.on(MainEventType.REDO, () => {
+            const editor = this.getCurEditor();
+            editor?.redo();
+        });
     }
 
     getOpenTreesModel() {
