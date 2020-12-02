@@ -13,6 +13,8 @@ import MainEventType from "../common/MainEventType";
 import { MainProcess } from "./MainProcess";
 import Settings from "./Settings";
 
+const packageConf = require("../package.json");
+
 export default class AppMenu {
     private mainProcess: MainProcess;
     private mainWindow: BrowserWindow;
@@ -369,6 +371,12 @@ export default class AppMenu {
                         browserWindow.reload();
                     },
                 },
+                {
+                    type: 'separator',
+                },
+                {
+                    label: `当前版本：${packageConf.version}`
+                }
             ],
         });
     }
