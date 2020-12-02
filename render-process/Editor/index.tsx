@@ -50,6 +50,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             width: window.screen.width * 0.66,
             height: window.screen.height,
             animate: false,
+            maxZoom: 2,
             // fitCenter: true,
             modes: {
                 default: [
@@ -323,12 +324,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         this.changeWithoutAnim();
     }
 
-    pushUndoStack() {
-        this.undoStack.push(Utils.cloneNodeData(this.graph.findDataById('1') as GraphNodeModel));
-        console.log("push", this.undoStack);
-        this.redoStack = [];
-    }
-
     changeWithoutAnim() {
         this.graph.set("animate", false);
         this.graph.changeData();
@@ -389,16 +384,33 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         }
     }
 
+    useStackData(data: BehaviorNodeModel) {
+        this.graph.set("animate", false);
+        this.graph.changeData(Utils.createTreeData(data, this.state.settings));
+        this.graph.layout(true);
+        this.graph.set("animate", true);
+    }
+
+    pushUndoStack(keepRedo?: boolean) {
+        this.undoStack.push(Utils.cloneNodeData(this.graph.findDataById('1') as GraphNodeModel));
+        console.log("push undo", this.undoStack);
+        if (!keepRedo) {
+            this.redoStack = [];
+        }
+    }
+
+    pushRedoStack() {
+        this.redoStack.push(Utils.cloneNodeData(this.graph.findDataById('1') as GraphNodeModel));
+        console.log("push redo", this.redoStack);
+    }
+
     undo() {
         if (this.undoStack.length == 0) {
             return;
         }
         const data = this.undoStack.pop();
-        this.graph.set("animate", false);
-        this.graph.changeData(Utils.createTreeData(data, this.state.settings));
-        this.graph.layout();
-        this.graph.set("animate", true);
-        this.redoStack.push(data);
+        this.pushRedoStack();
+        this.useStackData(data);
     }
 
     redo() {
@@ -406,11 +418,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             return;
         }
         const data = this.redoStack.pop();
-        this.graph.set("animate", false);
-        this.graph.changeData(Utils.createTreeData(data, this.state.settings));
-        this.graph.layout();
-        this.graph.set("animate", true);
-        this.undoStack.push(data);
+        this.pushUndoStack(true);
+        this.useStackData(data);
     }
 
     render() {
@@ -431,7 +440,6 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                                 settings={settings}
                                 updateNode={(id, forceUpdate) => {
                                     if (forceUpdate) {
-                                        this.pushUndoStack();
                                         const data: any = this.graph.findDataById(id);
                                         data.conf = settings.getNodeConf(data.name);
                                         data.size = Utils.calcTreeNodeSize(data);
@@ -439,6 +447,9 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                                     }
                                     const item = this.graph.findById(id);
                                     item.draw();
+                                }}
+                                pushUndoStack={() => {
+                                    this.pushUndoStack();
                                 }}
                             />
                         ) : (

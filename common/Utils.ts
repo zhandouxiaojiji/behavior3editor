@@ -8,6 +8,7 @@ export const cloneNodeData = (nodeData: GraphNodeModel) => {
     const newData: BehaviorNodeModel = {
         id: Number(nodeData.id),
         name: nodeData.name,
+        desc: nodeData.desc,
     };
     if(nodeData.input) {
         newData.input = [];

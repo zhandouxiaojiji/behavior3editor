@@ -27,6 +27,7 @@ interface NodePanelProps {
     model: BehaviorNodeModel;
     settings: Settings;
     updateNode: (id: string, forceUpdate: boolean) => void;
+    pushUndoStack: () => void;
 }
 
 interface NodePanelState {}
@@ -67,20 +68,12 @@ export default class NodePanel extends React.Component<NodePanelProps> {
 
     onFinish = (values: any) => {
         console.log("Success:", values);
-        const { updateNode, model, settings } = this.props;
+        const { updateNode, pushUndoStack, model, settings } = this.props;
         const conf = settings.getNodeConf(values.name);
         if (!conf) {
             notification.warn({ message: `节点${values.name}未定义` });
             return;
         }
-        var forceUpdate = false;
-        if (model.name != values.name) {
-            model.name = values.name;
-            forceUpdate = true;
-        }
-        model.desc = values.desc;
-        model.debug = values.debug;
-
         var args: any = {};
         if (values.customArgs) {
             try {
@@ -90,6 +83,16 @@ export default class NodePanel extends React.Component<NodePanelProps> {
                 return;
             }
         }
+
+        pushUndoStack();
+
+        var forceUpdate = false;
+        if (model.name != values.name) {
+            model.name = values.name;
+            forceUpdate = true;
+        }
+        model.desc = values.desc;
+        model.debug = values.debug;
 
         if (conf.args) {
             conf.args.forEach((e) => {
