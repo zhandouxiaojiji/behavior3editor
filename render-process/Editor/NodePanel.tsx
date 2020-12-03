@@ -213,12 +213,13 @@ export default class NodePanel extends React.Component<NodePanelProps> {
                 return <Switch onChange={this.handleSubmit} />;
             } else if (e.type.indexOf("lua") >= 0) {
                 return <Input onBlur={this.handleSubmit} placeholder={"公式"} />;
-            } else if (e.type.indexOf("enum") >= 0) {
-                const list = e.type.substring(e.type.indexOf("|")+1).split(',')
+            } else if (e.type.indexOf("enum") >= 0 ) {
                 return <Select style={{ width: 120 }} onChange={this.handleSubmit} >
-                    {list.map((e)=>{
-                        return (<Option key={e} value={e}>{e}</Option>)
-                    })}
+                    {
+                    e.options.map((e)=>{
+                        return (<Option key={e.name} value={e.value}>{e.name}</Option>)
+                    })
+                    }
                 </Select>;
             }
         };

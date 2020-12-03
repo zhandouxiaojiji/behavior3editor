@@ -1,10 +1,16 @@
 import { TreeGraphData } from "@antv/g6/lib/types";
 
+export interface ArgsOptional{
+    name:string;
+    value:string|number;
+}
+
 export interface ArgsDefType {
     name: string;
     type: string;
     desc: string;
     default: string;
+    options: ArgsOptional[];
 }
 export interface BehaviorNodeTypeModel {
     name: string;
