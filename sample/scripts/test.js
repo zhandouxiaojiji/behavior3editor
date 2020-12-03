@@ -5,12 +5,12 @@
 */
 ({
     processTree: (tree) => {
-        console.log("processTree", tree.name);
+        console.log(`processTree ${tree.name}`);
         if (tree.name == "hero") {
             return tree;
         }
     },
-    processNode: (node) => {
-        console.log("processNode", node.id)
+    processNode: (node, tree) => {
+        console.log(`processNode ${tree.name}.${node.id}`);
     }
 })
