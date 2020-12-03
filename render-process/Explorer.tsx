@@ -384,11 +384,11 @@ export default class Explorer extends Component<ExplorerProps> {
         const { onOpenTree, onDeleteTree, workdir } = this.props;
 
         const root = this.state.root;
-        if (!workdir || workdir === "" ) {
-            return (<div>请打开workspace.json文件</div>);
+        if (!workdir || workdir === "" || !root) {
+            return `请打开workspace.json文件`;
         }
 
-        const nodes = root ? [root.getRenderData()] : [];
+        const nodes = [root.getRenderData()];
 
         return (
             <div>
