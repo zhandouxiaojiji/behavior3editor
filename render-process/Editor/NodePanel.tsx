@@ -22,6 +22,7 @@ import { FormInstance } from "antd/lib/form";
 import Markdown from "react-markdown";
 
 const { Item } = Form;
+const { Option } = Select;
 
 interface NodePanelProps {
     model: BehaviorNodeModel;
@@ -212,6 +213,13 @@ export default class NodePanel extends React.Component<NodePanelProps> {
                 return <Switch onChange={this.handleSubmit} />;
             } else if (e.type.indexOf("lua") >= 0) {
                 return <Input onBlur={this.handleSubmit} placeholder={"公式"} />;
+            } else if (e.type.indexOf("enum") >= 0) {
+                const list = e.type.substring(e.type.indexOf("|")+1).split(',')
+                return <Select style={{ width: 120 }} onChange={this.handleSubmit} >
+                    {list.map((e)=>{
+                        return (<Option key={e} value={e}>{e}</Option>)
+                    })}
+                </Select>;
             }
         };
 
@@ -235,6 +243,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
                         const required = e.type.indexOf("?") == -1;
                         return (
                             <Item
+                                initialValue={e.default}
                                 name={`args.${e.name}`}
                                 label={e.desc}
                                 key={`args.${e.name}`}

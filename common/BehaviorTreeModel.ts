@@ -4,6 +4,7 @@ export interface ArgsDefType {
     name: string;
     type: string;
     desc: string;
+    default: string;
 }
 export interface BehaviorNodeTypeModel {
     name: string;
