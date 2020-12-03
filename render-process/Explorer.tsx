@@ -280,13 +280,17 @@ export default class Explorer extends Component<ExplorerProps> {
     }
 
     getRootNode(workdir: string) {
-        return new FileDataNode({
-            name: path.basename(workdir),
-            filepath: workdir,
-            isFolder: true,
-            parent: null,
-            children: []
-        });
+        if(workdir && workdir!==""){
+            return new FileDataNode({
+                name: path.basename(workdir),
+                filepath: workdir,
+                isFolder: true,
+                parent: null,
+                children: []
+            });
+        }else{
+            return null;
+        }
     }
 
     // renderContextMeun(selectedNode: FileDataNode) {
@@ -379,8 +383,8 @@ export default class Explorer extends Component<ExplorerProps> {
         const { onOpenTree, onDeleteTree, workdir } = this.props;
 
         const root = this.state.root;
-        if (!workdir || workdir === "") {
-            return `请打开workspace.json文件`;
+        if (!workdir || workdir === "" ) {
+            return (<div>请打开workspace.json文件</div>);
         }
 
         const nodes = root ? [root.getRenderData()] : [];
