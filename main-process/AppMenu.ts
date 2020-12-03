@@ -345,14 +345,28 @@ export default class AppMenu {
             label: "开发工具",
             submenu: [
                 {
-                    label: "联调服务器",
-                    submenu: serverItems,
-                },
-                {
                     label: "热更",
                     accelerator: "Ctrl+R",
                     click: () => {
                         this.webContents.send(MainEventType.RELOAD_SERVER);
+                    }
+                },
+                {
+                    label: "联调服务器",
+                    submenu: serverItems,
+                },
+                {
+                    label: "处理脚本",
+                    click: () => {
+                        (async () => {
+                            const res = await dialog.showOpenDialog({
+                                properties: ["openFile"],
+                                filters: [{ name: "Javascript", extensions: ["js"] }],
+                            });
+                            if (res.filePaths.length > 0) {
+                                this.webContents.send(MainEventType.BATCH_EXEC, res.filePaths[0]);
+                            }
+                        })();
                     }
                 },
                 {

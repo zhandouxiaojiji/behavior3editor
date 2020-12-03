@@ -12,6 +12,7 @@ import "./index.css";
 import RegisterNode from "./RegisterNode";
 import TreeTabs from "./TreeTabs";
 import Explorer from "./Explorer";
+import BatchExec from "../common/BatchExec";
 
 const { Sider, Content } = Layout;
 
@@ -61,6 +62,10 @@ export default class Main extends Component {
                 })
             });
             message.success("服务器已更新");
+        })
+
+        ipcRenderer.on(MainEventType.BATCH_EXEC, (event: any, path: string)=>{
+            BatchExec(path, this.state.workdir);
         })
 
         console.log("workdir", this.settings.curWorkspace.getWorkdir());

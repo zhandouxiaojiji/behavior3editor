@@ -12,4 +12,5 @@ export default {
     RELOAD_SERVER: "RELOAD_SERVER",
     UNDO: "UNDO",
     REDO: "REDO",
+    BATCH_EXEC: "BATCH_EXEC",
 };

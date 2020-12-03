@@ -10,9 +10,10 @@
 + 行为树->新建
 
 ## 示例项目
-+ 工作区: sample/sample-workspace.json
-+ 节点定义: sample/sample-node-config.json
-+ 行为树目录: sample/sample-workdir
++ 工作区: sample/workspace.json
++ 节点定义: sample/node-config.json
++ 行为树目录: sample/workdir
++ 批处理脚本: sample/scripts
 
 Tips: workspace.json也可以手动编辑,加上isRelative可以让配置中的路径变成相对路径，这样就不需要团队中每个人在使用前都必须先创建工作区
 
@@ -44,9 +45,9 @@ npm run dist # 编译exe可执行文件
 
 ## 技术栈
 + react + ts
-+ g6
-+ antd
 + electron
++ antd
++ g6
 
 ## 示例行为树框架
 + lua版本 [behavior3lua](https://github.com/zhandouxiaojiji/behavior3lua)
@@ -54,6 +55,9 @@ npm run dist # 编译exe可执行文件
 
 ## TODO
 + 右键菜单
++ 面板拖拽新建节点
++ 未保存的行为树标星号
++ 异步加载界面
 
 ## About
 目前编辑器还处于非常简陋的阶段，有问题可以联系作者(QQ1013299930)，本项目将长期维护，望前端大佬们多提点~
