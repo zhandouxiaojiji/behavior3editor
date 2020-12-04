@@ -10,7 +10,9 @@ import { BehaviorTreeModel } from "../common/BehaviorTreeModel";
 
 const { TabPane } = Tabs;
 
-interface TreeTabsProps {}
+interface TreeTabsProps {
+    onTabSelected:(path:string)=>void;
+}
 
 interface TreeTabsState {
     filepaths: string[];
@@ -97,9 +99,13 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
         if (this.state.filepaths.indexOf(path) < 0) {
             const filepaths = this.state.filepaths;
             filepaths.push(path);
-            this.setState({ filepaths, curPath: path });
+            this.setState({ filepaths, curPath: path },()=>{
+                this.props.onTabSelected(path);
+            });
         } else {
-            this.setState({ curPath: path });
+            this.setState({ curPath: path },()=>{
+                this.props.onTabSelected(path);
+            });
         }
     }
 
@@ -128,7 +134,9 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
                 defaultActiveKey={curPath}
                 activeKey={curPath}
                 onChange={(activeKey) => {
-                    this.setState({ curPath: activeKey });
+                    this.setState({ curPath: activeKey },()=>{
+                        this.props.onTabSelected(activeKey);
+                    });
                 }}
                 onEdit={(targetKey, action) => {
                     if (action == "remove") {

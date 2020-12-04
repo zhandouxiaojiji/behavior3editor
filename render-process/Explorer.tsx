@@ -348,12 +348,19 @@ export default class Explorer extends Component<ExplorerProps> {
         this.forceUpdate();
     }
 
+    selectNode(id:string){
+        this.setState({
+            selectedKey:id
+        })
+    }
+
     renderItem(node: FileDataNode) {
         if(!node.visible){
             return null;
         }
         const titleStr = node.text;
         const searchKey = this.state.searchKey;
+        const isSelected = this.state.selectedKey==node.id;
         const index = titleStr.indexOf(searchKey);
         const beforeStr = titleStr.substr(0, index);
         const afterStr = titleStr.substr(index + searchKey.length);
@@ -361,7 +368,7 @@ export default class Explorer extends Component<ExplorerProps> {
 
         return (
             <div
-                className="explorer-node"
+                className={isSelected?"explorer-node-selected":"explorer-node"}
                 key={node.id}
                 onMouseMove={() => {}}
             >
@@ -407,10 +414,8 @@ export default class Explorer extends Component<ExplorerProps> {
                 <DirectoryTree
                     keygen="id"
                     data={nodes}
-                    line={true}
+                    line={false}
                     doubleClickExpand
-                    // expandIcons={[<DownOutlined />, <RightOutlined />]}
-                    //defaultValue={[root.id]}
                     defaultExpanded={[root.id]}
                     expanded={this.state.expandedKeys}
                     value={[this.state.selectedKey]}
@@ -422,9 +427,6 @@ export default class Explorer extends Component<ExplorerProps> {
                     onClick={(node: FileDataNode) => {
                         if (!node.isFolder) {
                             onOpenTree(node.path);
-                            // this.setState({
-                            //     selectedKey:node.id
-                            // })
                         }
                     }}
                 ></DirectoryTree>

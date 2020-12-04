@@ -58,6 +58,17 @@ body {
     color: #ffffff;
 }
 
+.explorer-node-selected {
+    margin: 0;
+    padding: 0;
+    line-height: 20px;
+    white-space: nowrap;
+    list-style: none;
+    outline: 0;
+    color: #ffffff;
+    background-color: #818181;
+}
+
 .explorer-node-title {
     color: #ffffff;
 }

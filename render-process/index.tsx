@@ -29,6 +29,7 @@ export default class Main extends Component {
 
     settings: Settings;
     tabs: TreeTabs;
+    explorer: Explorer;
     session = 0;
 
     componentDidMount() {
@@ -88,6 +89,9 @@ export default class Main extends Component {
                 <Sider className="sider" width={250}>
                     {workdir !== "" ? (
                         <Explorer
+                            ref={(ref) => {
+                                this.explorer = ref;
+                            }}
                             workdir={workdir}
                             onOpenTree={(path) => {
                                 this.tabs.openFile(path);
@@ -105,6 +109,10 @@ export default class Main extends Component {
                         ref={(ref) => {
                             this.tabs = ref;
                         }}
+                        onTabSelected={(path)=>{
+                            this.explorer.selectNode(path);
+                        }   
+                        }
                     />
                 </Content>
             </Layout>
