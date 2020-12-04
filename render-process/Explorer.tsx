@@ -198,6 +198,56 @@ class FileDataNode {
     // children?: NodeData[];
 }
 
+const NodeActions: { [x: string]: string } = {
+    ["create"]: "New Tree",
+    ["createFolder"]: "New Folder",
+    ["rename"]: "Rename",
+    ["delete"]: "Delete",
+    ["reveal_in_explorer"]: "Reveal In File Explorer",
+};
+
+interface ExplorerNodeProps{
+    visible:boolean;
+    title:string;
+    selected:boolean;
+    expended:boolean;
+    isLeaf:boolean;
+    searchKey:string;
+}
+class ExplorerNode extends Component<ExplorerNodeProps> {
+    shouldComponentUpdate(nextProps: ExplorerNodeProps) {
+      return JSON.stringify(this.props)!=JSON.stringify(nextProps);
+    }
+
+    render() {
+        const {title,visible,selected,expended,isLeaf,searchKey} = this.props;
+        if(!visible){
+            return null;
+        }
+
+        const index = title.indexOf(searchKey);
+        const beforeStr = title.substr(0, index);
+        const afterStr = title.substr(index + searchKey.length);
+
+        return (
+            <div
+                className={selected?"explorer-node-selected":"explorer-node"}
+            >
+                {!isLeaf?(expended?<FolderOpenOutlined />:<FolderOutlined />):<FileOutlined />}
+                {isLeaf && index > -1 ? (
+                    <span className="explorer-node-title">
+                        {beforeStr}
+                        <span className="explorer-node-search-value">{searchKey}</span>
+                        {afterStr}
+                    </span>
+                ) : (
+                    <span className="explorer-node-title">{title}</span>
+                )}
+            </div>
+        );
+    }
+}
+
 export interface ExplorerProps {
     workdir: string;
     onOpenTree: (path: string) => void;
@@ -218,14 +268,6 @@ interface ExplorerState {
         key: string;
     };
 }
-
-const NodeActions: { [x: string]: string } = {
-    ["create"]: "New Tree",
-    ["createFolder"]: "New Folder",
-    ["rename"]: "Rename",
-    ["delete"]: "Delete",
-    ["reveal_in_explorer"]: "Reveal In File Explorer",
-};
 
 export default class Explorer extends Component<ExplorerProps> {
     state: ExplorerState = {
@@ -355,35 +397,14 @@ export default class Explorer extends Component<ExplorerProps> {
     }
 
     renderItem(node: FileDataNode) {
-        if(!node.visible){
-            return null;
-        }
-        const titleStr = node.text;
-        const searchKey = this.state.searchKey;
-        const isSelected = this.state.selectedKey==node.id;
-        const index = titleStr.indexOf(searchKey);
-        const beforeStr = titleStr.substr(0, index);
-        const afterStr = titleStr.substr(index + searchKey.length);
-        const expended = this.state.expandedKeys.includes(node.id );
-
-        return (
-            <div
-                className={isSelected?"explorer-node-selected":"explorer-node"}
-                key={node.id}
-                onMouseMove={() => {}}
-            >
-                {node.isFolder?(expended?<FolderOpenOutlined />:<FolderOutlined />):<FileOutlined />}
-                {!node.isFolder && index > -1 ? (
-                    <span className="explorer-node-title">
-                        {beforeStr}
-                        <span className="explorer-node-search-value">{searchKey}</span>
-                        {afterStr}
-                    </span>
-                ) : (
-                    <span className="explorer-node-title">{titleStr}</span>
-                )}
-            </div>
-        );
+        return (<ExplorerNode
+            visible={node.visible}
+            title={node.text}
+            selected={this.state.selectedKey==node.id}
+            expended={this.state.expandedKeys.includes(node.id )}
+            isLeaf={!node.isFolder}
+            searchKey={this.state.searchKey}
+            />);
     }
 
     render() {
