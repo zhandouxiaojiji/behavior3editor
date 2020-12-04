@@ -422,9 +422,9 @@ export default class Explorer extends Component<ExplorerProps> {
                     onClick={(node: FileDataNode) => {
                         if (!node.isFolder) {
                             onOpenTree(node.path);
-                            this.setState({
-                                selectedKey:node.id
-                            })
+                            // this.setState({
+                            //     selectedKey:node.id
+                            // })
                         }
                     }}
                 ></DirectoryTree>

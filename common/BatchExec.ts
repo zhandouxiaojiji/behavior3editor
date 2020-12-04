@@ -2,8 +2,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { BehaviorNodeModel, BehaviorTreeModel } from './BehaviorTreeModel';
 
-
-
 export default (scriptPath: string, dirPath: string) => {
     console.log("run script", scriptPath);
     const str = fs.readFileSync(scriptPath, "utf8");

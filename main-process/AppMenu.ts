@@ -263,6 +263,14 @@ export default class AppMenu {
                     },
                 },
                 {
+                    label: "刷新",
+                    accelerator: "F5",
+                    click: () => {
+                        console.log("reload workspace");
+                        openWorkspace(this.settings.curWorkspace.getFilepath());
+                    },
+                },
+                {
                     label: "最近打开",
                     submenu: recentItems,
                 },
