@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as fs from "fs";
 import * as path from "path";
-import { Row, Col, message } from "antd";
+import { Row, Col, message, Card } from "antd";
 import NodePanel from "./NodePanel";
 import G6, { TreeGraph } from "@antv/g6";
 import { G6GraphEvent } from "@antv/g6/lib/interface/behavior";
@@ -16,7 +16,6 @@ import Settings from "../../main-process/Settings";
 
 import "./Editor.css";
 import { clipboard } from "electron";
-import { TreeGraphData } from "@antv/g6/lib/types";
 
 export interface EditorProps {
     filepath: string;
@@ -24,7 +23,6 @@ export interface EditorProps {
 
 interface EditorState {
     curNodeId?: string;
-    treeModel?: BehaviorTreeModel;
 }
 
 export default class Editor extends React.Component<EditorProps, EditorState> {
@@ -47,8 +45,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
         this.settings = Utils.getRemoteSettings();
         const str = fs.readFileSync(this.props.filepath, "utf8");
-        let tree: BehaviorTreeModel = JSON.parse(str);
-        this.data = Utils.createTreeData(tree.root, this.settings);
+        this.treeModel = JSON.parse(str);
+        this.data = Utils.createTreeData(this.treeModel.root, this.settings);
         this.autoId = Utils.refreshNodeId(this.data);
     }
 
@@ -389,7 +387,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     useStackData(data: BehaviorNodeModel) {
         this.graph.set("animate", false);
         this.graph.changeData(Utils.createTreeData(data, this.settings));
-        this.graph.layout(true);
+        this.graph.layout();
+        this.graph.fitCenter();
         this.graph.set("animate", true);
     }
 
@@ -425,7 +424,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     }
 
     render() {
-        const { curNodeId, treeModel } = this.state;
+        console.log("render tree");
+        const { curNodeId } = this.state;
         var curNode: any;
         if (curNodeId) {
             curNode = this.graph.findDataById(curNodeId);
@@ -455,7 +455,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                                 }}
                             />
                         ) : (
-                                <TreePanel model={treeModel} />
+                                <TreePanel model={this.treeModel} />
                             )}
                     </Col>
                 </Row>

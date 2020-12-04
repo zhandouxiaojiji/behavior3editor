@@ -70,10 +70,12 @@ export default class Main extends Component {
         })
 
         console.log("workdir", this.settings.curWorkspace.getWorkdir());
-        this.setState({
-            workdir: this.settings.curWorkspace.getWorkdir(),
-            workspace: this.settings.curWorkspace.getFilepath(),
-        });
+        setTimeout(() => {
+            this.setState({
+                workdir: this.settings.curWorkspace.getWorkdir(),
+                workspace: this.settings.curWorkspace.getFilepath(),
+            });
+        }, 50);
     }
 
     updateSettings() {

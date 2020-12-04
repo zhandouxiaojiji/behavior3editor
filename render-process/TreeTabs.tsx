@@ -112,13 +112,10 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
     }
 
     closeFile(path: string) {
-        const index = this.state.filepaths.indexOf(path);
-        if (index >= 0) {
-            const filepaths = this.state.filepaths;
-            filepaths.splice(index, 1);
-            const length = filepaths.length;
-            this.setState({ filepaths, curPath: length > 0 ? filepaths[length - 1] : null });
-        }
+        let filepaths = this.state.filepaths;
+        filepaths = filepaths.filter((filepath) => (filepath != path));
+        const length = filepaths.length;
+        this.setState({ filepaths, curPath: length > 0 ? filepaths[0] : null });
     }
 
     render() {
@@ -140,13 +137,7 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
                 }}
                 onEdit={(targetKey, action) => {
                     if (action == "remove") {
-                        const idx = filepaths.indexOf(targetKey as string);
-                        if (idx < 0) {
-                            return;
-                        }
-                        filepaths.splice(idx, 1);
-                        const nextPath = filepaths[idx - 1];
-                        this.setState({ filepaths, curPath: nextPath });
+                        this.closeFile(targetKey as string);
                     }
                 }}
             >
