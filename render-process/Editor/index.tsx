@@ -25,7 +25,6 @@ export interface EditorProps {
 interface EditorState {
     curNodeId?: string;
     treeModel?: BehaviorTreeModel;
-    settings?: Settings;
 }
 
 export default class Editor extends React.Component<EditorProps, EditorState> {
@@ -38,10 +37,19 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     private autoId: number;
     private undoStack: BehaviorNodeModel[] = [];
     private redoStack: BehaviorNodeModel[] = [];
+    private treeModel: BehaviorTreeModel;
+    private settings: Settings;
+    private data: GraphNodeModel;
 
     constructor(props: EditorProps) {
         super(props);
         this.ref = React.createRef();
+
+        this.settings = Utils.getRemoteSettings();
+        const str = fs.readFileSync(this.props.filepath, "utf8");
+        let tree: BehaviorTreeModel = JSON.parse(str);
+        this.data = Utils.createTreeData(tree.root, this.settings);
+        this.autoId = Utils.refreshNodeId(this.data);
     }
 
     componentDidMount() {
@@ -255,20 +263,14 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             this.changeWithoutAnim();
         });
 
-        const settings = Utils.getRemoteSettings();
-
-        const str = fs.readFileSync(this.props.filepath, "utf8");
-        let tree: BehaviorTreeModel = JSON.parse(str);
-        const data = Utils.createTreeData(tree.root, settings);
-        this.autoId = Utils.refreshNodeId(data);
-        graph.data(data);
+        graph.data(this.data);
         graph.render();
         graph.fitCenter();
         graph.set("animate", true);
 
         this.graph = graph;
 
-        this.setState({ treeModel: tree, settings });
+        this.forceUpdate();
     }
 
     onSelectNode(curNodeId: string | null) {
@@ -286,7 +288,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
     createNode(name: string) {
         console.log("editor create node", name);
-        const { curNodeId, settings } = this.state;
+        const { curNodeId } = this.state;
         if (!curNodeId) {
             message.warn("未选中节点");
             return;
@@ -300,7 +302,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         if (!curNodeData.children) {
             curNodeData.children = [];
         }
-        curNodeData.children.push(Utils.createTreeData(newNodeData, settings));
+        curNodeData.children.push(Utils.createTreeData(newNodeData, this.settings));
         this.changeWithoutAnim();
     }
 
@@ -369,7 +371,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                 return;
             }
             this.pushUndoStack();
-            const data = Utils.createTreeData(JSON.parse(str), this.state.settings);
+            const data = Utils.createTreeData(JSON.parse(str), this.settings);
             this.autoId = Utils.refreshNodeId(data, this.autoId);
             this.onSelectNode(null);
             if (!curNodeData.children) {
@@ -386,7 +388,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
     useStackData(data: BehaviorNodeModel) {
         this.graph.set("animate", false);
-        this.graph.changeData(Utils.createTreeData(data, this.state.settings));
+        this.graph.changeData(Utils.createTreeData(data, this.settings));
         this.graph.layout(true);
         this.graph.set("animate", true);
     }
@@ -423,7 +425,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     }
 
     render() {
-        const { curNodeId, treeModel, settings } = this.state;
+        const { curNodeId, treeModel } = this.state;
         var curNode: any;
         if (curNodeId) {
             curNode = this.graph.findDataById(curNodeId);
@@ -437,11 +439,11 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                         {curNode ? (
                             <NodePanel
                                 model={curNode}
-                                settings={settings}
+                                settings={this.settings}
                                 updateNode={(id, forceUpdate) => {
                                     if (forceUpdate) {
                                         const data: any = this.graph.findDataById(id);
-                                        data.conf = settings.getNodeConf(data.name);
+                                        data.conf = this.settings.getNodeConf(data.name);
                                         data.size = Utils.calcTreeNodeSize(data);
                                         this.changeWithoutAnim();
                                     }

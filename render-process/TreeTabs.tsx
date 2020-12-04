@@ -11,7 +11,7 @@ import { BehaviorTreeModel } from "../common/BehaviorTreeModel";
 const { TabPane } = Tabs;
 
 interface TreeTabsProps {
-    onTabSelected:(path:string)=>void;
+    onTabSelected: (path: string) => void;
 }
 
 interface TreeTabsState {
@@ -76,11 +76,17 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
         });
     }
 
+    componentDidUpdate() {
+        setTimeout(() => {
+            this.props.onTabSelected(this.state.curPath);
+        }, 100);
+    }
+
     getOpenTreesModel() {
         const trees: BehaviorTreeModel[] = []
         for (let k in this.editors) {
             let editor = this.editors[k];
-            if(editor) {
+            if (editor) {
                 trees.push(editor.save());
             }
         }
@@ -99,13 +105,9 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
         if (this.state.filepaths.indexOf(path) < 0) {
             const filepaths = this.state.filepaths;
             filepaths.push(path);
-            this.setState({ filepaths, curPath: path },()=>{
-                this.props.onTabSelected(path);
-            });
+            this.setState({ filepaths, curPath: path });
         } else {
-            this.setState({ curPath: path },()=>{
-                this.props.onTabSelected(path);
-            });
+            this.setState({ curPath: path });
         }
     }
 
@@ -113,10 +115,10 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
         const index = this.state.filepaths.indexOf(path);
         if (index >= 0) {
             const filepaths = this.state.filepaths;
-            filepaths.splice(index,1);
+            filepaths.splice(index, 1);
             const length = filepaths.length;
-            this.setState({ filepaths, curPath: length>0?filepaths[length-1]:null });
-        } 
+            this.setState({ filepaths, curPath: length > 0 ? filepaths[length - 1] : null });
+        }
     }
 
     render() {
@@ -134,9 +136,7 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
                 defaultActiveKey={curPath}
                 activeKey={curPath}
                 onChange={(activeKey) => {
-                    this.setState({ curPath: activeKey },()=>{
-                        this.props.onTabSelected(activeKey);
-                    });
+                    this.setState({ curPath: activeKey });
                 }}
                 onEdit={(targetKey, action) => {
                     if (action == "remove") {
