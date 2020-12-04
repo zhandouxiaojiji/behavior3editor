@@ -243,7 +243,9 @@ export default class Explorer extends Component<ExplorerProps> {
     shouldComponentUpdate(nextProps: ExplorerProps) {
         const shouldUpdate = this.curWorkdir != nextProps.workdir;
         this.curWorkdir = nextProps.workdir;
-        this.updateRoot();
+        if(shouldUpdate){
+            this.updateRoot();
+        }
         return shouldUpdate;
     }
 
@@ -351,7 +353,8 @@ export default class Explorer extends Component<ExplorerProps> {
     selectNode(id:string){
         this.setState({
             selectedKey:id
-        })
+        });
+        this.forceUpdate();
     }
 
     renderItem(node: FileDataNode) {
