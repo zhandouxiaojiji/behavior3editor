@@ -243,9 +243,6 @@ export default class Explorer extends Component<ExplorerProps> {
     shouldComponentUpdate(nextProps: ExplorerProps) {
         const shouldUpdate = this.curWorkdir != nextProps.workdir;
         this.curWorkdir = nextProps.workdir;
-        if(shouldUpdate){
-            this.updateRoot();
-        }
         return shouldUpdate;
     }
 
