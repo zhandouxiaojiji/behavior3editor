@@ -14,14 +14,19 @@ interface TreeTabsProps {
     onTabSelected: (path: string) => void;
 }
 
+interface TreeInfo {
+    filepath: string;
+    unsave?: boolean;
+}
+
 interface TreeTabsState {
-    filepaths: string[];
-    curPath?: string;
+    trees: TreeInfo[];
+    curTree?: string;
 }
 
 export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
     state: TreeTabsState = {
-        filepaths: [],
+        trees: [],
     };
 
     editors: { [path: string]: Editor } = {};
@@ -48,7 +53,7 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
         });
 
         ipcRenderer.on(MainEventType.SAVE, (event: any) => {
-            const { curPath } = this.state;
+            const { curTree: curPath } = this.state;
             if (!curPath) {
                 return;
             }
@@ -78,8 +83,8 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
 
     componentDidUpdate() {
         setTimeout(() => {
-            this.props.onTabSelected(this.state.curPath);
-        }, 100);
+            this.props.onTabSelected(this.state.curTree);
+        }, 500);
     }
 
     getOpenTreesModel() {
@@ -94,7 +99,7 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
     }
 
     getCurEditor() {
-        const { curPath } = this.state;
+        const { curTree: curPath } = this.state;
         if (!curPath) {
             return;
         }
@@ -102,26 +107,26 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
     }
 
     openFile(path: string) {
-        if (this.state.filepaths.indexOf(path) < 0) {
-            const filepaths = this.state.filepaths;
-            filepaths.push(path);
-            this.setState({ filepaths, curPath: path });
+        if (!this.state.trees.find(e => e.filepath == path)) {
+            const trees = this.state.trees;
+            trees.push({ filepath: path });
+            this.setState({ trees, curTree: path });
         } else {
-            this.setState({ curPath: path });
+            this.setState({ curTree: path });
         }
     }
 
     closeFile(path: string) {
-        let filepaths = this.state.filepaths;
-        filepaths = filepaths.filter((filepath) => (filepath != path));
-        const length = filepaths.length;
-        this.setState({ filepaths, curPath: length > 0 ? filepaths[0] : null });
+        let trees = this.state.trees;
+        trees = trees.filter(tree => tree.filepath != path);
+        const length = trees.length;
+        this.setState({ trees: trees, curTree: length > 0 ? trees[0].filepath : null });
     }
 
     render() {
-        console.log("render tabs");
-        const { filepaths, curPath } = this.state;
-        if (!curPath) {
+        const { trees, curTree } = this.state;
+        console.log("render tabs", trees);
+        if (!curTree) {
             return <div />;
         }
         this.editors = {};
@@ -130,10 +135,10 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
                 hideAdd
                 className="tabs"
                 type="editable-card"
-                defaultActiveKey={curPath}
-                activeKey={curPath}
+                defaultActiveKey={curTree}
+                activeKey={curTree}
                 onChange={(activeKey) => {
-                    this.setState({ curPath: activeKey });
+                    this.setState({ curTree: activeKey });
                 }}
                 onEdit={(targetKey, action) => {
                     if (action == "remove") {
@@ -141,13 +146,19 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
                     }
                 }}
             >
-                {filepaths.map((filepath) => {
+                {trees.map((tree) => {
                     return (
-                        <TabPane tab={path.basename(filepath)} key={filepath}>
+                        <TabPane tab={`${path.basename(tree.filepath)}${tree.unsave?"*":''}`} key={tree.filepath}>
                             <Editor
-                                filepath={filepath}
+                                filepath={tree.filepath}
+                                onChangeSaveState={(unsave) => {
+                                    if(tree.unsave != unsave) {
+                                        tree.unsave = unsave;
+                                        this.forceUpdate();
+                                    } 
+                                }}
                                 ref={(ref) => {
-                                    this.editors[filepath] = ref;
+                                    this.editors[tree.filepath] = ref;
                                 }}
                             />
                         </TabPane>
