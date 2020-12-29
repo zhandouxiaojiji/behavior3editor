@@ -364,7 +364,7 @@ export default class AppMenu {
                     submenu: serverItems,
                 },
                 {
-                    label: "处理脚本",
+                    label: "批处理脚本",
                     click: () => {
                         (async () => {
                             const res = await dialog.showOpenDialog({

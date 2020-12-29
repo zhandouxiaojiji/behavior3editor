@@ -39,6 +39,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     private treeModel: BehaviorTreeModel;
     private settings: Settings;
     private data: GraphNodeModel;
+    private unsave: boolean = false;
 
     constructor(props: EditorProps) {
         super(props);
@@ -336,11 +337,17 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         this.graph.set("animate", true);
 
         this.props.onChangeSaveState(true);
+        this.unsave = true;
     }
 
     save() {
+        if(!this.unsave) {
+            return;
+        }
         const { filepath } = this.props;
-        const root = Utils.createFileData(this.graph.findDataById("1") as GraphNodeModel);
+        const data = this.graph.findDataById("1") as GraphNodeModel;
+        this.autoId = Utils.refreshNodeId(data);
+        const root = Utils.createFileData(data);
         const treeModel = {
             name: path.basename(filepath).slice(0, -5),
             root,
@@ -348,9 +355,17 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         } as BehaviorTreeModel;
         fs.writeFileSync(
             filepath,
-            JSON.stringify(treeModel)
+            JSON.stringify(treeModel, null, 2)
         );
         this.props.onChangeSaveState(false);
+        this.unsave = false;
+
+        this.graph.set("animate", false);
+        this.graph.changeData(Utils.createTreeData(root, this.settings));
+        this.graph.layout();
+        this.graph.fitCenter();
+        this.graph.set("animate", true);
+
         return treeModel;
     }
 
@@ -400,6 +415,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         this.graph.set("animate", true);
 
         this.props.onChangeSaveState(true);
+        this.unsave = true;
     }
 
     pushUndoStack(keepRedo?: boolean) {
@@ -460,6 +476,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                                     const item = this.graph.findById(id);
                                     item.draw();
                                     this.props.onChangeSaveState(true);
+                                    this.unsave = true;
                                 }}
                                 pushUndoStack={() => {
                                     this.pushUndoStack();
