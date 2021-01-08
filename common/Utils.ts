@@ -10,28 +10,28 @@ export const cloneNodeData = (nodeData: GraphNodeModel) => {
         name: nodeData.name,
         desc: nodeData.desc,
     };
-    if(nodeData.input) {
+    if (nodeData.input) {
         newData.input = [];
-        for(let v of nodeData.input){
+        for (let v of nodeData.input) {
             newData.input.push(v || "");
         }
     }
-    if(nodeData.output) {
+    if (nodeData.output) {
         newData.output = [];
-        for(let v of nodeData.output){
+        for (let v of nodeData.output) {
             newData.output.push(v || "");
         }
     }
-    if(nodeData.args) {
+    if (nodeData.args) {
         newData.args = {};
-        for(let k in nodeData.args) {
+        for (let k in nodeData.args) {
             let v = nodeData.args[k];
             newData.args[k] = v;
         }
     }
-    if(nodeData.children) {
+    if (nodeData.children) {
         newData.children = []
-        for(let child of nodeData.children) {
+        for (let child of nodeData.children) {
             newData.children.push(cloneNodeData(child));
         }
     }
@@ -55,7 +55,7 @@ export const calcTreeNodeSize = (treeNode: GraphNodeModel) => {
     var height = 40;
     const updateHeight = (obj: any) => {
         if (Array.isArray(obj) || (obj && Object.keys(obj).length > 0)) {
-            height += 25;
+            height += 30;
         }
     };
     updateHeight(treeNode.conf.args);
@@ -155,3 +155,21 @@ export const createNewTree = (filename: string) => {
     };
     return tree;
 };
+
+export const toBreakWord = (str: string, len: number, char='\n') => {
+    var strTemp = "";
+    var line = 1;
+    if(str.length <= len) {
+        return {str, line};
+    }
+    while (str.length > len) {
+        strTemp += str.substr(0, len) + char;
+        str = str.substr(len, str.length);
+        line ++;
+    }
+    strTemp += str;
+    return {
+        str: strTemp,
+        line,
+    };
+}

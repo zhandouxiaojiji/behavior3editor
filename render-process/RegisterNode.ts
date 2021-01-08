@@ -1,4 +1,5 @@
 import G6 from "@antv/g6";
+import { toBreakWord } from "../common/Utils";
 import Settings from "../main-process/Settings";
 
 const NODE_COLORS: any = {
@@ -165,50 +166,54 @@ export default function (settings: Settings) {
 
                 const args: any = cfg.args;
                 if (nodeConf.args && args && Object.keys(args).length > 0) {
-                    y += 20;
+                    const { str, line } = toBreakWord(`参数:${JSON.stringify(args)}`, 35);
                     group.addShape("text", {
                         attrs: {
                             textBaseline: "top",
                             x,
-                            y,
+                            y: y + 20,
+                            w,
                             lineHeight: 20,
-                            text: `参数:${JSON.stringify(args)}`,
+                            text: str,
                             fill: "black",
                         },
                         name: "args-text",
                     });
+                    y += 20 * line;
                 }
 
                 const input: [] = cfg.input ? (cfg.input as []) : [];
                 if (nodeConf.input && input.length > 0) {
-                    y += 20;
+                    const { str, line } = toBreakWord(`输入:${JSON.stringify(input)}`, 35);
                     group.addShape("text", {
                         attrs: {
                             textBaseline: "top",
                             x,
-                            y,
+                            y: y + 20,
                             lineHeight: 20,
-                            text: `输入:${JSON.stringify(input)}`,
+                            text: str,
                             fill: "black",
                         },
                         name: "input-text",
                     });
+                    y += 20 * line;
                 }
 
                 const output: [] = cfg.output ? (cfg.output as []) : [];
                 if (nodeConf.output && output.length > 0) {
-                    y += 20;
+                    const { str, line } = toBreakWord(`输出:${JSON.stringify(output)}`, 35);
                     group.addShape("text", {
                         attrs: {
                             textBaseline: "top",
                             x,
-                            y,
+                            y: y + 20,
                             lineHeight: 20,
-                            text: `输出:${JSON.stringify(output)}`,
+                            text: str,
                             fill: "black",
                         },
                         name: "output-text",
                     });
+                    y += 20 * line;
                 }
 
                 if (Array.isArray(cfg.children) && cfg.children.length > 0) {
