@@ -1,27 +1,33 @@
 import React, { ChangeEvent, Component } from "react";
 import { Input } from "antd";
 import { Tree } from "shineout";
-import {FolderOutlined ,FileOutlined,FolderOpenOutlined} from "@ant-design/icons";
+import { FolderOutlined, FileOutlined, FolderOpenOutlined } from "@ant-design/icons";
 import * as fs from "fs";
 import * as path from "path";
 import { ipcRenderer } from "electron";
 import MainEventType from "../common/MainEventType";
+import Settings from "../main-process/Settings";
+import * as Utils from "../common/Utils";
 
-const {Search} = Input;
+const { Search } = Input;
 const DirectoryTree = Tree;
 
 
 class FileDataNode {
     name: string; //display name
+    desc: string; //describe
     filepath: string; //file full path
     isFolder: boolean;
+
+    settings: Settings;
 
     parent: FileDataNode;
     visible: boolean = true;
     children: FileDataNode[];
 
-    public constructor(init?: Partial<FileDataNode>) {
+    public constructor(init?: Partial<FileDataNode>, settings?: Settings) {
         Object.assign(this, init);
+        this.settings = settings;
     }
 
     get id() {
@@ -29,7 +35,10 @@ class FileDataNode {
     }
 
     get text() {
-        return this.name;
+        if (!this.desc) {
+            return this.name;
+        }
+        return `${this.name}(${this.desc})`;
     }
 
     get path() {
@@ -42,10 +51,11 @@ class FileDataNode {
         }
         let ret = new FileDataNode({
             name: this.name,
+            desc: this.isFolder ? undefined : this.settings.getTreeDesc(this.filepath),
             filepath: this.filepath,
             isFolder: this.isFolder,
             children: new Array(),
-        });
+        }, this.settings);
 
         for (const child of this.children) {
             const data = child.getRenderData();
@@ -70,10 +80,11 @@ class FileDataNode {
             const name = isFolder ? filename : filename.slice(0, -5);
             const node = new FileDataNode({
                 name: name,
+                desc: isFolder ? undefined : this.settings.getTreeDesc(fullPath),
                 filepath: fullPath,
                 isFolder: isFolder,
                 parent: this,
-            });
+            }, this.settings);
 
             (node.children =
                 isFolder && recursive ? (node.loadChilds(recursive) as FileDataNode[]) : []),
@@ -87,46 +98,6 @@ class FileDataNode {
         return list;
     }
 
-
-    // async updateChilds(recursive?: boolean): Promise<FileDataNode[]> {
-    //     const folder = this.path;
-    //     if (folder == "" || !fs.existsSync(folder)) {
-    //         return [];
-    //     }
-    //     this.loading = true;
-    //     await fs.promises.readdir(folder).then((files) => {
-    //         this.loading = false;
-    //         let list = new Array<FileDataNode>();
-    //         files.forEach((filename) => {
-    //             const fullPath = path.join(folder, filename);
-    //             const stat = fs.statSync(fullPath);
-    //             const isFolder = stat.isDirectory();
-    //             const name = isFolder ? filename : filename.slice(0, -5);
-    //             const node = new FileDataNode({
-    //                 name: name,
-    //                 filepath: fullPath,
-    //                 isFolder: isFolder,
-    //                 parent: this,
-    //                 children: [],
-    //             });
-
-    //             if (isFolder && recursive) {
-    //                 node.updateChilds(recursive).then((children)=>{
-    //                     node.children = children;
-    //                 });
-    //             }
-    //             list.push(node);
-    //         });
-    //         list.sort((a, b) => {
-    //             const av = a.isFolder ? 100 : 0;
-    //             const bv = b.isFolder ? 100 : 0;
-    //             return bv - av;
-    //         });
-    //         this.children = list;
-    //     });
-    //     return this.children;
-    // }
-
     addChild(filePath: string) {
         const isDir = fs.statSync(filePath).isDirectory();
         const newNode = new FileDataNode({
@@ -135,7 +106,7 @@ class FileDataNode {
             isFolder: isDir,
             parent: this,
             children: [],
-        });
+        }, this.settings);
         this.children = [newNode, ...this.children];
     }
 
@@ -206,22 +177,22 @@ const NodeActions: { [x: string]: string } = {
     ["reveal_in_explorer"]: "Reveal In File Explorer",
 };
 
-interface ExplorerNodeProps{
-    visible:boolean;
-    title:string;
-    selected:boolean;
-    expended:boolean;
-    isLeaf:boolean;
-    searchKey:string;
+interface ExplorerNodeProps {
+    visible: boolean;
+    title: string;
+    selected: boolean;
+    expended: boolean;
+    isLeaf: boolean;
+    searchKey: string;
 }
 class ExplorerNode extends Component<ExplorerNodeProps> {
     shouldComponentUpdate(nextProps: ExplorerNodeProps) {
-      return JSON.stringify(this.props)!=JSON.stringify(nextProps);
+        return JSON.stringify(this.props) != JSON.stringify(nextProps);
     }
 
     render() {
-        const {title,visible,selected,expended,isLeaf,searchKey} = this.props;
-        if(!visible){
+        const { title, visible, selected, expended, isLeaf, searchKey } = this.props;
+        if (!visible) {
             return null;
         }
 
@@ -231,9 +202,9 @@ class ExplorerNode extends Component<ExplorerNodeProps> {
 
         return (
             <div
-                className={selected?"explorer-node-selected":"explorer-node"}
+                className={selected ? "explorer-node-selected" : "explorer-node"}
             >
-                {!isLeaf?(expended?<FolderOpenOutlined />:<FolderOutlined />):<FileOutlined />}
+                {!isLeaf ? (expended ? <FolderOpenOutlined /> : <FolderOutlined />) : <FileOutlined />}
                 {isLeaf && index > -1 ? (
                     <span className="explorer-node-title">
                         {beforeStr}
@@ -241,8 +212,8 @@ class ExplorerNode extends Component<ExplorerNodeProps> {
                         {afterStr}
                     </span>
                 ) : (
-                    <span className="explorer-node-title">{title}</span>
-                )}
+                        <span className="explorer-node-title">{title}</span>
+                    )}
             </div>
         );
     }
@@ -281,6 +252,7 @@ export default class Explorer extends Component<ExplorerProps> {
     };
 
     curWorkdir: string = "";
+    settings: Settings;
 
     shouldComponentUpdate(nextProps: ExplorerProps) {
         const shouldUpdate = this.curWorkdir != nextProps.workdir;
@@ -289,6 +261,7 @@ export default class Explorer extends Component<ExplorerProps> {
     }
 
     componentDidMount() {
+        this.settings = Utils.getRemoteSettings();
         ipcRenderer.on(MainEventType.CREATE_TREE, (event: any, path: string) => {
             console.log("on Create tree", path);
             this.props.onOpenTree(path);
@@ -322,15 +295,15 @@ export default class Explorer extends Component<ExplorerProps> {
     }
 
     getRootNode(workdir: string) {
-        if(workdir && workdir!==""){
+        if (workdir && workdir !== "") {
             return new FileDataNode({
                 name: path.basename(workdir),
                 filepath: workdir,
                 isFolder: true,
                 parent: null,
                 children: []
-            });
-        }else{
+            }, this.settings);
+        } else {
             return null;
         }
     }
@@ -389,9 +362,9 @@ export default class Explorer extends Component<ExplorerProps> {
         this.forceUpdate();
     }
 
-    selectNode(id:string){
+    selectNode(id: string) {
         this.setState({
-            selectedKey:id
+            selectedKey: id
         });
         this.forceUpdate();
     }
@@ -400,11 +373,11 @@ export default class Explorer extends Component<ExplorerProps> {
         return (<ExplorerNode
             visible={node.visible}
             title={node.text}
-            selected={this.state.selectedKey==node.id}
-            expended={this.state.expandedKeys.includes(node.id )}
+            selected={this.state.selectedKey == node.id}
+            expended={this.state.expandedKeys.includes(node.id)}
             isLeaf={!node.isFolder}
             searchKey={this.state.searchKey}
-            />);
+        />);
     }
 
     render() {
@@ -430,7 +403,7 @@ export default class Explorer extends Component<ExplorerProps> {
                     onSearch={(value, event) => {
                         this.handleOnSearch(value?.toLowerCase());
                     }}
-                /> 
+                />
 
                 <DirectoryTree
                     keygen="id"
@@ -440,7 +413,7 @@ export default class Explorer extends Component<ExplorerProps> {
                     defaultExpanded={[root.id]}
                     expanded={this.state.expandedKeys}
                     value={[this.state.selectedKey]}
-                    onExpand={(expanded)=>{
+                    onExpand={(expanded) => {
                         this.setState({ expandedKeys: expanded })
                         this.forceUpdate();
                     }}

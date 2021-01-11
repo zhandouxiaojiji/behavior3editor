@@ -11,6 +11,7 @@ export interface SettingsModel {
     recentFiles?: string[];
     serverName?: string;
     nodeClassify?: BehaviorNodeClassify[];
+    treesDesc?: { [name: string]: string };
 }
 
 const settingPath = "settings.json";
@@ -23,10 +24,18 @@ const sampleNodeClassify: BehaviorNodeClassify[] = [
 
 export default class Settings {
     private model: SettingsModel;
+    private dirty: boolean = false;
     curWorkspace?: Workspace;
 
     constructor() {
         this.load();
+
+        setInterval(() => {
+            if (this.dirty) {
+                fs.writeFileSync(settingPath, JSON.stringify(this.model, null, 2));
+                this.dirty = false;
+            }
+        }, 1000)
     }
 
     get nodeConfPath() {
@@ -66,7 +75,7 @@ export default class Settings {
                 return this.model.serverName;
             }
         }
-        if(servers[0]) {
+        if (servers[0]) {
             return servers[0].name;
         } else {
             return ''
@@ -88,6 +97,10 @@ export default class Settings {
         if (fs.existsSync(settingPath)) {
             const str = fs.readFileSync(settingPath, "utf8");
             this.model = JSON.parse(str);
+            if (!this.model.treesDesc) {
+                this.model.treesDesc = {};
+                this.save();
+            }
         } else {
             this.model = {
                 recentWorkspaces: ["sample/workspace.json"],
@@ -101,7 +114,7 @@ export default class Settings {
     }
 
     save() {
-        fs.writeFileSync(settingPath, JSON.stringify(this.model, null, 2));
+        this.dirty = true;
     }
 
     getNodeConf(name: string) {
@@ -114,10 +127,28 @@ export default class Settings {
             list = list.filter((value) => value !== path);
         }
         list.unshift(path);
-        while(list.length > 10) {
+        while (list.length > 10) {
             list.pop();
         }
         this.model.recentWorkspaces = list;
         this.save();
+    }
+
+    getTreeDesc(name: string) {
+        const key = this.curWorkspace.getFilepath() + ' ' + name;
+        var desc = this.model.treesDesc[key];
+        if (!desc) {
+            const str = fs.readFileSync(name, "utf8");
+            const tree = JSON.parse(str);
+            desc = tree.desc ? tree.desc : '';
+            this.model.treesDesc[key] = desc;
+            this.save();
+        }
+        return desc;
+    }
+
+    setTreeDesc(name: string, desc?: string) {
+        const key = this.curWorkspace.getFilepath() + ' ' + name;
+        this.model.treesDesc[key] = desc;
     }
 }
