@@ -55,12 +55,14 @@ export const calcTreeNodeSize = (treeNode: GraphNodeModel) => {
     var height = 40;
     const updateHeight = (obj: any) => {
         if (Array.isArray(obj) || (obj && Object.keys(obj).length > 0)) {
-            height += 30;
+            const { str, line } = toBreakWord(`参数:${JSON.stringify(obj)}`, 35);
+            console.log("line", str, line);
+            height += 20 * line;
         }
     };
-    updateHeight(treeNode.conf.args);
-    updateHeight(treeNode.conf.input);
-    updateHeight(treeNode.conf.output);
+    updateHeight(treeNode.args);
+    updateHeight(treeNode.input);
+    updateHeight(treeNode.output);
     return [200, height];
 };
 
