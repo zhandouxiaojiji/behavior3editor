@@ -35,6 +35,7 @@ export interface BehaviorNodeModel {
 
 export interface BehaviorTreeModel {
     name: string;
+    desc?: string;
     root: BehaviorNodeModel;
 }
 

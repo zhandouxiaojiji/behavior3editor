@@ -341,7 +341,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     }
 
     save() {
-        if(!this.unsave) {
+        if (!this.unsave) {
             return;
         }
         const { filepath } = this.props;
@@ -351,7 +351,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         const treeModel = {
             name: path.basename(filepath).slice(0, -5),
             root,
-            desc: root.desc,
+            desc: this.treeModel.desc,
         } as BehaviorTreeModel;
         fs.writeFileSync(
             filepath,
@@ -449,6 +449,13 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         this.useStackData(data);
     }
 
+    changeTreeDesc(desc: string) {
+        this.treeModel.desc = desc;
+        this.settings.setTreeDesc(this.props.filepath, desc);
+        this.unsave = true;
+        this.save();
+    }
+
     render() {
         const { curNodeId } = this.state;
         console.log("render tree", curNodeId);
@@ -483,7 +490,18 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                                 }}
                             />
                         ) : (
-                                <TreePanel model={this.treeModel} />
+                                <TreePanel
+                                    model={this.treeModel}
+                                    onRenameTree={(name: string) => {
+
+                                    }}
+                                    onRemoveTree={() => {
+
+                                    }}
+                                    onChangeTreeDesc={(desc) => {
+                                        this.changeTreeDesc(desc);
+                                    }}
+                                />
                             )}
                     </Col>
                 </Row>

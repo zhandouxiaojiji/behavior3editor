@@ -56,7 +56,6 @@ export const calcTreeNodeSize = (treeNode: GraphNodeModel) => {
     const updateHeight = (obj: any) => {
         if (Array.isArray(obj) || (obj && Object.keys(obj).length > 0)) {
             const { str, line } = toBreakWord(`参数:${JSON.stringify(obj)}`, 35);
-            console.log("line", str, line);
             height += 20 * line;
         }
     };
