@@ -83,6 +83,7 @@ export default class Settings {
     }
     set serverName(name: string) {
         this.model.serverName = name;
+        this.save();
     }
 
     set(config: SettingsModel) {
@@ -106,6 +107,7 @@ export default class Settings {
                 recentWorkspaces: ["sample/workspace.json"],
                 recentFiles: [],
                 nodeClassify: sampleNodeClassify,
+                treesDesc: {},
             };
             this.save();
         }

@@ -152,7 +152,7 @@ class FileDataNode {
         for (let i = this.children.length - 1; i >= 0; i--) {
             const child = this.children[i];
             if (!child.isFolder) {
-                const keyStr = child.id;
+                const keyStr = child.text;
                 child.visible = keyStr.includes(keyWord);
             } else {
                 child.visible = child.setVisible(keyWord);
