@@ -92,7 +92,8 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
         for (let k in this.editors) {
             let editor = this.editors[k];
             if (editor) {
-                trees.push(editor.save());
+                editor.save();
+                trees.push(editor.getTreeModel());
             }
         }
         return trees;

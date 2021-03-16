@@ -365,8 +365,18 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         this.graph.layout();
         this.graph.fitCenter();
         this.graph.set("animate", true);
+    }
 
-        return treeModel;
+    getTreeModel() {
+        const { filepath } = this.props;
+        const data = this.graph.findDataById("1") as GraphNodeModel;
+        this.autoId = Utils.refreshNodeId(data);
+        const root = Utils.createFileData(data);
+        return {
+            name: path.basename(filepath).slice(0, -5),
+            root,
+            desc: this.treeModel.desc,
+        } as BehaviorTreeModel;
     }
 
     copyNode() {
