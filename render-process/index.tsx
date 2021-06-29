@@ -96,18 +96,18 @@ export default class Main extends Component {
         }
 
         function doDrag(e: DragEvent) {
-            let calcWidth = startWidth + e.clientX - startX;
-            const maxValue = window.innerWidth * 0.8;
-            const minValue = 100;
-            if (calcWidth > maxValue) {
-                calcWidth = maxValue;
-            } else if (calcWidth < minValue) {
-                calcWidth = minValue;
-            }
+            const calcWidth = startWidth + e.clientX - startX;
             setWidth(calcWidth);
         }
 
         function setWidth(width: number) {
+            const maxValue = window.innerWidth * 0.8;
+            const minValue = 100;
+            if (width > maxValue) {
+                width = maxValue;
+            } else if (width < minValue) {
+                width = minValue;
+            }
             reSizerParent.style.width = width + "px";
             sider.style.width = width + "px";
             sider.style.maxWidth = width + "px";
@@ -130,14 +130,7 @@ export default class Main extends Component {
         }, false);
 
         window.addEventListener("resize", function() {
-            let currentWidth = parseInt(document.defaultView.getComputedStyle(reSizerParent).width, 10);
-            const maxValue = window.innerWidth * 0.8;
-            const minValue = 100;
-            if (currentWidth > maxValue) {
-                currentWidth = maxValue;
-            } else if (currentWidth < minValue) {
-                currentWidth = minValue;
-            }
+            const currentWidth = parseInt(document.defaultView.getComputedStyle(reSizerParent).width, 10);
             setWidth(currentWidth);
         })
     }
