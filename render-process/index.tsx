@@ -76,6 +76,54 @@ export default class Main extends Component {
                 workspace: this.settings.curWorkspace.getFilepath(),
             });
         }, 50);
+
+        this.setReSizer();
+    }
+
+    setReSizer() {
+        let startX: number;
+        let startWidth: number;
+
+        const sider: any = document.getElementsByClassName("sider")[0];
+        const reSizerParent: any = document.getElementsByClassName("ant-layout-sider-children")[0];
+        const reSizer = document.getElementById("sizer-hint-bar");
+
+        function initDrag(e: DragEvent) {
+            startX = e.clientX;
+            startWidth = parseInt(document.defaultView.getComputedStyle(reSizerParent).width, 10);
+            document.documentElement.addEventListener("mousemove", doDrag, false);
+            document.documentElement.addEventListener("mouseup", stopDrag, false);
+        }
+
+        function doDrag(e: DragEvent) {
+            let calcWidth = startWidth + e.clientX - startX;
+            const maxValue = window.innerWidth * 0.8;
+            const minValue = 100;
+            if (calcWidth > maxValue) {
+                calcWidth = maxValue;
+            } else if (calcWidth < minValue) {
+                calcWidth = minValue;
+            }
+            reSizerParent.style.width = calcWidth + "px";
+            sider.style.width = calcWidth + "px";
+            sider.style.maxWidth = calcWidth + "px";
+            sider.style.minWidth = "0px";
+            sider.style.flex = "";
+            reSizer.style.left = (calcWidth - 5) + "px";
+        }
+
+        function stopDrag(e: DragEvent) {
+            document.documentElement.removeEventListener("mousemove", doDrag, false);
+            document.documentElement.removeEventListener("mouseup", stopDrag, false);
+        }
+
+        reSizer.addEventListener("mouseover", function init() {
+            reSizer.style.opacity = "1";
+            reSizer.addEventListener("mousedown", initDrag, false);
+            reSizer.addEventListener("mouseout", function init() {
+                reSizer.style.opacity = "0";
+            }, false);
+        }, false);
     }
 
     updateSettings() {
@@ -106,6 +154,7 @@ export default class Main extends Component {
                         "Please Open Workspace"
                     )}
                 </Sider>
+                <div id="sizer-hint-bar"/>
                 <Content className="content">
                     <TreeTabs
                         ref={(ref) => {
