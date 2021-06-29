@@ -104,12 +104,16 @@ export default class Main extends Component {
             } else if (calcWidth < minValue) {
                 calcWidth = minValue;
             }
-            reSizerParent.style.width = calcWidth + "px";
-            sider.style.width = calcWidth + "px";
-            sider.style.maxWidth = calcWidth + "px";
+            setWidth(calcWidth);
+        }
+
+        function setWidth(width: number) {
+            reSizerParent.style.width = width + "px";
+            sider.style.width = width + "px";
+            sider.style.maxWidth = width + "px";
             sider.style.minWidth = "0px";
             sider.style.flex = "";
-            reSizer.style.left = (calcWidth - 5) + "px";
+            reSizer.style.left = (width - 5) + "px";
         }
 
         function stopDrag(e: DragEvent) {
@@ -117,13 +121,25 @@ export default class Main extends Component {
             document.documentElement.removeEventListener("mouseup", stopDrag, false);
         }
 
-        reSizer.addEventListener("mouseover", function init() {
+        reSizer.addEventListener("mouseover", function() {
             reSizer.style.opacity = "1";
             reSizer.addEventListener("mousedown", initDrag, false);
             reSizer.addEventListener("mouseout", function init() {
                 reSizer.style.opacity = "0";
             }, false);
         }, false);
+
+        window.addEventListener("resize", function() {
+            let currentWidth = parseInt(document.defaultView.getComputedStyle(reSizerParent).width, 10);
+            const maxValue = window.innerWidth * 0.8;
+            const minValue = 100;
+            if (currentWidth > maxValue) {
+                currentWidth = maxValue;
+            } else if (currentWidth < minValue) {
+                currentWidth = minValue;
+            }
+            setWidth(currentWidth);
+        })
     }
 
     updateSettings() {
