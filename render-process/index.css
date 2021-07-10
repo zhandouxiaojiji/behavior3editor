@@ -10,13 +10,31 @@ body {
   position: fixed;
 }
 
+.ant-layout {
+  flex-wrap: wrap;
+}
+
 .sider {
-  height  : 100%;
-  overflow: hidden;
+  height     : 100%;
+  overflow   : hidden;
+  transition : all 0s;
 }
 
 .sider:hover {
-  overflow-y   : auto;
+  overflow-y : auto;
+}
+
+#sizer-hint-bar {
+  position   : absolute;
+  width      : 10px;
+  height     : 100vh;
+  background : #66ccff;
+  top        : 0;
+  left       : 245px;
+  opacity    : 0;
+  transition : opacity 0.3s;
+  cursor     : col-resize;
+  z-index    : 10;
 }
 
 .content {

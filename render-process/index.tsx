@@ -76,6 +76,67 @@ export default class Main extends Component {
                 workspace: this.settings.curWorkspace.getFilepath(),
             });
         }, 50);
+
+        this.setReSizer();
+    }
+
+    setReSizer() {
+        let startX: number;
+        let startWidth: number;
+
+        const sider: any = document.getElementsByClassName("sider")[0];
+        const reSizerParent: any = document.getElementsByClassName("ant-layout-sider-children")[0];
+        const reSizer: any = document.getElementById("sizer-hint-bar");
+        const content: any = document.getElementsByClassName("ant-layout-content content")[0];
+
+        function initDrag(e: DragEvent) {
+            startX = e.clientX;
+            startWidth = parseInt(document.defaultView.getComputedStyle(reSizerParent).width, 10);
+            document.documentElement.addEventListener("mousemove", doDrag, false);
+            document.documentElement.addEventListener("mouseup", stopDrag, false);
+        }
+
+        function doDrag(e: DragEvent) {
+            const calcWidth = startWidth + e.clientX - startX;
+            setWidth(calcWidth);
+        }
+
+        function setWidth(width: number) {
+            const maxValue = window.innerWidth * 0.8;
+            const minValue = 100;
+            if (width > maxValue) {
+                width = maxValue;
+            } else if (width < minValue) {
+                width = minValue;
+            }
+            reSizerParent.style.width = width + "px";
+            sider.style.width = width + "px";
+            sider.style.maxWidth = width + "px";
+            sider.style.minWidth = "0px";
+            sider.style.flex = "";
+            reSizer.style.left = (width - 5) + "px";
+            content.style.width = window.innerWidth - width + "px";
+        }
+
+        function stopDrag(e: DragEvent) {
+            document.documentElement.removeEventListener("mousemove", doDrag, false);
+            document.documentElement.removeEventListener("mouseup", stopDrag, false);
+        }
+
+        reSizer.addEventListener("mouseover", function() {
+            reSizer.style.opacity = "1";
+            reSizer.addEventListener("mousedown", initDrag, false);
+            reSizer.addEventListener("mouseout", function init() {
+                reSizer.style.opacity = "0";
+            }, false);
+        }, false);
+
+        window.addEventListener("resize", function() {
+            const currentWidth = parseInt(document.defaultView.getComputedStyle(reSizerParent).width, 10);
+            setWidth(currentWidth);
+        });
+
+        setWidth(250);
     }
 
     updateSettings() {
@@ -87,7 +148,7 @@ export default class Main extends Component {
         const { workdir, workspace } = this.state;
         document.title = `行为树编辑器 - ${workspace}`;
         return (
-            <Layout className="body">
+            <Layout className="body" style={{flexDirection: "column"}}>
                 <Sider className="sider" width={250}>
                     {workdir !== "" ? (
                         <Explorer
@@ -106,6 +167,7 @@ export default class Main extends Component {
                         "Please Open Workspace"
                     )}
                 </Sider>
+                <div id="sizer-hint-bar"/>
                 <Content className="content">
                     <TreeTabs
                         ref={(ref) => {
