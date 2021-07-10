@@ -86,7 +86,8 @@ export default class Main extends Component {
 
         const sider: any = document.getElementsByClassName("sider")[0];
         const reSizerParent: any = document.getElementsByClassName("ant-layout-sider-children")[0];
-        const reSizer = document.getElementById("sizer-hint-bar");
+        const reSizer: any = document.getElementById("sizer-hint-bar");
+        const content: any = document.getElementsByClassName("ant-layout-content content")[0];
 
         function initDrag(e: DragEvent) {
             startX = e.clientX;
@@ -114,6 +115,7 @@ export default class Main extends Component {
             sider.style.minWidth = "0px";
             sider.style.flex = "";
             reSizer.style.left = (width - 5) + "px";
+            content.style.width = window.innerWidth - width + "px";
         }
 
         function stopDrag(e: DragEvent) {
@@ -132,7 +134,9 @@ export default class Main extends Component {
         window.addEventListener("resize", function() {
             const currentWidth = parseInt(document.defaultView.getComputedStyle(reSizerParent).width, 10);
             setWidth(currentWidth);
-        })
+        });
+
+        setWidth(250);
     }
 
     updateSettings() {
@@ -144,7 +148,7 @@ export default class Main extends Component {
         const { workdir, workspace } = this.state;
         document.title = `行为树编辑器 - ${workspace}`;
         return (
-            <Layout className="body">
+            <Layout className="body" style={{flexDirection: "column"}}>
                 <Sider className="sider" width={250}>
                     {workdir !== "" ? (
                         <Explorer
