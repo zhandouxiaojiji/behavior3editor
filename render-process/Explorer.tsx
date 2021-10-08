@@ -71,7 +71,9 @@ class FileDataNode {
         if (folder == "" || !fs.existsSync(folder)) {
             return [];
         }
-        const files = fs.readdirSync(folder);
+        const files = fs.readdirSync(folder).filter((f) => {
+            return f.endsWith(".json");
+        });
         const list: FileDataNode[] = [];
         files.forEach((filename) => {
             const fullPath = path.join(folder, filename);
