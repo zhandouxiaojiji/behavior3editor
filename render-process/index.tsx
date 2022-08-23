@@ -2,11 +2,10 @@ import * as ReactDOM from "react-dom";
 import SyncRequest from "sync-request";
 import React, { Component } from "react";
 import { Layout, message, Tabs } from "antd";
-import { ipcRenderer, remote } from "electron";
 import * as Utils from "../common/Utils";
 import MainEventType from "../common/MainEventType";
 import Settings from "../main-process/Settings";
-
+import {ipcRenderer} from "electron";
 import "antd/dist/antd.dark.css";
 import "./index.css";
 import RegisterNode from "./RegisterNode";

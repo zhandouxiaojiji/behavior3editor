@@ -16,7 +16,8 @@ body {
 
 .sider {
   height     : 100%;
-  overflow   : hidden;
+  overflow-y : auto;
+  overflow-x : hidden;
   transition : all 0s;
 }
 

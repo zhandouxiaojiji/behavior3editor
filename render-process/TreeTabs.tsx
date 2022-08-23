@@ -1,7 +1,7 @@
 import Editor from "./Editor";
 import React, { Component } from "react";
 import { Layout, Tabs, message } from "antd";
-import { ipcRenderer, remote } from "electron";
+import { ipcRenderer } from "electron";
 import * as path from "path";
 
 import "antd/dist/antd.dark.css";

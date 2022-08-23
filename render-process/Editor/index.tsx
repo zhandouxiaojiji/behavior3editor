@@ -113,6 +113,10 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                 },
             },
         });
+        
+        graph.on("contextmenu", (e: G6GraphEvent) => {
+            require("@electron/remote").Menu.getApplicationMenu().popup();
+        });
 
         graph.on("node:mouseenter", (e: G6GraphEvent) => {
             const { item } = e;

@@ -438,7 +438,7 @@ export default class AppMenu {
             if (typeItem.submenu instanceof Menu) {
                 console.log("typeItem.submenu error", typeItem);
             } else {
-                typeItem.submenu.push(item);
+                (typeItem.submenu as MenuItemConstructorOptions[]).push(item);
             }
         }
 
