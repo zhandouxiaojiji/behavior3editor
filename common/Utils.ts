@@ -1,7 +1,6 @@
 import { TreeGraphData } from "@antv/g6/lib/types";
 import { BehaviorNodeModel, BehaviorTreeModel, GraphNodeModel } from "./BehaviorTreeModel";
 import Settings from "../main-process/Settings";
-import { remote } from "electron";
 import * as path from "path";
 
 export const cloneNodeData = (nodeData: GraphNodeModel) => {
@@ -138,7 +137,7 @@ export const findFromAllChildren = (node: TreeGraphData, id: string): TreeGraphD
 };
 
 export const getRemoteSettings = () => {
-    return remote.getGlobal("settings") as Settings;
+    return require("@electron/remote").getGlobal("settings") as Settings;
 };
 
 export const fileName2treeName = (filename: string) => {

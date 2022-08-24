@@ -2,7 +2,6 @@ import { app, BrowserWindow, Menu, MenuItem, dialog, nativeTheme } from "electro
 import AppMenu from "./AppMenu";
 import Settings from "./Settings";
 import MainEventType from "../common/MainEventType";
-
 import electronLocalshortcut from "electron-localshortcut";
 
 // 一些暴露给render-process的全局变量
@@ -47,11 +46,14 @@ export class MainProcess {
             height: 800,
             webPreferences: {
                 nodeIntegration: true,
-                enableRemoteModule: true,
+                contextIsolation:false,
             },
             // fullscreenable:false,
             // maximizable:false
         });
+        
+        require("@electron/remote/main").initialize();
+        require("@electron/remote/main").enable(this.mainWindow.webContents);
         this.mainWindow.maximize();
         // mainWindow.webContents.openDevTools();
         this.mainWindow.loadFile("index.html");
