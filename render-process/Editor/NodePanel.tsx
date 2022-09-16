@@ -147,7 +147,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
 
     handleSubmit = (event: any) => {
         console.log("handleSubmit");
-        this.blockNodeSelectChange = this.blockNodeSelectChange === event.currentTarget.id ? null : this.blockNodeSelectChange
+        this.blockNodeSelectChange = (event.currentTarget && this.blockNodeSelectChange === event.currentTarget.id) ? null : this.blockNodeSelectChange
         this.formRef.current.submit();
     };
     onBlockNodeSelectChange = (event: any) => {
