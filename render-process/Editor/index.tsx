@@ -24,6 +24,7 @@ export interface EditorProps {
 
 interface EditorState {
     curNodeId?: string;
+    blockNodeSelectChange?: boolean;
 }
 
 export default class Editor extends React.Component<EditorProps, EditorState> {
@@ -113,7 +114,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                 },
             },
         });
-        
+
         graph.on("contextmenu", (e: G6GraphEvent) => {
             require("@electron/remote").Menu.getApplicationMenu().popup();
         });
@@ -135,6 +136,11 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         });
 
         graph.on("nodeselectchange", (e: G6GraphEvent) => {
+            if (this.state.blockNodeSelectChange) {
+                // ** 重置选中效果
+                this.onSelectNode(this.state.curNodeId)
+                return;
+            }
             if (e.target) {
                 this.onSelectNode(e.target.getID());
             } else {
@@ -481,8 +487,12 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         return (
             <div className="editor">
                 <Row className="editorBd">
-                    <Col span={18} className="editorContent" ref={this.ref} />
-                    <Col span={6} className="editorSidebar">
+                    <Col span={18} className="editorContent" ref={this.ref} onMouseDownCapture={(event) => {
+                        this.state.blockNodeSelectChange = false;
+                    }} />
+                    <Col span={6} className="editorSidebar" onMouseDownCapture={(event) => {
+                        this.state.blockNodeSelectChange = true;
+                    }}>
                         {curNode ? (
                             <NodePanel
                                 model={curNode}
@@ -504,19 +514,19 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                                 }}
                             />
                         ) : (
-                                <TreePanel
-                                    model={this.treeModel}
-                                    onRenameTree={(name: string) => {
+                            <TreePanel
+                                model={this.treeModel}
+                                onRenameTree={(name: string) => {
 
-                                    }}
-                                    onRemoveTree={() => {
+                                }}
+                                onRemoveTree={() => {
 
-                                    }}
-                                    onChangeTreeDesc={(desc) => {
-                                        this.changeTreeDesc(desc);
-                                    }}
-                                />
-                            )}
+                                }}
+                                onChangeTreeDesc={(desc) => {
+                                    this.changeTreeDesc(desc);
+                                }}
+                            />
+                        )}
                     </Col>
                 </Row>
             </div>
