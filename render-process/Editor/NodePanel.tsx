@@ -31,10 +31,16 @@ interface NodePanelProps {
     pushUndoStack: () => void;
 }
 
-interface NodePanelState {}
+interface NodePanelState { }
 
 export default class NodePanel extends React.Component<NodePanelProps> {
     formRef = React.createRef<FormInstance>();
+    /**
+     * 阻止 G6 的 nodeselectchange 事件触发时机造成的问题：
+     * 1. 编辑节点参数时，鼠标按下并选中内容后，如果鼠标弹起时位于树状图区域，节点的选中状态会被取消。
+     * 2. 选中参数A后，不取消选中状态，直接鼠标选中并编辑参数B，鼠标弹起时位于树状图区域，同样可以重现问题 1 。
+     */
+    public blockNodeSelectChange: string = null;
 
     componentDidUpdate() {
         this.formRef.current.resetFields();
@@ -139,10 +145,14 @@ export default class NodePanel extends React.Component<NodePanelProps> {
         console.log("Failed:", errorInfo);
     };
 
-    handleSubmit = () => {
+    handleSubmit = (event: any) => {
         console.log("handleSubmit");
+        this.blockNodeSelectChange = this.blockNodeSelectChange === event.currentTarget.id ? null : this.blockNodeSelectChange
         this.formRef.current.submit();
     };
+    onBlockNodeSelectChange = (event: any) => {
+        this.blockNodeSelectChange = event.currentTarget.id;
+    }
 
     render() {
         const { model, settings } = this.props;
@@ -206,19 +216,19 @@ export default class NodePanel extends React.Component<NodePanelProps> {
         const normalArgs = (e: ArgsDefType) => {
             const required = e.type.indexOf("?") == -1;
             if (e.type.indexOf("string") >= 0) {
-                return <Input onBlur={this.handleSubmit} />;
+                return <Input onBlur={this.handleSubmit} onMouseDown={this.onBlockNodeSelectChange} />;
             } else if (e.type.indexOf("int") >= 0) {
-                return <InputNumber style={{ width: "100%" }} onBlur={this.handleSubmit} />;
+                return <InputNumber style={{ width: "100%" }} onBlur={this.handleSubmit} onMouseDown={this.onBlockNodeSelectChange} />;
             } else if (e.type.indexOf("boolean") >= 0) {
                 return <Switch onChange={this.handleSubmit} />;
             } else if (e.type.indexOf("lua") >= 0) {
-                return <Input onBlur={this.handleSubmit} placeholder={"公式"} />;
-            } else if (e.type.indexOf("enum") >= 0 ) {
+                return <Input onBlur={this.handleSubmit} onMouseDown={this.onBlockNodeSelectChange} placeholder={"公式"} />;
+            } else if (e.type.indexOf("enum") >= 0) {
                 return <Select style={{ width: 120 }} onChange={this.handleSubmit} >
                     {
-                    e.options.map((e)=>{
-                        return (<Option key={e.name} value={e.value}>{e.name}</Option>)
-                    })
+                        e.options.map((e) => {
+                            return (<Option key={e.name} value={e.value}>{e.name}</Option>)
+                        })
                     }
                 </Select>;
             }
@@ -228,7 +238,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
         const customArgs = () => {
             return (
                 <Item name="customArgs" label="自定义" key="customArgs">
-                    <Input.TextArea onBlur={this.handleSubmit} style={{ minHeight: 100 }} />
+                    <Input.TextArea onBlur={this.handleSubmit} onMouseDown={this.onBlockNodeSelectChange} style={{ minHeight: 100 }} />
                 </Item>
             );
         };

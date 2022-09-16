@@ -40,10 +40,12 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     private settings: Settings;
     private data: GraphNodeModel;
     private unsave: boolean = false;
+    private nodePanelRef: React.RefObject<NodePanel>;
 
     constructor(props: EditorProps) {
         super(props);
         this.ref = React.createRef();
+        this.nodePanelRef = React.createRef();
 
         this.settings = Utils.getRemoteSettings();
         const str = fs.readFileSync(this.props.filepath, "utf8");
@@ -113,7 +115,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                 },
             },
         });
-        
+
         graph.on("contextmenu", (e: G6GraphEvent) => {
             require("@electron/remote").Menu.getApplicationMenu().popup();
         });
@@ -135,6 +137,11 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         });
 
         graph.on("nodeselectchange", (e: G6GraphEvent) => {
+            if (this.nodePanelRef.current && this.nodePanelRef.current.blockNodeSelectChange) {
+                // ** 重置选中效果
+                this.onSelectNode(this.state.curNodeId)
+                return;
+            }
             if (e.target) {
                 this.onSelectNode(e.target.getID());
             } else {
@@ -485,6 +492,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                     <Col span={6} className="editorSidebar">
                         {curNode ? (
                             <NodePanel
+                                ref={this.nodePanelRef}
                                 model={curNode}
                                 settings={this.settings}
                                 updateNode={(id, forceUpdate) => {
@@ -504,19 +512,19 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                                 }}
                             />
                         ) : (
-                                <TreePanel
-                                    model={this.treeModel}
-                                    onRenameTree={(name: string) => {
+                            <TreePanel
+                                model={this.treeModel}
+                                onRenameTree={(name: string) => {
 
-                                    }}
-                                    onRemoveTree={() => {
+                                }}
+                                onRemoveTree={() => {
 
-                                    }}
-                                    onChangeTreeDesc={(desc) => {
-                                        this.changeTreeDesc(desc);
-                                    }}
-                                />
-                            )}
+                                }}
+                                onChangeTreeDesc={(desc) => {
+                                    this.changeTreeDesc(desc);
+                                }}
+                            />
+                        )}
                     </Col>
                 </Row>
             </div>
