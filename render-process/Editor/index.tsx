@@ -16,6 +16,7 @@ import Settings from "../../main-process/Settings";
 
 import "./Editor.css";
 import { clipboard } from "electron";
+import { Matrix } from '@antv/g6/lib/types';
 
 export interface EditorProps {
     filepath: string;
@@ -25,6 +26,7 @@ export interface EditorProps {
 interface EditorState {
     curNodeId?: string;
     blockNodeSelectChange?: boolean;
+    viewportMatrix?: Matrix
 }
 
 export default class Editor extends React.Component<EditorProps, EditorState> {
@@ -114,6 +116,12 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                 },
             },
         });
+
+        graph.on("viewportchange", (data: any) => {
+            if (data.action == 'translate' || data.action == 'zoom') {
+                this.state.viewportMatrix = data.matrix
+            }
+        })
 
         graph.on("contextmenu", (e: G6GraphEvent) => {
             require("@electron/remote").Menu.getApplicationMenu().popup();
@@ -287,6 +295,15 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         this.forceUpdate();
     }
 
+    /**
+     * remember the last matrix that triggered by Translate or Zoom action , and restore that matrix where the graph is reconstruct.
+     */
+    restoreViewport() {
+        if (this.state.viewportMatrix) {
+            this.graph.getGroup().setMatrix(this.state.viewportMatrix);
+        }
+    }
+
     onSelectNode(curNodeId: string | null) {
         const graph = this.graph;
 
@@ -373,7 +390,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         this.graph.set("animate", false);
         this.graph.changeData(Utils.createTreeData(root, this.settings));
         this.graph.layout();
-        this.graph.fitCenter();
+        this.restoreViewport();
         this.graph.set("animate", true);
     }
 
@@ -431,7 +448,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         this.graph.set("animate", false);
         this.graph.changeData(Utils.createTreeData(data, this.settings));
         this.graph.layout();
-        this.graph.fitCenter();
+        this.restoreViewport();
         this.graph.set("animate", true);
 
         this.props.onChangeSaveState(true);
