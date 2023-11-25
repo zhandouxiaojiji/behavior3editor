@@ -428,19 +428,19 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             if (!str || str == "") {
                 return;
             }
-            this.pushUndoStack();
             const data = Utils.createTreeData(JSON.parse(str), this.settings);
             this.autoId = Utils.refreshNodeId(data, this.autoId);
             this.onSelectNode(null);
             if (!curNodeData.children) {
                 curNodeData.children = [];
             }
+            this.pushUndoStack();
             curNodeData.children.push(data);
             // this.autoId = Utils.refreshNodeId(this.graph.findDataById("1") as GraphNodeModel);
             this.changeWithoutAnim();
         } catch (error) {
             // message.error("粘贴数据有误");
-            console.log("paste error");
+            console.log(error);
         }
     }
 
