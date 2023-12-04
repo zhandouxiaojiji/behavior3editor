@@ -131,6 +131,20 @@ export default function (settings: Settings) {
                     name: "node-icon",
                 });
 
+                // debug
+                if (cfg.debug) {
+                    group.addShape("image", {
+                        attrs: {
+                            x: x0 + 182,
+                            y: y0 + 2,
+                            height: 14,
+                            width: 14,
+                            img: `./static/icons/Debug.svg`,
+                        },
+                        name: "node-icon",
+                    });
+                }
+
                 // name text
                 group.addShape("text", {
                     attrs: {
