@@ -211,8 +211,8 @@ export default class NodePanel extends React.Component<NodePanelProps> {
                 return <InputNumber style={{ width: "100%" }} onBlur={this.handleSubmit} />;
             } else if (e.type.indexOf("boolean") >= 0) {
                 return <Switch onChange={this.handleSubmit} />;
-            } else if (e.type.indexOf("lua") >= 0) {
-                return <Input onBlur={this.handleSubmit} placeholder={"公式"} />;
+            } else if (e.type.indexOf("code") >= 0) {
+                return <Input onBlur={this.handleSubmit} placeholder={"表达式"} />;
             } else if (e.type.indexOf("enum") >= 0 ) {
                 return <Select style={{ width: 120 }} onChange={this.handleSubmit} >
                     {
