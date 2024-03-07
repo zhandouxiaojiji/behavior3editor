@@ -207,7 +207,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
             const required = e.type.indexOf("?") == -1;
             if (e.type.indexOf("string") >= 0) {
                 return <Input onBlur={this.handleSubmit} />;
-            } else if (e.type.indexOf("int") >= 0) {
+            } else if (e.type.indexOf("int") >= 0 || e.type.indexOf("float") >= 0) {
                 return <InputNumber style={{ width: "100%" }} onBlur={this.handleSubmit} />;
             } else if (e.type.indexOf("boolean") >= 0) {
                 return <Switch onChange={this.handleSubmit} />;
