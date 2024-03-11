@@ -1,0 +1,25 @@
+{
+  "name": "subtree",
+  "root": {
+    "id": 1,
+    "name": "Sequence",
+    "desc": "新建行为树",
+    "children": [
+      {
+        "id": 2,
+        "name": "Log",
+        "args": {
+          "str": "hello"
+        }
+      },
+      {
+        "id": 3,
+        "name": "Wait",
+        "args": {
+          "time": 1
+        }
+      }
+    ]
+  },
+  "desc": "子树1"
+}

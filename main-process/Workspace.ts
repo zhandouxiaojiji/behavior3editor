@@ -43,8 +43,8 @@ export default class Workspace {
             const model = JSON.parse(str) as WorkspaceModel;
             if (model.isRelative) {
                 const root = path.dirname(this.filepath);
-                this.nodeConfPath = path.join(root,model.nodeConfPath);
-                this.workdir = path.join(root,model.workdir);
+                this.nodeConfPath = path.join(root, model.nodeConfPath);
+                this.workdir = path.join(root, model.workdir);
             } else {
                 this.nodeConfPath = model.nodeConfPath;
                 this.workdir = model.workdir;
@@ -86,7 +86,7 @@ export default class Workspace {
         this.workdir = workdir;
     }
     getServers() {
-        if(this.model && this.model.servers) {
+        if (this.model && this.model.servers) {
             return this.model.servers;
         } else {
             return [];
@@ -153,5 +153,9 @@ export default class Workspace {
 
     getNodeConf(name: string) {
         return this.name2conf[name] || unknowNodeType;
+    }
+
+    hasNodeConf(name: string) {
+        return !!this.name2conf[name];
     }
 }

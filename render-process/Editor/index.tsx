@@ -1,22 +1,22 @@
-import * as React from "react";
-import * as fs from "fs";
-import * as path from "path";
-import { Row, Col, message, Card } from "antd";
-import NodePanel from "./NodePanel";
 import G6, { TreeGraph } from "@antv/g6";
 import { G6GraphEvent } from "@antv/g6/lib/interface/behavior";
-import * as Utils from "../../common/Utils";
+import { Col, Row, message } from "antd";
+import * as fs from "fs";
+import * as path from "path";
+import * as React from "react";
 import {
+    BehaviorNodeModel,
     BehaviorTreeModel,
     GraphNodeModel,
-    BehaviorNodeModel,
 } from "../../common/BehaviorTreeModel";
-import TreePanel from "./TreePanel";
+import * as Utils from "../../common/Utils";
 import Settings from "../../main-process/Settings";
+import NodePanel from "./NodePanel";
+import TreePanel from "./TreePanel";
 
-import "./Editor.css";
+import { Matrix } from "@antv/g6/lib/types";
 import { clipboard } from "electron";
-import { Matrix } from '@antv/g6/lib/types';
+import "./Editor.css";
 
 export interface EditorProps {
     filepath: string;
@@ -26,7 +26,7 @@ export interface EditorProps {
 interface EditorState {
     curNodeId?: string;
     blockNodeSelectChange?: boolean;
-    viewportMatrix?: Matrix
+    viewportMatrix?: Matrix;
 }
 
 export default class Editor extends React.Component<EditorProps, EditorState> {
@@ -34,6 +34,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     state: EditorState = {};
 
     private graph: TreeGraph;
+    private isInEditor: boolean = false;
     private dragSrcId: string;
     private dragDstId: string;
     private autoId: number;
@@ -56,7 +57,9 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     }
 
     shouldComponentUpdate(nextProps: EditorProps, nextState: EditorState) {
-        return this.props.filepath != nextProps.filepath || this.state.curNodeId != nextState.curNodeId;
+        return (
+            this.props.filepath != nextProps.filepath || this.state.curNodeId != nextState.curNodeId
+        );
     }
 
     componentDidMount() {
@@ -118,13 +121,21 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         });
 
         graph.on("viewportchange", (data: any) => {
-            if (data.action == 'translate' || data.action == 'zoom') {
-                this.state.viewportMatrix = data.matrix
+            if (data.action == "translate" || data.action == "zoom") {
+                this.state.viewportMatrix = data.matrix;
             }
-        })
+        });
 
         graph.on("contextmenu", (e: G6GraphEvent) => {
             require("@electron/remote").Menu.getApplicationMenu().popup();
+        });
+
+        graph.on("canvas:mouseover", () => {
+            this.isInEditor = true;
+        });
+
+        graph.on("canvas:mouseleave", () => {
+            this.isInEditor = false;
         });
 
         graph.on("node:mouseenter", (e: G6GraphEvent) => {
@@ -146,7 +157,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         graph.on("nodeselectchange", (e: G6GraphEvent) => {
             if (this.state.blockNodeSelectChange) {
                 // ** 重置选中效果
-                this.onSelectNode(this.state.curNodeId)
+                this.onSelectNode(this.state.curNodeId);
                 return;
             }
             if (e.target) {
@@ -237,16 +248,16 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             }
 
             const rootData = graph.findDataById("1");
-            const srcData = graph.findDataById(srcNodeId);
-            const srcParent = Utils.findParent(rootData, srcNodeId);
-            const dstData = graph.findDataById(dstNode.getID());
-            const dstParent = Utils.findParent(rootData, dstNode.getID());
+            const srcData = graph.findDataById(srcNodeId) as GraphNodeModel;
+            const srcParent = Utils.findParent(this.graph, srcData);
+            const dstData = graph.findDataById(dstNode.getID()) as GraphNodeModel;
+            const dstParent = Utils.findParent(this.graph, dstData);
             if (!srcParent) {
                 console.log("no parent!");
                 return;
             }
 
-            if (Utils.findFromAllChildren(srcData, dstData.id)) {
+            if (Utils.isAncestor(this.graph, srcData, dstData)) {
                 // 不能将父节点拖到自已的子孙节点
                 console.log("cannot move to child");
                 return;
@@ -262,6 +273,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                 if (!dstData.children) {
                     dstData.children = [];
                 }
+                srcData.parent = dstData.id;
                 dstData.children.push(srcData);
             } else if (dragDir == "dragUp") {
                 if (!dstParent) {
@@ -269,6 +281,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                 }
                 removeSrc();
                 const idx = dstParent.children.findIndex((e) => e.id == dstData.id);
+                srcData.parent = dstParent.id;
                 dstParent.children.splice(idx, 0, srcData);
             } else if (dragDir == "dragDown") {
                 if (!dstParent) {
@@ -276,6 +289,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                 }
                 removeSrc();
                 const idx = dstParent.children.findIndex((e) => e.id == dstData.id);
+                srcData.parent = dstParent.id;
                 dstParent.children.splice(idx + 1, 0, srcData);
             } else {
                 return;
@@ -309,6 +323,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
         if (this.state.curNodeId) {
             graph.setItemState(this.state.curNodeId, "selected", false);
+            graph.setItemState(this.state.curNodeId, "hover", false);
         }
 
         this.setState({ curNodeId });
@@ -318,6 +333,10 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     }
 
     createNode(name: string) {
+        if (!this.isInEditor) {
+            return;
+        }
+
         console.log("editor create node", name);
         const { curNodeId } = this.state;
         if (!curNodeId) {
@@ -333,7 +352,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         if (!curNodeData.children) {
             curNodeData.children = [];
         }
-        curNodeData.children.push(Utils.createTreeData(newNodeData, this.settings));
+        curNodeData.children.push(Utils.createTreeData(newNodeData, this.settings, curNodeId));
         this.changeWithoutAnim();
     }
 
@@ -344,15 +363,17 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             return;
         }
 
-        if (curNodeId == "1") {
+        if (curNodeId === "1") {
             message.warn("根节点不能删除!");
             return;
         }
 
         this.onSelectNode(null);
         this.pushUndoStack();
-        const rootData = this.graph.findDataById("1");
-        const parentData = Utils.findParent(rootData, curNodeId);
+        const parentData = Utils.findParent(
+            this.graph,
+            this.graph.findDataById(curNodeId) as GraphNodeModel
+        );
         parentData.children = parentData.children.filter((e) => e.id != curNodeId);
         this.changeWithoutAnim();
     }
@@ -380,18 +401,33 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             root,
             desc: this.treeModel.desc,
         } as BehaviorTreeModel;
-        fs.writeFileSync(
-            filepath,
-            JSON.stringify(treeModel, null, 2)
-        );
+        fs.writeFileSync(filepath, JSON.stringify(treeModel, null, 2));
         this.props.onChangeSaveState(false);
         this.unsave = false;
 
+        const treeData = Utils.createTreeData(root, this.settings);
+        this.autoId = Utils.refreshNodeId(treeData);
+
         this.graph.set("animate", false);
-        this.graph.changeData(Utils.createTreeData(root, this.settings));
+        this.graph.changeData(treeData);
         this.graph.layout();
         this.restoreViewport();
         this.graph.set("animate", true);
+    }
+
+    reload() {
+        if (!this.unsave) {
+            const data = this.graph.findDataById("1") as GraphNodeModel;
+            this.autoId = Utils.refreshNodeId(data);
+            const root = Utils.createFileData(data);
+            const treeData = Utils.createTreeData(root, this.settings);
+            this.autoId = Utils.refreshNodeId(treeData);
+            this.graph.set("animate", false);
+            this.graph.changeData(treeData);
+            this.graph.layout();
+            this.restoreViewport();
+            this.graph.set("animate", true);
+        }
     }
 
     getTreeModel() {
@@ -407,28 +443,40 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     }
 
     copyNode() {
+        if (!this.isInEditor) {
+            return;
+        }
+
         console.log("editor copy node");
         const { curNodeId } = this.state;
         if (!curNodeId) {
             return;
         }
         const data = this.graph.findDataById(curNodeId) as GraphNodeModel;
-        clipboard.writeText(JSON.stringify(Utils.cloneNodeData(data), null, 2));
+        const str = JSON.stringify(Utils.cloneNodeData(data), null, 2);
+        console.log("copy:", str);
+        clipboard.writeText(str);
     }
 
     pasteNode() {
+        if (!this.isInEditor) {
+            return;
+        }
+
         const { curNodeId } = this.state;
         if (!curNodeId) {
             message.warn("未选中节点");
             return;
         }
+
         const curNodeData = this.graph.findDataById(curNodeId);
         try {
             const str = clipboard.readText();
             if (!str || str == "") {
                 return;
             }
-            const data = Utils.createTreeData(JSON.parse(str), this.settings);
+            console.log("paste:", str);
+            const data = Utils.createTreeData(JSON.parse(str), this.settings, curNodeId);
             this.autoId = Utils.refreshNodeId(data, this.autoId);
             this.onSelectNode(null);
             if (!curNodeData.children) {
@@ -446,7 +494,9 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
     useStackData(data: BehaviorNodeModel) {
         this.graph.set("animate", false);
-        this.graph.changeData(Utils.createTreeData(data, this.settings));
+        this.data = Utils.createTreeData(data, this.settings);
+        this.autoId = Utils.refreshNodeId(this.data);
+        this.graph.changeData(this.data);
         this.graph.layout();
         this.restoreViewport();
         this.graph.set("animate", true);
@@ -456,7 +506,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     }
 
     pushUndoStack(keepRedo?: boolean) {
-        this.undoStack.push(Utils.cloneNodeData(this.graph.findDataById('1') as GraphNodeModel));
+        this.undoStack.push(Utils.cloneNodeData(this.graph.findDataById("1") as GraphNodeModel));
         console.log("push undo", this.undoStack);
         if (!keepRedo) {
             this.redoStack = [];
@@ -464,7 +514,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
     }
 
     pushRedoStack() {
-        this.redoStack.push(Utils.cloneNodeData(this.graph.findDataById('1') as GraphNodeModel));
+        this.redoStack.push(Utils.cloneNodeData(this.graph.findDataById("1") as GraphNodeModel));
         console.log("push redo", this.redoStack);
     }
 
@@ -504,22 +554,35 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         return (
             <div className="editor">
                 <Row className="editorBd">
-                    <Col span={18} className="editorContent" ref={this.ref} onMouseDownCapture={(event) => {
-                        this.state.blockNodeSelectChange = false;
-                    }} />
-                    <Col span={6} className="editorSidebar" onMouseDownCapture={(event) => {
-                        this.state.blockNodeSelectChange = true;
-                    }}>
+                    <Col
+                        span={18}
+                        className="editorContent"
+                        ref={this.ref}
+                        onMouseDownCapture={(event) => {
+                            this.state.blockNodeSelectChange = false;
+                        }}
+                    />
+                    <Col
+                        span={6}
+                        className="editorSidebar"
+                        onMouseDownCapture={(event) => {
+                            this.state.blockNodeSelectChange = true;
+                        }}
+                    >
                         {curNode ? (
                             <NodePanel
                                 model={curNode}
                                 settings={this.settings}
                                 updateNode={(id, forceUpdate) => {
                                     if (forceUpdate) {
-                                        const data: any = this.graph.findDataById(id);
+                                        const data: GraphNodeModel = this.graph.findDataById(
+                                            id
+                                        ) as GraphNodeModel;
                                         data.conf = this.settings.getNodeConf(data.name);
                                         data.size = Utils.calcTreeNodeSize(data);
                                         this.changeWithoutAnim();
+                                        this.save();
+                                        return;
                                     }
                                     const item = this.graph.findById(id);
                                     item.draw();
@@ -533,12 +596,8 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                         ) : (
                             <TreePanel
                                 model={this.treeModel}
-                                onRenameTree={(name: string) => {
-
-                                }}
-                                onRemoveTree={() => {
-
-                                }}
+                                onRenameTree={(name: string) => {}}
+                                onRemoveTree={() => {}}
                                 onChangeTreeDesc={(desc) => {
                                     this.changeTreeDesc(desc);
                                 }}

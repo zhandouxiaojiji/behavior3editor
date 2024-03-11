@@ -1,0 +1,15 @@
+{
+  "name": "subtree2",
+  "root": {
+    "id": 1,
+    "name": "Sequence",
+    "desc": "新建行为树",
+    "children": [
+      {
+        "id": 2,
+        "name": "unknow"
+      }
+    ]
+  },
+  "desc": "子树2"
+}

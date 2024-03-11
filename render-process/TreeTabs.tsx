@@ -1,12 +1,14 @@
-import Editor from "./Editor";
-import React, { Component } from "react";
-import { Layout, Tabs, message } from "antd";
+import { Tabs, message } from "antd";
 import { ipcRenderer } from "electron";
+import * as fs from "fs";
 import * as path from "path";
+import * as Utils from "../common/Utils";
+import React, { Component } from "react";
+import Editor from "./Editor";
 
 import "antd/dist/antd.dark.css";
-import MainEventType from "../common/MainEventType";
 import { BehaviorTreeModel } from "../common/BehaviorTreeModel";
+import MainEventType from "../common/MainEventType";
 
 const { TabPane } = Tabs;
 
@@ -70,6 +72,31 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
             message.success("已保存所有行为树");
         });
 
+        ipcRenderer.on(MainEventType.BUILD, () => {
+            for (let k in this.editors) {
+                let editor = this.editors[k];
+                editor.save();
+            }
+
+            const settings = Utils.getRemoteSettings();
+            const workdir = settings.workdir;
+            if (!fs.existsSync(workdir)) {
+                console.log("workdir not found:", workdir);
+                return;
+            }
+            const files = fs.readdirSync(workdir).filter((f) => {
+                return f.endsWith(".json");
+            });
+            for (const path of files) {
+                const builddir = fs.realpathSync(workdir + "/../build", "utf-8");
+                fs.mkdirSync(builddir, { recursive: true });
+                const buildpath = builddir + "/" + path;
+                console.log("build:", buildpath);
+                const treeModel = Utils.createBuildData(path, settings);
+                fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
+            }
+        });
+
         ipcRenderer.on(MainEventType.UNDO, () => {
             const editor = this.getCurEditor();
             editor?.undo();
@@ -88,7 +115,7 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
     }
 
     getOpenTreesModel() {
-        const trees: BehaviorTreeModel[] = []
+        const trees: BehaviorTreeModel[] = [];
         for (let k in this.editors) {
             let editor = this.editors[k];
             if (editor) {
@@ -108,7 +135,7 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
     }
 
     openFile(path: string) {
-        if (!this.state.trees.find(e => e.filepath == path)) {
+        if (!this.state.trees.find((e) => e.filepath == path)) {
             const trees = this.state.trees;
             trees.push({ filepath: path });
             this.setState({ trees, curTree: path });
@@ -119,7 +146,7 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
 
     closeFile(path: string) {
         let trees = this.state.trees;
-        trees = trees.filter(tree => tree.filepath != path);
+        trees = trees.filter((tree) => tree.filepath != path);
         const length = trees.length;
         this.setState({ trees: trees, curTree: length > 0 ? trees[0].filepath : null });
     }
@@ -139,6 +166,8 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
                 defaultActiveKey={curTree}
                 activeKey={curTree}
                 onChange={(activeKey) => {
+                    const editor = this.editors[activeKey];
+                    editor?.reload();
                     this.setState({ curTree: activeKey });
                 }}
                 onEdit={(targetKey, action) => {
@@ -149,14 +178,17 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
             >
                 {trees.map((tree) => {
                     return (
-                        <TabPane tab={`${path.basename(tree.filepath)}${tree.unsave?"*":''}`} key={tree.filepath}>
+                        <TabPane
+                            tab={`${path.basename(tree.filepath)}${tree.unsave ? "*" : ""}`}
+                            key={tree.filepath}
+                        >
                             <Editor
                                 filepath={tree.filepath}
                                 onChangeSaveState={(unsave) => {
-                                    if(tree.unsave != unsave) {
+                                    if (tree.unsave != unsave) {
                                         tree.unsave = unsave;
                                         this.forceUpdate();
-                                    } 
+                                    }
                                 }}
                                 ref={(ref) => {
                                     this.editors[tree.filepath] = ref;

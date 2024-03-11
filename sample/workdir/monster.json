@@ -18,10 +18,18 @@
             "args": {},
             "output": [
               "hp"
+            ],
+            "children": [
+              {
+                "id": 4,
+                "name": "Sequence",
+                "desc": "新建行为树",
+                "path": "subtree2.json"
+              }
             ]
           },
           {
-            "id": 4,
+            "id": 6,
             "name": "Cmp",
             "args": {
               "gt": 50,
@@ -32,17 +40,24 @@
             ]
           },
           {
-            "id": 5,
+            "id": 7,
             "name": "Log",
             "desc": "攻击",
             "args": {
               "str": "Attack!"
-            }
+            },
+            "children": []
+          },
+          {
+            "id": 8,
+            "name": "Sequence",
+            "desc": "新建行为树",
+            "path": "subtree1.json"
           }
         ]
       },
       {
-        "id": 6,
+        "id": 11,
         "name": "Log",
         "desc": "逃跑",
         "args": {

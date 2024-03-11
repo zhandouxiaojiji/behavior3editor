@@ -1,13 +1,27 @@
-import { TreeGraphData } from "@antv/g6/lib/types";
-import { BehaviorNodeModel, BehaviorTreeModel, GraphNodeModel } from "./BehaviorTreeModel";
-import Settings from "../main-process/Settings";
+import { TreeGraph } from "@antv/g6";
 import * as path from "path";
+import * as fs from "fs";
+import Settings from "../main-process/Settings";
+import { BehaviorNodeModel, BehaviorTreeModel, GraphNodeModel } from "./BehaviorTreeModel";
+import { message } from "antd";
+
+interface INodeDataLike {
+    path?: string;
+    id: string | number;
+}
+
+export const isSubtree = (nodeData: INodeDataLike) => {
+    return nodeData.path && nodeData.id.toString() !== "1";
+};
+
+const parsingStack: string[] = [];
 
 export const cloneNodeData = (nodeData: GraphNodeModel) => {
     const newData: BehaviorNodeModel = {
         id: Number(nodeData.id),
         name: nodeData.name,
         desc: nodeData.desc,
+        path: nodeData.path,
     };
     if (nodeData.input) {
         newData.input = [];
@@ -28,8 +42,8 @@ export const cloneNodeData = (nodeData: GraphNodeModel) => {
             newData.args[k] = v;
         }
     }
-    if (nodeData.children) {
-        newData.children = []
+    if (nodeData.children && !isSubtree(nodeData)) {
+        newData.children = [];
         for (let child of nodeData.children) {
             newData.children.push(cloneNodeData(child));
         }
@@ -44,6 +58,7 @@ export const refreshNodeId = (nodeData: GraphNodeModel, id?: number) => {
     nodeData.id = (id++).toString();
     if (nodeData.children) {
         nodeData.children.forEach((child) => {
+            child.parent = nodeData.id;
             id = refreshNodeId(child, id);
         });
     }
@@ -51,21 +66,24 @@ export const refreshNodeId = (nodeData: GraphNodeModel, id?: number) => {
 };
 
 export const calcTreeNodeSize = (treeNode: GraphNodeModel) => {
-    var height = 40;
+    var height = 40 + 2;
     const updateHeight = (obj: any) => {
         if (Array.isArray(obj) || (obj && Object.keys(obj).length > 0)) {
             const { str, line } = toBreakWord(`参数:${JSON.stringify(obj)}`, 35);
             height += 20 * line;
         }
     };
+    if (treeNode.path) {
+        height += 20;
+    }
     updateHeight(treeNode.args);
     updateHeight(treeNode.input);
     updateHeight(treeNode.output);
     return [200, height];
 };
 
-export const createTreeData = (bNode: BehaviorNodeModel, settings: Settings) => {
-    const treeData: GraphNodeModel = {
+export const createTreeData = (bNode: BehaviorNodeModel, settings: Settings, parent?: string) => {
+    let treeData: GraphNodeModel = {
         id: bNode.id.toString(),
         name: bNode.name,
         desc: bNode.desc,
@@ -74,19 +92,60 @@ export const createTreeData = (bNode: BehaviorNodeModel, settings: Settings) => 
         output: bNode.output,
         debug: bNode.debug,
         conf: settings.getNodeConf(bNode.name),
+        parent: parent,
     };
+
     treeData.size = calcTreeNodeSize(treeData);
+
+    if (!parent) {
+        parsingStack.length = 0;
+    }
+
     if (bNode.children) {
         treeData.children = [];
         bNode.children.forEach((child) => {
-            treeData.children.push(createTreeData(child, settings));
+            treeData.children.push(createTreeData(child, settings, treeData.id));
         });
+    } else if (bNode.path) {
+        if (parsingStack.indexOf(bNode.path) >= 0) {
+            treeData.path = bNode.path;
+            treeData.size = calcTreeNodeSize(treeData);
+            message.error(`循环引用节点：${bNode.path}`, 4);
+            return treeData;
+        }
+        parsingStack.push(bNode.path);
+        try {
+            const subtreePath = settings.workdir + "/" + bNode.path;
+            const str = fs.readFileSync(subtreePath, "utf8");
+            console.log("read subtree:", subtreePath);
+            treeData = createTreeData(JSON.parse(str).root, settings, treeData.id);
+            treeData.path = bNode.path;
+            treeData.size = calcTreeNodeSize(treeData);
+        } catch (error) {
+            console.log("parse subtree:", error);
+        }
+        parsingStack.pop();
     }
     calcTreeNodeSize(treeData);
     return treeData;
 };
 
-export const createFileData = (gNode: GraphNodeModel) => {
+export const createBuildData = (path: string, settings: Settings): BehaviorNodeModel | null => {
+    try {
+        path = settings.workdir + "/" + path;
+        const str = fs.readFileSync(path, "utf8");
+        let treeModel = JSON.parse(str);
+        const data = createTreeData(treeModel.root, settings);
+        refreshNodeId(data);
+        treeModel.root = createFileData(data, true);
+        return treeModel as BehaviorNodeModel;
+    } catch (error) {
+        console.log("build error:", path, error);
+    }
+    return null;
+};
+
+export const createFileData = (gNode: GraphNodeModel, includeSubtree?: boolean) => {
     const nodeData: BehaviorNodeModel = {
         id: Number(gNode.id),
         name: gNode.name,
@@ -95,45 +154,37 @@ export const createFileData = (gNode: GraphNodeModel) => {
         input: gNode.input || undefined,
         output: gNode.output || undefined,
         debug: gNode.debug,
+        path: gNode.path,
     };
-    if (gNode.children) {
+    if (gNode.children && (includeSubtree || !isSubtree(gNode))) {
         nodeData.children = [];
         gNode.children.forEach((child) => {
-            nodeData.children.push(createFileData(child));
+            nodeData.children.push(createFileData(child, includeSubtree));
         });
     }
     return nodeData;
 };
 
-export const findParent = (node: TreeGraphData, id: string): TreeGraphData | null => {
-    if (node.children) {
-        for (let child of node.children) {
-            if (child.id == id) {
-                return node;
-            } else {
-                let parent = findParent(child, id);
-                if (parent) {
-                    return parent;
-                }
-            }
-        }
+export const findParent = (graph: TreeGraph, node: GraphNodeModel) => {
+    if (node.parent) {
+        return graph.findDataById(node.parent);
+    } else {
+        return null;
     }
-    return null;
 };
 
-export const findFromAllChildren = (node: TreeGraphData, id: string): TreeGraphData | null => {
-    if (node.id == id) {
-        return node;
+export const isAncestor = (
+    graph: TreeGraph,
+    ancestor: GraphNodeModel,
+    node: GraphNodeModel
+): boolean => {
+    if (ancestor.id === node.parent) {
+        return true;
+    } else if (node.parent) {
+        return isAncestor(graph, ancestor, graph.findDataById(node.parent) as GraphNodeModel);
+    } else {
+        return false;
     }
-    if (node.children) {
-        for (let child of node.children) {
-            let found = findFromAllChildren(child, id);
-            if (found) {
-                return found;
-            }
-        }
-    }
-    return null;
 };
 
 export const getRemoteSettings = () => {
@@ -156,20 +207,20 @@ export const createNewTree = (filename: string) => {
     return tree;
 };
 
-export const toBreakWord = (str: string, len: number, char='\n') => {
+export const toBreakWord = (str: string, len: number, char = "\n") => {
     var strTemp = "";
     var line = 1;
-    if(str.length <= len) {
-        return {str, line};
+    if (str.length <= len) {
+        return { str, line };
     }
     while (str.length > len) {
         strTemp += str.substr(0, len) + char;
         str = str.substr(len, str.length);
-        line ++;
+        line++;
     }
     strTemp += str;
     return {
         str: strTemp,
         line,
     };
-}
+};

@@ -25,11 +25,11 @@ module.exports = {
       {
         test: /\.less$/,
         include: /node_modules/,
-        loaders: ['style-loader','css-loader','less-loader']
+        use: ['style-loader',{ loader: 'css-loader' },{ loader: 'less-loader' }]
       },
       {
         test: /\.css$/,
-        loaders: ['style-loader', 'css-loader']
+        use: ['style-loader', { loader: 'css-loader' }]
       },
       {//https://github.com/ashtuchkin/iconv-lite/issues/205
         test: /node_modules[\/\\](iconv-lite)[\/\\].+/,

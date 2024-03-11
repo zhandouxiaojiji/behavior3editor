@@ -1,8 +1,8 @@
 import { TreeGraphData } from "@antv/g6/lib/types";
 
-export interface ArgsOptional{
-    name:string;
-    value:string|number;
+export interface ArgsOptional {
+    name: string;
+    value: string | number;
 }
 
 export interface ArgsDefType {
@@ -31,6 +31,7 @@ export interface BehaviorNodeModel {
     output?: string[];
     children?: BehaviorNodeModel[];
     debug?: boolean;
+    path?: string;
 }
 
 export interface BehaviorTreeModel {
@@ -48,6 +49,8 @@ export interface GraphNodeModel extends TreeGraphData {
     children?: GraphNodeModel[];
     conf: BehaviorNodeTypeModel;
     debug?: boolean;
+    parent?: string;
+    path?: string;
 
     size?: number[];
 }

@@ -18,10 +18,10 @@ export class MainProcess {
         nativeTheme.themeSource = "dark";
         app.on("ready", () => {
             this.createWindow();
-            electronLocalshortcut.register(this.mainWindow, "Ctrl+C", () => {
+            electronLocalshortcut.register(this.mainWindow, "CommandOrControl+C", () => {
                 this.mainWindow.webContents.send(MainEventType.COPY_NODE);
             });
-            electronLocalshortcut.register(this.mainWindow, "Ctrl+V", () => {
+            electronLocalshortcut.register(this.mainWindow, "CommandOrControl+V", () => {
                 this.mainWindow.webContents.send(MainEventType.PASTE_NODE);
             });
         });
@@ -46,12 +46,12 @@ export class MainProcess {
             height: 800,
             webPreferences: {
                 nodeIntegration: true,
-                contextIsolation:false,
+                contextIsolation: false,
             },
             // fullscreenable:false,
             // maximizable:false
         });
-        
+
         require("@electron/remote/main").initialize();
         require("@electron/remote/main").enable(this.mainWindow.webContents);
         this.mainWindow.maximize();

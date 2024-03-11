@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import Workspace from "./Workspace";
+import { app } from "electron";
 
 export interface BehaviorNodeClassify {
     classify: string;
@@ -14,7 +15,10 @@ export interface SettingsModel {
     treesDesc?: { [name: string]: string };
 }
 
-const settingPath = "settings.json";
+const settingPath = app.getPath("userData") + "/settings.json";
+
+console.log("setting path:", settingPath);
+
 const sampleNodeClassify: BehaviorNodeClassify[] = [
     { classify: "Composite", desc: "复合节点" },
     { classify: "Decorator", desc: "修饰节点" },
@@ -35,7 +39,7 @@ export default class Settings {
                 fs.writeFileSync(settingPath, JSON.stringify(this.model, null, 2));
                 this.dirty = false;
             }
-        }, 1000)
+        }, 1000);
     }
 
     get nodeConfPath() {
@@ -54,7 +58,7 @@ export default class Settings {
         return this.model.nodeClassify;
     }
     get serverModel() {
-        const servers = this.curWorkspace.getServers()
+        const servers = this.curWorkspace.getServers();
         if (!servers) {
             return;
         }
@@ -66,7 +70,7 @@ export default class Settings {
         return servers[0];
     }
     get serverName() {
-        const servers = this.curWorkspace.getServers()
+        const servers = this.curWorkspace.getServers();
         if (!servers) {
             return "";
         }
@@ -78,7 +82,7 @@ export default class Settings {
         if (servers[0]) {
             return servers[0].name;
         } else {
-            return ''
+            return "";
         }
     }
     set serverName(name: string) {
@@ -119,8 +123,16 @@ export default class Settings {
         this.dirty = true;
     }
 
+    get workdir() {
+        return this.curWorkspace.getWorkdir();
+    }
+
     getNodeConf(name: string) {
         return this.curWorkspace.getNodeConf(name);
+    }
+
+    hasNodeConf(name: string) {
+        return this.curWorkspace.hasNodeConf(name);
     }
 
     pushRecentWorkspace(path: string) {
@@ -137,12 +149,12 @@ export default class Settings {
     }
 
     getTreeDesc(name: string) {
-        const key = this.curWorkspace.getFilepath() + ' ' + name;
+        const key = this.curWorkspace.getFilepath() + " " + name;
         var desc = this.model.treesDesc[key];
         if (!desc) {
             const str = fs.readFileSync(name, "utf8");
             const tree = JSON.parse(str);
-            desc = tree.desc ? tree.desc : '';
+            desc = tree.desc ? tree.desc : "";
             this.model.treesDesc[key] = desc;
             this.save();
         }
@@ -150,7 +162,7 @@ export default class Settings {
     }
 
     setTreeDesc(name: string, desc?: string) {
-        const key = this.curWorkspace.getFilepath() + ' ' + name;
+        const key = this.curWorkspace.getFilepath() + " " + name;
         this.model.treesDesc[key] = desc;
     }
 }

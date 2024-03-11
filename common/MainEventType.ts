@@ -9,6 +9,7 @@ export default {
     COPY_NODE: "COPY_NODE",
     PASTE_NODE: "PASTE_NODE",
     SAVE_ALL: "SAVE_ALL",
+    BUILD: "BUILD",
     SAVE: "SAVE",
     UNDO: "UNDO",
     REDO: "REDO",
