@@ -47,6 +47,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
             name: model.name,
             desc: model.desc,
             debug: model.debug,
+            path: model.path,
             customArgs: model.args ? JSON.stringify(model.args, null, " ") : "",
         };
         if (model.args) {
@@ -94,6 +95,11 @@ export default class NodePanel extends React.Component<NodePanelProps> {
         }
         model.desc = values.desc;
         model.debug = values.debug;
+
+        if (model.path !== values.path) {
+            model.path = values.path;
+            forceUpdate = true;
+        }
 
         if (conf.args) {
             conf.args.forEach((e) => {
@@ -187,6 +193,9 @@ export default class NodePanel extends React.Component<NodePanelProps> {
                     </Item>
                     <Item label="调试开关" name="debug" valuePropName="checked">
                         <Switch onChange={this.handleSubmit} />
+                    </Item>
+                    <Item label="子树" name="path">
+                        <Input onBlur={this.handleSubmit} />
                     </Item>
                     <Markdown source={conf.doc} />
                     {this.renderInputs(conf)}
