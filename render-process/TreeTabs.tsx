@@ -87,6 +87,7 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
             const files = fs.readdirSync(workdir).filter((f) => {
                 return f.endsWith(".json");
             });
+            fs.mkdirSync(workdir + "/../build", { recursive: true });
             for (const path of files) {
                 const builddir = fs.realpathSync(workdir + "/../build", "utf-8");
                 fs.mkdirSync(builddir, { recursive: true });
