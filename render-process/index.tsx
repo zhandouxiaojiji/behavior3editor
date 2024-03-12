@@ -5,7 +5,7 @@ import { Layout, message, Tabs } from "antd";
 import * as Utils from "../common/Utils";
 import MainEventType from "../common/MainEventType";
 import Settings from "../main-process/Settings";
-import {ipcRenderer} from "electron";
+import { ipcRenderer } from "electron";
 import "antd/dist/antd.dark.css";
 import "./index.css";
 import RegisterNode from "./RegisterNode";
@@ -53,20 +53,20 @@ export default class Main extends Component {
             }
             SyncRequest("POST", serverModel.host, {
                 body: JSON.stringify({
-                    cmd:"btree.reload",
+                    cmd: "btree.reload",
                     data: {
-                        trees: this.tabs.getOpenTreesModel()
+                        trees: this.tabs.getOpenTreesModel(),
                     },
                     session: this.session++,
                     timestamp: Date.now(),
-                })
+                }),
             });
             message.success("服务器已更新");
-        })
+        });
 
-        ipcRenderer.on(MainEventType.BATCH_EXEC, (event: any, path: string)=>{
+        ipcRenderer.on(MainEventType.BATCH_EXEC, (event: any, path: string) => {
             BatchExec(path, this.state.workdir);
-        })
+        });
 
         console.log("workdir", this.settings.curWorkspace.getWorkdir());
         setTimeout(() => {
@@ -113,7 +113,7 @@ export default class Main extends Component {
             sider.style.maxWidth = width + "px";
             sider.style.minWidth = "0px";
             sider.style.flex = "";
-            reSizer.style.left = (width - 5) + "px";
+            reSizer.style.left = width - 5 + "px";
             content.style.width = window.innerWidth - width + "px";
         }
 
@@ -122,16 +122,27 @@ export default class Main extends Component {
             document.documentElement.removeEventListener("mouseup", stopDrag, false);
         }
 
-        reSizer.addEventListener("mouseover", function() {
-            reSizer.style.opacity = "1";
-            reSizer.addEventListener("mousedown", initDrag, false);
-            reSizer.addEventListener("mouseout", function init() {
-                reSizer.style.opacity = "0";
-            }, false);
-        }, false);
+        reSizer.addEventListener(
+            "mouseover",
+            function () {
+                reSizer.style.opacity = "1";
+                reSizer.addEventListener("mousedown", initDrag, false);
+                reSizer.addEventListener(
+                    "mouseout",
+                    function init() {
+                        reSizer.style.opacity = "0";
+                    },
+                    false
+                );
+            },
+            false
+        );
 
-        window.addEventListener("resize", function() {
-            const currentWidth = parseInt(document.defaultView.getComputedStyle(reSizerParent).width, 10);
+        window.addEventListener("resize", function () {
+            const currentWidth = parseInt(
+                document.defaultView.getComputedStyle(reSizerParent).width,
+                10
+            );
             setWidth(currentWidth);
         });
 
@@ -147,7 +158,7 @@ export default class Main extends Component {
         const { workdir, workspace } = this.state;
         document.title = `行为树编辑器 - ${workspace}`;
         return (
-            <Layout className="body" style={{flexDirection: "column"}}>
+            <Layout className="body" style={{ flexDirection: "column" }}>
                 <Sider className="sider" width={250}>
                     {workdir !== "" ? (
                         <Explorer
@@ -166,16 +177,15 @@ export default class Main extends Component {
                         "Please Open Workspace"
                     )}
                 </Sider>
-                <div id="sizer-hint-bar"/>
+                <div id="sizer-hint-bar" />
                 <Content className="content">
                     <TreeTabs
                         ref={(ref) => {
                             this.tabs = ref;
                         }}
-                        onTabSelected={(path)=>{
+                        onTabSelected={(path) => {
                             this.explorer.selectNode(path);
-                        }   
-                        }
+                        }}
                     />
                 </Content>
             </Layout>

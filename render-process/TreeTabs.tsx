@@ -2,8 +2,8 @@ import { Tabs, message } from "antd";
 import { ipcRenderer } from "electron";
 import * as fs from "fs";
 import * as path from "path";
-import * as Utils from "../common/Utils";
 import React, { Component } from "react";
+import * as Utils from "../common/Utils";
 import Editor from "./Editor";
 
 import "antd/dist/antd.dark.css";
@@ -72,7 +72,7 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
             message.success("已保存所有行为树");
         });
 
-        ipcRenderer.on(MainEventType.BUILD, () => {
+        ipcRenderer.on(MainEventType.BUILD, async (event, buildDir) => {
             for (let k in this.editors) {
                 let editor = this.editors[k];
                 editor.save();
@@ -80,21 +80,16 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
 
             const settings = Utils.getRemoteSettings();
             const workdir = settings.workdir;
-            if (!fs.existsSync(workdir)) {
-                console.log("workdir not found:", workdir);
-                return;
-            }
             const files = fs.readdirSync(workdir).filter((f) => {
                 return f.endsWith(".json");
             });
             for (const path of files) {
-                const builddir = fs.realpathSync(workdir + "/../build", "utf-8");
-                fs.mkdirSync(builddir, { recursive: true });
-                const buildpath = builddir + "/" + path;
+                const buildpath = buildDir + "/" + path;
                 console.log("build:", buildpath);
                 const treeModel = Utils.createBuildData(path, settings);
                 fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
             }
+            message.success("已构建所有行为树");
         });
 
         ipcRenderer.on(MainEventType.UNDO, () => {

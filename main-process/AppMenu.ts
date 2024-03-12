@@ -20,6 +20,7 @@ export default class AppMenu {
     private mainWindow: BrowserWindow;
     private webContents: WebContents;
     private settings: Settings;
+    private buildDir?: string;
 
     constructor(mainProcess: MainProcess) {
         this.mainProcess = mainProcess;
@@ -139,8 +140,17 @@ export default class AppMenu {
                 {
                     label: "构建",
                     accelerator: "CommandOrControl+b",
-                    click: () => {
-                        this.webContents.send(MainEventType.BUILD);
+                    click: async () => {
+                        if (!this.buildDir) {
+                            const res = await dialog.showOpenDialog({
+                                properties: ["openDirectory"],
+                            });
+                            if (res.canceled) {
+                                return;
+                            }
+                            this.buildDir = res.filePaths[0];
+                        }
+                        this.webContents.send(MainEventType.BUILD, this.buildDir);
                     },
                 },
             ],
