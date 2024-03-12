@@ -117,11 +117,11 @@ export const createTreeData = (bNode: BehaviorNodeModel, settings: Settings, par
         try {
             const subtreePath = settings.workdir + "/" + bNode.path;
             const str = fs.readFileSync(subtreePath, "utf8");
-            console.log("read subtree:", subtreePath);
             treeData = createTreeData(JSON.parse(str).root, settings, treeData.id);
             treeData.path = bNode.path;
             treeData.size = calcTreeNodeSize(treeData);
         } catch (error) {
+            message.error(`解析子树失败：${bNode.path}`);
             console.log("parse subtree:", error);
         }
         parsingStack.pop();
