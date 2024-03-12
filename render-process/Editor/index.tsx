@@ -21,6 +21,7 @@ import "./Editor.css";
 export interface EditorProps {
     filepath: string;
     onChangeSaveState: (unsave: boolean) => void;
+    onOpenSubtree: (path: string) => void;
 }
 
 interface EditorState {
@@ -32,9 +33,9 @@ interface EditorState {
 export default class Editor extends React.Component<EditorProps, EditorState> {
     private ref: React.RefObject<any>;
     state: EditorState = {};
+    isInEditor: boolean = false;
 
     private graph: TreeGraph;
-    private isInEditor: boolean = false;
     private dragSrcId: string;
     private dragDstId: string;
     private autoId: number;
@@ -71,6 +72,47 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         }
     }
 
+    findParent(node: GraphNodeModel) {
+        if (node.parent) {
+            return this.graph.findDataById(node.parent) as GraphNodeModel;
+        } else {
+            return null;
+        }
+    }
+
+    findSubtree(node?: GraphNodeModel): GraphNodeModel | null {
+        if (node?.path) {
+            return node;
+        } else if (node?.parent) {
+            return this.findSubtree(this.findParent(node));
+        } else {
+            return null;
+        }
+    }
+
+    isSubtreeNode(node?: GraphNodeModel): boolean {
+        if (node?.path) {
+            return true;
+        } else if (node?.parent) {
+            return this.isSubtreeNode(this.findParent(node));
+        } else {
+            return false;
+        }
+    }
+
+    isAncestor(ancestor: GraphNodeModel, node: GraphNodeModel): boolean {
+        if (ancestor.id === node.parent) {
+            return true;
+        } else if (node.parent) {
+            return this.isAncestor(
+                ancestor,
+                this.graph.findDataById(node.parent) as GraphNodeModel
+            );
+        } else {
+            return false;
+        }
+    }
+
     componentDidMount() {
         const graph = new TreeGraph({
             container: this.ref.current,
@@ -80,28 +122,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             maxZoom: 2,
             // fitCenter: true,
             modes: {
-                default: [
-                    "drag-canvas",
-                    "zoom-canvas",
-                    "click-select",
-                    "hover",
-                    {
-                        type: "collapse-expand",
-                        trigger: "dblclick",
-                        onChange: (item, collapsed) => {
-                            this.onSelectNode(item.getID());
-                            const data = item.getModel();
-                            data.collapsed = collapsed;
-                            graph.setItemState(item, "collapsed", data.collapsed as boolean);
-                            const icon = data.collapsed ? G6.Marker.expand : G6.Marker.collapse;
-                            const marker = item
-                                .get("group")
-                                .find((ele: any) => ele.get("name") === "collapse-icon");
-                            marker.attr("symbol", icon);
-                            return true;
-                        },
-                    },
-                ],
+                default: ["drag-canvas", "zoom-canvas", "click-select", "hover"],
             },
             defaultEdge: {
                 type: "cubic-horizontal",
@@ -145,6 +166,27 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
         graph.on("canvas:mouseleave", () => {
             this.isInEditor = false;
+        });
+
+        graph.on("node:click", (e: G6GraphEvent) => {
+            if (e.shape.cfg.name === "collapse-icon") {
+                const item = e.item;
+                this.onSelectNode(item.getID());
+                const data = item.getModel();
+                if ((data as unknown as GraphNodeModel).children?.length > 0) {
+                    data.collapsed = !data.collapsed;
+                    graph.setItemState(item, "collapsed", data.collapsed as boolean);
+                    e.shape.attr("symbol", data.collapsed ? G6.Marker.expand : G6.Marker.collapse);
+                    this.graph.layout();
+                }
+            }
+        });
+
+        graph.on("node:dblclick", (e: G6GraphEvent) => {
+            const data = this.findSubtree(e.item.getModel() as unknown as GraphNodeModel);
+            if (data) {
+                this.props.onOpenSubtree(data.path);
+            }
         });
 
         graph.on("node:mouseenter", (e: G6GraphEvent) => {
@@ -258,15 +300,15 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
             const rootData = graph.findDataById("1");
             const srcData = graph.findDataById(srcNodeId) as GraphNodeModel;
-            const srcParent = Utils.findParent(this.graph, srcData);
+            const srcParent = this.findParent(srcData);
             const dstData = graph.findDataById(dstNode.getID()) as GraphNodeModel;
-            const dstParent = Utils.findParent(this.graph, dstData);
+            const dstParent = this.findParent(dstData);
             if (!srcParent) {
                 console.log("no parent!");
                 return;
             }
 
-            if (Utils.isAncestor(this.graph, srcData, dstData)) {
+            if (this.isAncestor(srcData, dstData)) {
                 // 不能将父节点拖到自已的子孙节点
                 console.log("cannot move to child");
                 return;
@@ -379,10 +421,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
         this.onSelectNode(null);
         this.pushUndoStack();
-        const parentData = Utils.findParent(
-            this.graph,
-            this.graph.findDataById(curNodeId) as GraphNodeModel
-        );
+        const parentData = this.findParent(this.graph.findDataById(curNodeId) as GraphNodeModel);
         parentData.children = parentData.children.filter((e) => e.id != curNodeId);
         this.changeWithoutAnim();
     }
@@ -583,6 +622,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                         {curNode ? (
                             <NodePanel
                                 model={curNode}
+                                isSubtreeNode={this.isSubtreeNode(curNode)}
                                 settings={this.settings}
                                 updateNode={(id, forceUpdate) => {
                                     if (forceUpdate) {

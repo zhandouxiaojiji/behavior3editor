@@ -55,7 +55,7 @@ export default class AppMenu {
             submenu: [
                 {
                     label: "新建",
-                    accelerator: "CommandOrControl+n",
+                    accelerator: "CmdOrCtrl+n",
                     click: () => {
                         (async () => {
                             const res = await dialog.showSaveDialog({
@@ -75,7 +75,7 @@ export default class AppMenu {
                 },
                 {
                     label: "打开文件",
-                    accelerator: "CommandOrControl+O",
+                    accelerator: "CmdOrCtrl+O",
                     click: () => {
                         (async () => {
                             const res = await dialog.showOpenDialog({
@@ -103,14 +103,14 @@ export default class AppMenu {
                 { type: "separator" },
                 {
                     label: "保存",
-                    accelerator: "CommandOrControl+s",
+                    accelerator: "CmdOrCtrl+s",
                     click: () => {
                         this.webContents.send(MainEventType.SAVE);
                     },
                 },
                 {
                     label: "全部保存",
-                    accelerator: "CommandOrControl+shift+s",
+                    accelerator: "CmdOrCtrl+shift+s",
                     click: () => {
                         this.webContents.send(MainEventType.SAVE_ALL);
                     },
@@ -139,7 +139,7 @@ export default class AppMenu {
                 },
                 {
                     label: "构建",
-                    accelerator: "CommandOrControl+b",
+                    accelerator: "CmdOrCtrl+b",
                     click: async () => {
                         if (!this.buildDir) {
                             const res = await dialog.showOpenDialog({
@@ -163,17 +163,13 @@ export default class AppMenu {
             submenu: [
                 {
                     label: "撤销",
-                    accelerator: "CommandOrControl+z",
-                    click: () => {
-                        this.webContents.send(MainEventType.UNDO);
-                    },
+                    accelerator: "CmdOrCtrl+z",
+                    role: "undo",
                 },
                 {
                     label: "恢复",
-                    accelerator: "CommandOrControl+y",
-                    click: () => {
-                        this.webContents.send(MainEventType.REDO);
-                    },
+                    accelerator: process.platform === "darwin" ? "cmd+shift+z" : "ctrl+y",
+                    role: "redo",
                 },
                 { type: "separator" },
                 {
@@ -287,7 +283,7 @@ export default class AppMenu {
                 { type: "separator" },
                 {
                     label: "打开目录",
-                    accelerator: "CommandOrControl+Shift+O",
+                    accelerator: "CmdOrCtrl+Shift+O",
                     click: () => {
                         if (!this.settings.curWorkspace.getNodeConfPath()) {
                             dialog.showErrorBox("警告", "请先指定节点定义配置!");
@@ -364,7 +360,7 @@ export default class AppMenu {
             submenu: [
                 {
                     label: "热更",
-                    accelerator: "CommandOrControl+R",
+                    accelerator: "CmdOrCtrl+R",
                     click: () => {
                         this.webContents.send(MainEventType.RELOAD_SERVER);
                     },
@@ -392,7 +388,7 @@ export default class AppMenu {
                 },
                 {
                     label: "打开控制台",
-                    accelerator: "CommandOrControl+Shift+I",
+                    accelerator: "CmdOrCtrl+Shift+I",
                     click: (_, browserWindow) => {
                         browserWindow.webContents.toggleDevTools();
                     },

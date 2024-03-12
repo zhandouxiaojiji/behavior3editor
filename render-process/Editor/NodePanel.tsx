@@ -25,6 +25,7 @@ const { Item } = Form;
 const { Option } = Select;
 
 interface NodePanelProps {
+    isSubtreeNode: boolean;
     model: BehaviorNodeModel;
     settings: Settings;
     updateNode: (id: string, forceUpdate: boolean) => void;
@@ -151,7 +152,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
     };
 
     render() {
-        const { model, settings } = this.props;
+        const { model, settings, isSubtreeNode } = this.props;
         const conf = settings.getNodeConf(model.name);
         const title = conf.desc;
 
@@ -178,6 +179,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
                     </Item>
                     <Item label="节点名称" name="name">
                         <AutoComplete
+                            disabled={isSubtreeNode}
                             options={options}
                             onBlur={this.handleSubmit}
                             filterOption={(inputValue: string, option: any) => {
@@ -189,24 +191,24 @@ export default class NodePanel extends React.Component<NodePanelProps> {
                         />
                     </Item>
                     <Item label="节点说明" name="desc">
-                        <Input onBlur={this.handleSubmit} />
+                        <Input disabled={isSubtreeNode} onBlur={this.handleSubmit} />
                     </Item>
                     <Item label="调试开关" name="debug" valuePropName="checked">
-                        <Switch onChange={this.handleSubmit} />
+                        <Switch disabled={isSubtreeNode} onChange={this.handleSubmit} />
                     </Item>
                     <Item label="子树" name="path">
-                        <Input onBlur={this.handleSubmit} />
+                        <Input disabled={isSubtreeNode && !model.path} onBlur={this.handleSubmit} />
                     </Item>
                     <Markdown source={conf.doc} />
-                    {this.renderInputs(conf)}
-                    {this.renderArgs(conf)}
-                    {this.renderOutputs(conf)}
+                    {this.renderInputs(conf, isSubtreeNode)}
+                    {this.renderArgs(conf, isSubtreeNode)}
+                    {this.renderOutputs(conf, isSubtreeNode)}
                 </Form>
             </Card>
         );
     }
 
-    renderArgs(conf: BehaviorNodeTypeModel) {
+    renderArgs(conf: BehaviorNodeTypeModel, isSubtreeNode: boolean) {
         if (!conf || !conf.args || conf.args.length == 0) {
             return null;
         }
@@ -215,24 +217,41 @@ export default class NodePanel extends React.Component<NodePanelProps> {
         const normalArgs = (e: ArgsDefType) => {
             const required = e.type.indexOf("?") == -1;
             if (e.type.indexOf("string") >= 0) {
-                return <Input onBlur={this.handleSubmit} />;
+                return <Input disabled={isSubtreeNode} onBlur={this.handleSubmit} />;
             } else if (e.type.indexOf("int") >= 0) {
                 return (
                     <InputNumber
+                        disabled={isSubtreeNode}
                         precision={0}
                         style={{ width: "100%" }}
                         onBlur={this.handleSubmit}
                     />
                 );
             } else if (e.type.indexOf("float") >= 0) {
-                return <InputNumber style={{ width: "100%" }} onBlur={this.handleSubmit} />;
+                return (
+                    <InputNumber
+                        disabled={isSubtreeNode}
+                        style={{ width: "100%" }}
+                        onBlur={this.handleSubmit}
+                    />
+                );
             } else if (e.type.indexOf("boolean") >= 0) {
-                return <Switch onChange={this.handleSubmit} />;
+                return <Switch disabled={isSubtreeNode} onChange={this.handleSubmit} />;
             } else if (e.type.indexOf("code") >= 0) {
-                return <Input onBlur={this.handleSubmit} placeholder={"表达式"} />;
+                return (
+                    <Input
+                        disabled={isSubtreeNode}
+                        onBlur={this.handleSubmit}
+                        placeholder={"表达式"}
+                    />
+                );
             } else if (e.type.indexOf("enum") >= 0) {
                 return (
-                    <Select style={{ width: 120 }} onChange={this.handleSubmit}>
+                    <Select
+                        disabled={isSubtreeNode}
+                        style={{ width: 120 }}
+                        onChange={this.handleSubmit}
+                    >
                         {e.options.map((e) => {
                             return (
                                 <Option key={e.name} value={e.value}>
@@ -249,7 +268,11 @@ export default class NodePanel extends React.Component<NodePanelProps> {
         const customArgs = () => {
             return (
                 <Item name="customArgs" label="自定义" key="customArgs">
-                    <Input.TextArea onBlur={this.handleSubmit} style={{ minHeight: 100 }} />
+                    <Input.TextArea
+                        disabled={isSubtreeNode}
+                        onBlur={this.handleSubmit}
+                        style={{ minHeight: 100 }}
+                    />
                 </Item>
             );
         };
@@ -283,7 +306,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
         );
     }
 
-    renderInputs(conf: BehaviorNodeTypeModel) {
+    renderInputs(conf: BehaviorNodeTypeModel, isSubtreeNode: boolean) {
         if (!conf.input || !conf.input || conf.input.length == 0) {
             return null;
         }
@@ -296,7 +319,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
                 {conf.input.map((e, i) => {
                     return (
                         <Item label={e} name={`input.${i}`} key={`input.${i}`}>
-                            <Input onBlur={this.handleSubmit} />
+                            <Input disabled={isSubtreeNode} onBlur={this.handleSubmit} />
                         </Item>
                     );
                 })}
@@ -304,7 +327,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
         );
     }
 
-    renderOutputs(conf: BehaviorNodeTypeModel) {
+    renderOutputs(conf: BehaviorNodeTypeModel, isSubtreeNode: boolean) {
         if (!conf.output || !conf.output || conf.output.length == 0) {
             return null;
         }
@@ -316,7 +339,7 @@ export default class NodePanel extends React.Component<NodePanelProps> {
                 {conf.output.map((e, i) => {
                     return (
                         <Item label={e} name={`output.${i}`} key={`output.${i}`}>
-                            <Input onBlur={this.handleSubmit} />
+                            <Input disabled={isSubtreeNode} onBlur={this.handleSubmit} />
                         </Item>
                     );
                 })}

@@ -93,12 +93,16 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
 
         ipcRenderer.on(MainEventType.UNDO, () => {
             const editor = this.getCurEditor();
-            editor?.undo();
+            if (editor?.isInEditor) {
+                editor.undo();
+            }
         });
 
         ipcRenderer.on(MainEventType.REDO, () => {
             const editor = this.getCurEditor();
-            editor?.redo();
+            if (editor?.isInEditor) {
+                editor.redo();
+            }
         });
     }
 
@@ -143,6 +147,10 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
         trees = trees.filter((tree) => tree.filepath != path);
         const length = trees.length;
         this.setState({ trees: trees, curTree: length > 0 ? trees[0].filepath : null });
+        if (length > 0) {
+            const editor = this.editors[trees[0].filepath];
+            editor?.reload();
+        }
     }
 
     render() {
@@ -183,6 +191,10 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
                                         tree.unsave = unsave;
                                         this.forceUpdate();
                                     }
+                                }}
+                                onOpenSubtree={(path) => {
+                                    const settings = Utils.getRemoteSettings();
+                                    this.openFile(settings.workdir + "/" + path);
                                 }}
                                 ref={(ref) => {
                                     this.editors[tree.filepath] = ref;

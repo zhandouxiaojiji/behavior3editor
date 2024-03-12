@@ -24,6 +24,7 @@
                 "id": 4,
                 "name": "Sequence",
                 "desc": "新建行为树",
+                "args": {},
                 "path": "subtree2.json"
               }
             ]

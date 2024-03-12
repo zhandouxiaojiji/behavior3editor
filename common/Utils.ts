@@ -1,9 +1,8 @@
-import { TreeGraph } from "@antv/g6";
-import * as path from "path";
+import { message } from "antd";
 import * as fs from "fs";
+import * as path from "path";
 import Settings from "../main-process/Settings";
 import { BehaviorNodeModel, BehaviorTreeModel, GraphNodeModel } from "./BehaviorTreeModel";
-import { message } from "antd";
 
 interface INodeDataLike {
     path?: string;
@@ -163,28 +162,6 @@ export const createFileData = (gNode: GraphNodeModel, includeSubtree?: boolean) 
         });
     }
     return nodeData;
-};
-
-export const findParent = (graph: TreeGraph, node: GraphNodeModel) => {
-    if (node.parent) {
-        return graph.findDataById(node.parent);
-    } else {
-        return null;
-    }
-};
-
-export const isAncestor = (
-    graph: TreeGraph,
-    ancestor: GraphNodeModel,
-    node: GraphNodeModel
-): boolean => {
-    if (ancestor.id === node.parent) {
-        return true;
-    } else if (node.parent) {
-        return isAncestor(graph, ancestor, graph.findDataById(node.parent) as GraphNodeModel);
-    } else {
-        return false;
-    }
 };
 
 export const getRemoteSettings = () => {

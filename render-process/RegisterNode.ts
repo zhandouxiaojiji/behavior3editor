@@ -290,21 +290,6 @@ export default function (settings: Settings) {
                     y += 20;
                 }
 
-                if (Array.isArray(cfg.children) && cfg.children.length > 0) {
-                    group.addShape("marker", {
-                        attrs: {
-                            x: w,
-                            y: h / 2,
-                            r: 6,
-                            symbol: G6.Marker.collapse,
-                            stroke: "#666",
-                            lineWidth: 1,
-                            fill: "#fff",
-                        },
-                        name: "collapse-icon",
-                    });
-                }
-
                 group.addShape("rect", {
                     name: "drag-up",
                     attrs: {
@@ -346,6 +331,22 @@ export default function (settings: Settings) {
                     },
                     draggable: true,
                 });
+
+                if (Array.isArray(cfg.children) && cfg.children.length > 0) {
+                    group.addShape("marker", {
+                        attrs: {
+                            x: w,
+                            y: h / 2,
+                            r: 6,
+                            symbol: G6.Marker.collapse,
+                            stroke: "#666",
+                            lineWidth: 1,
+                            fill: "#fff",
+                        },
+                        name: "collapse-icon",
+                    });
+                }
+
                 return shape;
             },
         },

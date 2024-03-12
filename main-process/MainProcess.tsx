@@ -18,11 +18,17 @@ export class MainProcess {
         nativeTheme.themeSource = "dark";
         app.on("ready", () => {
             this.createWindow();
-            electronLocalshortcut.register(this.mainWindow, "CommandOrControl+C", () => {
+            this.registerShortcut("CmdOrCtrl+C", () => {
                 this.mainWindow.webContents.send(MainEventType.COPY_NODE);
             });
-            electronLocalshortcut.register(this.mainWindow, "CommandOrControl+V", () => {
+            this.registerShortcut("CmdOrCtrl+V", () => {
                 this.mainWindow.webContents.send(MainEventType.PASTE_NODE);
+            });
+            this.registerShortcut("CmdOrCtrl+Z", () => {
+                this.mainWindow.webContents.send(MainEventType.UNDO);
+            });
+            this.registerShortcut(process.platform === "darwin" ? "Cmd+Shift+Z" : "ctrl+y", () => {
+                this.mainWindow.webContents.send(MainEventType.REDO);
             });
         });
         app.on("window-all-closed", () => {
@@ -35,6 +41,10 @@ export class MainProcess {
                 this.createWindow();
             }
         });
+    }
+
+    registerShortcut(accelerator: string | string[], callback: () => void) {
+        electronLocalshortcut.register(this.mainWindow, accelerator, callback);
     }
 
     createWindow() {
