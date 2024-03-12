@@ -14,7 +14,7 @@ import Settings from "../../main-process/Settings";
 import NodePanel from "./NodePanel";
 import TreePanel from "./TreePanel";
 
-import { Matrix } from "@antv/g6/lib/types";
+import { Item, Matrix } from "@antv/g6/lib/types";
 import { clipboard } from "electron";
 import "./Editor.css";
 
@@ -60,6 +60,15 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         return (
             this.props.filepath != nextProps.filepath || this.state.curNodeId != nextState.curNodeId
         );
+    }
+
+    setItemState(item: string | Item, state: string, value: string | boolean) {
+        if (typeof item === "string") {
+            item = this.graph.findById(item);
+        }
+        if (item) {
+            this.graph.setItemState(item, state, value);
+        }
     }
 
     componentDidMount() {
@@ -143,7 +152,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             if (item.hasState("selected")) {
                 return;
             }
-            graph.setItemState(item, "hover", true);
+            this.setItemState(item, "hover", true);
         });
 
         graph.on("node:mouseleave", (e: G6GraphEvent) => {
@@ -151,7 +160,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             if (item.hasState("selected")) {
                 return;
             }
-            graph.setItemState(item, "hover", false);
+            this.setItemState(item, "hover", false);
         });
 
         graph.on("nodeselectchange", (e: G6GraphEvent) => {
@@ -169,27 +178,27 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
 
         const clearDragDstState = () => {
             if (this.dragDstId) {
-                graph.setItemState(this.dragDstId, "dragRight", false);
-                graph.setItemState(this.dragDstId, "dragDown", false);
-                graph.setItemState(this.dragDstId, "dragUp", false);
+                this.setItemState(this.dragDstId, "dragRight", false);
+                this.setItemState(this.dragDstId, "dragDown", false);
+                this.setItemState(this.dragDstId, "dragUp", false);
                 this.dragDstId = null;
             }
         };
 
         const clearDragSrcState = () => {
             if (this.dragSrcId) {
-                graph.setItemState(this.dragSrcId, "dragSrc", false);
+                this.setItemState(this.dragSrcId, "dragSrc", false);
                 this.dragSrcId = null;
             }
         };
 
         graph.on("node:dragstart", (e: G6GraphEvent) => {
             this.dragSrcId = e.item.getID();
-            graph.setItemState(this.dragSrcId, "dragSrc", true);
+            this.setItemState(this.dragSrcId, "dragSrc", true);
         });
         graph.on("node:dragend", (e: G6GraphEvent) => {
             if (this.dragSrcId) {
-                graph.setItemState(this.dragSrcId, "dragSrc", false);
+                this.setItemState(this.dragSrcId, "dragSrc", false);
                 this.dragSrcId = null;
             }
         });
@@ -201,18 +210,18 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             }
 
             if (this.dragDstId) {
-                graph.setItemState(this.dragDstId, "dragRight", false);
-                graph.setItemState(this.dragDstId, "dragDown", false);
-                graph.setItemState(this.dragDstId, "dragUp", false);
+                this.setItemState(this.dragDstId, "dragRight", false);
+                this.setItemState(this.dragDstId, "dragDown", false);
+                this.setItemState(this.dragDstId, "dragUp", false);
             }
 
             const box = e.item.getBBox();
             if (e.x > box.minX + box.width * 0.6) {
-                graph.setItemState(dstNodeId, "dragRight", true);
+                this.setItemState(dstNodeId, "dragRight", true);
             } else if (e.y > box.minY + box.height * 0.5) {
-                graph.setItemState(dstNodeId, "dragDown", true);
+                this.setItemState(dstNodeId, "dragDown", true);
             } else {
-                graph.setItemState(dstNodeId, "dragUp", true);
+                this.setItemState(dstNodeId, "dragUp", true);
             }
             this.dragDstId = dstNodeId;
         });
@@ -322,13 +331,13 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         const graph = this.graph;
 
         if (this.state.curNodeId) {
-            graph.setItemState(this.state.curNodeId, "selected", false);
-            graph.setItemState(this.state.curNodeId, "hover", false);
+            this.setItemState(this.state.curNodeId, "selected", false);
+            this.setItemState(this.state.curNodeId, "hover", false);
         }
 
         this.setState({ curNodeId });
         if (this.state.curNodeId) {
-            graph.setItemState(this.state.curNodeId, "selected", true);
+            this.setItemState(this.state.curNodeId, "selected", true);
         }
     }
 
@@ -453,9 +462,11 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
             return;
         }
         const data = this.graph.findDataById(curNodeId) as GraphNodeModel;
-        const str = JSON.stringify(Utils.cloneNodeData(data), null, 2);
-        console.log("copy:", str);
-        clipboard.writeText(str);
+        if (data) {
+            const str = JSON.stringify(Utils.cloneNodeData(data), null, 2);
+            console.log("copy:", str);
+            clipboard.writeText(str);
+        }
     }
 
     pasteNode() {
