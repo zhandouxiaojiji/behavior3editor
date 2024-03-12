@@ -8,6 +8,7 @@
     "start": "electron .",
     "build": "electron-packager ./ behavior3editor --platform=win32 --arch=x64 --out=./build --overwrite",
     "build-mac": "electron-packager ./ behavior3editor --platform=darwin --arch=universal --out=./build --overwrite",
+    "dist-mac": "npm run prestart && electron-builder --dir && electron-builder --mac",
     "dist": "npm run prestart && electron-builder --dir && electron-builder --win --x64"
   },
   "repository": {
