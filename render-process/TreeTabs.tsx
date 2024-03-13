@@ -64,6 +64,15 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
             message.success("已保存");
         });
 
+        ipcRenderer.on(MainEventType.SAVE_AS_SUBTREE, (event: any, path: string) => {
+            const { curTree: curPath } = this.state;
+            if (!curPath) {
+                return;
+            }
+            const editor = this.editors[curPath];
+            editor.saveAsSubtree(path);
+        });
+
         ipcRenderer.on(MainEventType.SAVE_ALL, (event: any) => {
             for (let k in this.editors) {
                 let editor = this.editors[k];
@@ -72,7 +81,7 @@ export default class TreeTabs extends Component<TreeTabsProps, TreeTabsState> {
             message.success("已保存所有行为树");
         });
 
-        ipcRenderer.on(MainEventType.BUILD, async (event, buildDir) => {
+        ipcRenderer.on(MainEventType.BUILD, async (event, buildDir: string) => {
             for (let k in this.editors) {
                 let editor = this.editors[k];
                 editor.save();

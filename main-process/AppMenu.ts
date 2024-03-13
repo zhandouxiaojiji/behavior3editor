@@ -116,6 +116,20 @@ export default class AppMenu {
                     },
                 },
                 {
+                    label: "保存为子树",
+                    click: async () => {
+                        const res = await dialog.showSaveDialog({
+                            defaultPath: this.settings.workdir,
+                            properties: ["showOverwriteConfirmation"],
+                            filters: [{ name: "Json", extensions: ["json"] }],
+                        });
+                        if (!res.canceled) {
+                            const path = res.filePath;
+                            this.webContents.send(MainEventType.SAVE_AS_SUBTREE, path);
+                        }
+                    },
+                },
+                {
                     label: "合并导出Json",
                     click: () => {
                         (async () => {

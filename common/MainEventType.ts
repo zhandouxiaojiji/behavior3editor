@@ -11,6 +11,7 @@ export default {
     SAVE_ALL: "SAVE_ALL",
     BUILD: "BUILD",
     SAVE: "SAVE",
+    SAVE_AS_SUBTREE: "SAVE_AS_SUBTREE",
     UNDO: "UNDO",
     REDO: "REDO",
 };

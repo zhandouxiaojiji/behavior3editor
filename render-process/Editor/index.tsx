@@ -463,6 +463,34 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
         this.graph.set("animate", true);
     }
 
+    saveAsSubtree(subpath: string) {
+        const { curNodeId } = this.state;
+        if (!curNodeId) {
+            message.warn("未选择一个节点");
+            return;
+        } else if (curNodeId == "1") {
+            message.warn("根节点不能保存为子树");
+            return;
+        }
+        const workdir = this.settings.workdir;
+        if (subpath.indexOf(workdir) == -1) {
+            message.warn("请保存在工作区中");
+            return;
+        }
+        const data = this.graph.findDataById(curNodeId) as GraphNodeModel;
+        const subroot = Utils.createFileData(data);
+        const subtreeModel = {
+            name: path.basename(subpath).slice(0, -5),
+            root: subroot,
+            desc: data.desc,
+        } as BehaviorTreeModel;
+        fs.writeFileSync(subpath, JSON.stringify(subtreeModel, null, 2));
+        this.pushUndoStack();
+        data.path = subpath.substring(workdir.length + 1);
+        this.unsave = true;
+        this.save();
+    }
+
     reload() {
         if (!this.unsave) {
             const data = this.graph.findDataById("1") as GraphNodeModel;
