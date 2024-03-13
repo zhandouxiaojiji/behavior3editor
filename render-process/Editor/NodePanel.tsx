@@ -11,7 +11,6 @@ import {
     notification,
     message,
 } from "antd";
-import { INode } from "@antv/g6/lib/interface/item";
 import {
     BehaviorNodeModel,
     BehaviorNodeTypeModel,

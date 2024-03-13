@@ -1,5 +1,4 @@
-import G6, { TreeGraph } from "@antv/g6";
-import { G6GraphEvent } from "@antv/g6/lib/interface/behavior";
+import G6, { G6GraphEvent, Item, Matrix, TreeGraph } from "@antv/g6";
 import { Col, Row, message } from "antd";
 import * as fs from "fs";
 import * as path from "path";
@@ -14,7 +13,6 @@ import Settings from "../../main-process/Settings";
 import NodePanel from "./NodePanel";
 import TreePanel from "./TreePanel";
 
-import { Item, Matrix } from "@antv/g6/lib/types";
 import { clipboard } from "electron";
 import "./Editor.css";
 
@@ -212,7 +210,7 @@ export default class Editor extends React.Component<EditorProps, EditorState> {
                 return;
             }
             if (e.target) {
-                this.onSelectNode(e.target.getID());
+                this.onSelectNode((e.target as unknown as Item).getID());
             } else {
                 this.onSelectNode(null);
             }

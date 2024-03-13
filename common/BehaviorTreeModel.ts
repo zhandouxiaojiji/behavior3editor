@@ -1,4 +1,4 @@
-import { TreeGraphData } from "@antv/g6/lib/types";
+import { TreeGraphData } from "@antv/g6";
 
 export interface ArgsOptional {
     name: string;
