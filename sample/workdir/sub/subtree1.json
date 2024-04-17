@@ -17,7 +17,13 @@
         "name": "Wait",
         "args": {
           "time": 1
-        }
+        },
+        "children": [
+          {
+            "id": 4,
+            "name": "unknow"
+          }
+        ]
       }
     ]
   },

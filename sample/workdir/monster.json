@@ -24,13 +24,12 @@
                 "id": 4,
                 "name": "Sequence",
                 "desc": "新建行为树",
-                "args": {},
-                "path": "subtree2.json"
+                "path": "workdir/subtree2.json"
               }
             ]
           },
           {
-            "id": 6,
+            "id": 7,
             "name": "Cmp",
             "args": {
               "gt": 50,
@@ -41,24 +40,23 @@
             ]
           },
           {
-            "id": 7,
-            "name": "Log",
+            "id": 8,
+            "name": "TestB3",
             "desc": "攻击",
             "args": {
               "str": "Attack!"
-            },
-            "children": []
+            }
           },
           {
-            "id": 8,
+            "id": 9,
             "name": "Sequence",
             "desc": "新建行为树",
-            "path": "subtree1.json"
+            "path": "workdir/subtree1.json"
           }
         ]
       },
       {
-        "id": 11,
+        "id": 12,
         "name": "Log",
         "desc": "逃跑",
         "args": {

@@ -1,0 +1,7 @@
+**/*.js
+**/*.d.ts
+electron/
+common/
+.eslintrc.cjs
+playwright.config.ts
+vite.config.ts

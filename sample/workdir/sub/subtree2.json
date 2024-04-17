@@ -1,0 +1,26 @@
+{
+  "name": "subtree2",
+  "root": {
+    "id": 1,
+    "name": "Sequence",
+    "desc": "新建行为树",
+    "children": [
+      {
+        "id": 2,
+        "name": "Cmp",
+        "args": {},
+        "input": [
+          ""
+        ]
+      },
+      {
+        "id": 3,
+        "name": "Attack",
+        "input": [
+          "in"
+        ]
+      }
+    ]
+  },
+  "desc": "子树2"
+}

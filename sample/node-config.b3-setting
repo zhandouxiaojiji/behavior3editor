@@ -1,0 +1,236 @@
+[
+  {
+    "name": "AlwaysFail",
+    "type": "Decorator",
+    "doc": "+ 只能有一个子节点,多个仅执行第一个\n+ 不管子节点是否成功都返回失败\n",
+    "desc": "始终返回失败"
+  },
+  {
+    "name": "AlwaysSuccess",
+    "type": "Decorator",
+    "doc": "+ 只能有一个子节点,多个仅执行第一个\n+ 不管子节点是否成功都返回成功\n",
+    "desc": "始终返回成功"
+  },
+  {
+    "name": "Attack",
+    "type": "Action",
+    "input": [
+      "{目标}"
+    ],
+    "desc": "攻击"
+  },
+  {
+    "name": "Cmp",
+    "type": "Condition",
+    "doc": "+ 若值为空，返回失败\n+ 非整数类型可能会报错\n",
+    "input": [
+      "值(int)"
+    ],
+    "args": [
+      {
+        "name": "value",
+        "desc": "值",
+        "type": "code?"
+      },
+      {
+        "name": "gt",
+        "desc": ">",
+        "type": "int?"
+      },
+      {
+        "name": "ge",
+        "desc": ">=",
+        "type": "int?"
+      },
+      {
+        "name": "eq",
+        "desc": "==",
+        "type": "int?"
+      },
+      {
+        "name": "le",
+        "desc": "<=",
+        "type": "int?"
+      },
+      {
+        "name": "lt",
+        "desc": "<",
+        "type": "int?"
+      }
+    ],
+    "desc": "比较值大小"
+  },
+  {
+    "name": "FindEnemy",
+    "output": [
+      "目标单位"
+    ],
+    "type": "Condition",
+    "doc": "+ 没找到返回失败\n",
+    "args": [
+      {
+        "name": "x",
+        "desc": "x",
+        "type": "int?"
+      },
+      {
+        "name": "y",
+        "desc": "y",
+        "type": "int?"
+      },
+      {
+        "name": "w",
+        "desc": "宽",
+        "type": "int?"
+      },
+      {
+        "name": "h",
+        "desc": "高",
+        "type": "int?"
+      },
+      {
+        "name": "count",
+        "desc": "查找上限",
+        "type": "string?"
+      }
+    ],
+    "desc": "查找敌人"
+  },
+  {
+    "name": "GetHp",
+    "output": [
+      "生命值"
+    ],
+    "type": "Action",
+    "desc": "获取生命值"
+  },
+  {
+    "name": "Idle",
+    "type": "Action",
+    "desc": "待机"
+  },
+  {
+    "name": "Log",
+    "type": "Action",
+    "args": [
+      {
+        "name": "str",
+        "desc": "日志",
+        "type": "string"
+      }
+    ],
+    "desc": "打印日志"
+  },
+  {
+    "name": "MoveToPos",
+    "type": "Action",
+    "args": [
+      {
+        "name": "x",
+        "desc": "x",
+        "type": "int"
+      },
+      {
+        "name": "y",
+        "desc": "y",
+        "type": "int"
+      }
+    ],
+    "desc": "移动到坐标"
+  },
+  {
+    "name": "MoveToTarget",
+    "type": "Action",
+    "input": [
+      "{目标}"
+    ],
+    "desc": "移动到目标"
+  },
+  {
+    "name": "Not",
+    "type": "Decorator",
+    "doc": "+ 将子节点的返回值取反\n",
+    "desc": "取反"
+  },
+  {
+    "name": "Parallel",
+    "type": "Composite",
+    "doc": "执行所有子节点并返回成功\n",
+    "desc": "并行执行"
+  },
+  {
+    "name": "Selector",
+    "type": "Composite",
+    "doc": "+ 一直往下执行，有子节点返回成功则返回成功，若全部节点返回失败则返回失败\n+ 子节点是或的关系\n",
+    "desc": "选择执行"
+  },
+  {
+    "name": "Sequence",
+    "type": "Composite",
+    "doc": "+ 一直往下执行，有子节点返回成功则返回成功，若全部节点返回失败则返回失败\n+ 子节点是或的关系\n",
+    "desc": "顺序执行"
+  },
+  {
+    "name": "Wait",
+    "type": "Action",
+    "args": [
+      {
+        "name": "time",
+        "desc": "时间/tick",
+        "type": "int"
+      }
+    ],
+    "desc": "等待"
+  },
+  {
+    "name": "TestB3",
+    "type": "Action",
+    "args": [
+      {
+        "name": "time",
+        "desc": "时间",
+        "type": "int"
+      },
+      {
+        "name": "random",
+        "desc": "随机",
+        "type": "float?"
+      },
+      {
+        "name": "open",
+        "desc": "打开来",
+        "type": "boolean"
+      },
+      {
+        "name": "check",
+        "desc": "检查",
+        "type": "code"
+      },
+      {
+        "name": "name",
+        "desc": "检查",
+        "type": "string"
+      },
+      {
+        "name": "status",
+        "desc": "状态",
+        "type": "enum",
+        "options": [
+          {
+            "name": "成功",
+            "value": "SUCCESS"
+          },
+          {
+            "name": "失败",
+            "value": "FAILURE"
+          },
+          {
+            "name": "运行中",
+            "value": "RUNNING"
+          }
+        ]
+      }
+    ],
+    "desc": "等待"
+  }
+]
