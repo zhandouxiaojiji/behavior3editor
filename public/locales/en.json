@@ -4,6 +4,7 @@
   "build": "Build",
   "batch": "Batch Script",
   "buildCompleted": "Build completed",
+  "buildFailed": "Build failed, more information can be found in the console.",
   "cancel": "Cancel",
   "copy": "Copy",
   "createProject": "Create Project",

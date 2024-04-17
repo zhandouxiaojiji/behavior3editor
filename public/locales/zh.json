@@ -4,6 +4,7 @@
   "build": "构建",
   "batch": "批处理脚本",
   "buildCompleted": "构建完成",
+  "buildFailed": "构建出现错误，详情请查看控制台！",
   "cancel": "取消",
   "copy": "复制",
   "createProject": "新建项目",

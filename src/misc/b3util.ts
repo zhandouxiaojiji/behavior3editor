@@ -66,6 +66,78 @@ export const isNodeEqual = (node1: NodeModel, node2: NodeModel) => {
   return false;
 };
 
+export const checkNodeData = (data: NodeModel | null | undefined) => {
+  if (!data) {
+    return false;
+  }
+  let hasError = false;
+  const conf = useWorkspace.getState().getNodeDef(data.name);
+  if (conf.input) {
+    for (let i = 0; i < conf.input.length; i++) {
+      if (conf.input[i].indexOf("?") === -1 && !data.input?.[i]) {
+        console.error(`check ${data.id}|${data.name}: intput field '${conf.input[i]}' is required`);
+        hasError = true;
+      }
+    }
+  }
+  if (conf.output) {
+    for (let i = 0; i < conf.output.length; i++) {
+      if (conf.output[i].indexOf("?") === -1 && !data.output?.[i]) {
+        console.error(
+          `check ${data.id}|${data.name}: output field '${conf.output[i]}' is required`
+        );
+        hasError = true;
+      }
+    }
+  }
+  if (conf.args) {
+    for (let i = 0; i < conf.args.length; i++) {
+      const arg = conf.args[i];
+      if (arg.type.indexOf("?") === -1) {
+        const value = data.args?.[arg.name];
+        if (arg.type === "float") {
+          if (typeof value !== "number") {
+            console.error(`check ${data.id}|${data.name}: '${arg.name}' must be a number`);
+            hasError = true;
+          }
+        } else if (arg.type === "int") {
+          if (typeof value !== "number" || value !== Math.floor(value)) {
+            console.error(`check ${data.id}|${data.name}: '${arg.name}' must be a int`);
+            hasError = true;
+          }
+        } else if (arg.type === "string") {
+          if (!value || typeof value !== "string") {
+            console.error(`check ${data.id}|${data.name}: '${arg.name}' must be a string`);
+            hasError = true;
+          }
+        } else if (arg.type === "enum") {
+          if (!arg.options?.find((option) => option.value === value)) {
+            console.error(
+              `check ${data.id}|${data.name}: '${arg.name}' must be one of option value`
+            );
+            hasError = true;
+          }
+        } else if (arg.type == "code") {
+          if (!value || typeof value !== "string") {
+            console.error(`check ${data.id}|${data.name}: '${arg.name}' must be a string`);
+            hasError = true;
+          }
+        }
+      }
+    }
+  }
+
+  if (data.children) {
+    for (const child of data.children) {
+      if (!checkNodeData(child)) {
+        hasError = true;
+      }
+    }
+  }
+
+  return !hasError;
+};
+
 export const copyFromNode = (data: TreeGraphData, node: NodeModel) => {
   data.name = node.name;
   data.debug = node.debug;
@@ -192,6 +264,7 @@ export const checkTreeData = (data: TreeGraphData) => {
       }
     }
   }
+
   return true;
 };
 
@@ -253,7 +326,7 @@ export const createBuildData = (path: string) => {
     const data = createTreeData(treeModel.root);
     refreshTreeDataId(data);
     treeModel.root = createFileData(data, true);
-    return treeModel as NodeModel;
+    return treeModel as TreeModel;
   } catch (error) {
     console.log("build error:", path, error);
   }

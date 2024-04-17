@@ -195,7 +195,9 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         useSetting.getState().appendRecent(path);
       } catch (error) {
         console.error(error);
-        useSetting.getState().removeRecent(path);
+        if (!fs.existsSync(path)) {
+          useSetting.getState().removeRecent(path);
+        }
         message.error(`load workspace error: ${path}`);
       }
     }
@@ -242,14 +244,22 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         editor.dispatch?.("save");
       }
       try {
+        let hasError = false;
         for (const path of workspace.allFiles) {
           const buildpath = buildDir + "/" + Path.relative(workspace.workdir, path);
           console.log("build:", buildpath);
           const treeModel = b3util.createBuildData(path);
+          if (!b3util.checkNodeData(treeModel?.root)) {
+            hasError = true;
+          }
           fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
           fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
         }
-        message.success(i18n.t("buildCompleted"));
+        if (hasError) {
+          message.error(i18n.t("buildFailed"));
+        } else {
+          message.success(i18n.t("buildCompleted"));
+        }
       } catch (error) {
         console.error(error);
       }
