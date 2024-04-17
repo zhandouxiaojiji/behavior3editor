@@ -231,26 +231,27 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
 
   buildProject: () => {
     const workspace = get();
-    if (!buildDir && workspace.path) {
-      buildDir = dialog.showOpenDialogSync({
-        properties: ["openDirectory", "createDirectory"],
-      })?.[0];
-      if (buildDir) {
-        for (const editor of workspace.editors) {
-          editor.dispatch?.("save");
+    if (workspace.path)
+      if (!buildDir) {
+        buildDir = dialog.showOpenDialogSync({
+          properties: ["openDirectory", "createDirectory"],
+        })?.[0];
+      }
+    if (buildDir) {
+      for (const editor of workspace.editors) {
+        editor.dispatch?.("save");
+      }
+      try {
+        for (const path of workspace.allFiles) {
+          const buildpath = buildDir + "/" + Path.relative(workspace.workdir, path);
+          console.log("build:", buildpath);
+          const treeModel = b3util.createBuildData(path);
+          fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
+          fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
         }
-        try {
-          for (const path of workspace.allFiles) {
-            const buildpath = buildDir + "/" + Path.relative(workspace.workdir, path);
-            console.log("build:", buildpath);
-            const treeModel = b3util.createBuildData(path);
-            fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
-            fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
-          }
-          message.success(i18n.t("buildCompleted"));
-        } catch (error) {
-          console.error(error);
-        }
+        message.success(i18n.t("buildCompleted"));
+      } catch (error) {
+        console.error(error);
       }
     }
   },
