@@ -147,6 +147,54 @@ export const calcTreeDataSize = (data: TreeGraphData) => {
   return [200, height];
 };
 
+export const checkTreeData = (data: TreeGraphData) => {
+  const conf = data.def;
+  if (conf.input) {
+    for (let i = 0; i < conf.input.length; i++) {
+      if (conf.input[i].indexOf("?") === -1 && !data.input?.[i]) {
+        return false;
+      }
+    }
+  }
+  if (conf.output) {
+    for (let i = 0; i < conf.output.length; i++) {
+      if (conf.output[i].indexOf("?") === -1 && !data.output?.[i]) {
+        return false;
+      }
+    }
+  }
+  if (conf.args) {
+    for (let i = 0; i < conf.args.length; i++) {
+      const arg = conf.args[i];
+      if (arg.type.indexOf("?") === -1) {
+        const value = data.args?.[arg.name];
+        if (arg.type === "float") {
+          if (typeof value !== "number") {
+            return false;
+          }
+        } else if (arg.type === "int") {
+          if (typeof value !== "number" || value !== Math.floor(value)) {
+            return false;
+          }
+        } else if (arg.type === "string") {
+          if (!value || typeof value !== "string") {
+            return false;
+          }
+        } else if (arg.type === "enum") {
+          if (!arg.options?.find((option) => option.value === value)) {
+            return false;
+          }
+        } else if (arg.type == "code") {
+          if (!value || typeof value !== "string") {
+            return false;
+          }
+        }
+      }
+    }
+  }
+  return true;
+};
+
 export const createTreeData = (node: NodeModel, parent?: string) => {
   const workspace = useWorkspace.getState();
   let treeData: TreeGraphData = {

@@ -32,9 +32,6 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
-app.commandLine.appendArgument("–-allow-file-access-from-files");
-app.commandLine.appendArgument("--disable-web-security");
-
 // Remove electron security warnings
 // This warning only shows in development mode
 // Read more on https://www.electronjs.org/docs/latest/tutorial/security

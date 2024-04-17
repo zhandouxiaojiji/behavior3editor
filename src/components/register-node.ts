@@ -1,5 +1,6 @@
 import { useWorkspace } from "@/contexts/workspace-context";
-import { toBreakWord } from "@/misc/b3util";
+import { TreeGraphData } from "@/misc/b3type";
+import { checkTreeData, toBreakWord } from "@/misc/b3util";
 import i18n from "@/misc/i18n";
 import G6 from "@antv/g6";
 
@@ -76,7 +77,8 @@ G6.registerNode(
       let color = nodeDef.color || NODE_COLORS[classify] || NODE_COLORS["Other"];
       if (
         !workspace.hasNodeDef(cfg.name as string) ||
-        (cfg.path && (!cfg.children || (cfg.children as []).length == 0))
+        (cfg.path && (!cfg.children || (cfg.children as []).length == 0)) ||
+        !checkTreeData(cfg as TreeGraphData)
       ) {
         classify = "Error";
         color = NODE_COLORS[classify];

@@ -13,7 +13,6 @@ dist-ssr
 dist-electron
 release
 *.local
-build
 settings.json
 
 # Editor directories and files
