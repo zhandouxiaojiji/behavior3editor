@@ -78,7 +78,7 @@
   "node.deleteRootNodeDenied": "Unable to delete the root node",
   "node.editSubtreeDenied": "Unable to edit the subtree node",
   "node.desc": "Node desc",
-  "node.fileRequired": "{{field}} field is required",
+  "node.fileRequired": "field '{{field}}' is required",
   "node.id": "Node id",
   "node.inputVariable": "Input variables",
   "node.name": "Node name",

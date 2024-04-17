@@ -78,7 +78,7 @@
   "node.deleteRootNodeDenied": "不能删除根节点",
   "node.editSubtreeDenied": "不能编辑子树节点",
   "node.desc": "节点说明",
-  "node.fileRequired": "字段<b>{{field}}</b>必填",
+  "node.fileRequired": "字段“{{field}}”必填",
   "node.id": "节点标识",
   "node.inputVariable": "输入变量",
   "node.name": "节点名称",

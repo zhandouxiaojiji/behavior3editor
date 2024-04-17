@@ -381,7 +381,6 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       const workspace = get();
       let hasEvent = false;
       fs.watch(workspace.workdir, { recursive: true }, (event, filename) => {
-        console.log("fileanme", event, filename);
         if (event === "rename") {
           if (!hasEvent) {
             setTimeout(() => {

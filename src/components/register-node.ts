@@ -174,7 +174,7 @@ G6.registerNode(
       });
 
       // icon
-      const img = `./icons/${classify}.svg`;
+      const img = nodeDef.icon ? workspace.workdir + "/" + nodeDef.icon : `./icons/${classify}.svg`;
       addShape("image", {
         attrs: {
           x: 5,

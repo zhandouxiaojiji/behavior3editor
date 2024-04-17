@@ -22,6 +22,7 @@
   {
     "name": "Cmp",
     "type": "Condition",
+    "icon": "icons/cmp.svg",
     "doc": "+ 若值为空，返回失败\n+ 非整数类型可能会报错\n",
     "input": [
       "值(int)"

@@ -68,13 +68,13 @@ export const Inspector: FC = () => {
       if (node) {
         node.input?.forEach((v, i) => {
           const desc = node.def.input?.[i] ?? "<unknown>";
-          if (v && !options.find((option) => option.value !== v)) {
+          if (v && !options.find((option) => option.value === v)) {
             options.push({ label: `${v}(${desc})`, value: v });
           }
         });
         node.output?.forEach((v, i) => {
           const desc = node.def.output?.[i] ?? "<unknown>";
-          if (v && !options.find((option) => option.value !== v)) {
+          if (v && !options.find((option) => option.value === v)) {
             options.push({ label: `${v}(${desc})`, value: v });
           }
         });
