@@ -169,14 +169,16 @@ export const Inspector: FC = () => {
     // change node def
     const changeNodeDef = (newname: string) => {
       if (editingNode.data.name !== newname) {
-        editingNode.data = {
-          id: editingNode.data.id,
-          name: workspace.nodeDefs.get(newname)?.name ?? newname,
-          desc: editingNode.data.desc,
-          debug: editingNode.data.debug,
-        };
-        workspace.onEditingNode(editingNode);
-        form.submit();
+        workspace.onEditingNode({
+          data: {
+            id: editingNode.data.id,
+            name: workspace.nodeDefs.get(newname)?.name ?? newname,
+            desc: editingNode.data.desc,
+            debug: editingNode.data.debug,
+          },
+          editable: editingNode.editable,
+        });
+        finish(form.getFieldsValue());
       } else {
         form.submit();
       }
