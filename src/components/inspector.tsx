@@ -242,7 +242,7 @@ export const Inspector: FC = () => {
               />
             </Form.Item>
             <Markdown>{def.doc}</Markdown>
-            {def.input?.length && (
+            {def.input && def.input.length > 0 && (
               <>
                 <Divider orientation="left">
                   <h4>{t("node.inputVariable")}</h4>
@@ -272,7 +272,7 @@ export const Inspector: FC = () => {
                 })}
               </>
             )}
-            {def.args?.length && (
+            {def.args && def.args.length > 0 && (
               <>
                 <Divider orientation="left">
                   <h4>{t("node.args")}</h4>
@@ -319,7 +319,7 @@ export const Inspector: FC = () => {
                 })}
               </>
             )}
-            {def.output?.length && (
+            {def.output && def.output.length > 0 && (
               <>
                 <Divider orientation="left">
                   <h4>{t("node.outputVariable")}</h4>
