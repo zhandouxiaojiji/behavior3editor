@@ -12,8 +12,13 @@
 
 ## 节点定义
 ```typescript
+interface NodeArgOption {
+  name: string;
+  value: string | number;
+}
 interface NodeArg {
   name: string, // 字段名
+  // string | string? | boolean | boolean?| int | int? | float | float? | code | code? | enum | enum?
   type: string, // 字段类型
   desc: string, // 字段中文描述
   default?: string; // 默认值
@@ -24,11 +29,11 @@ interface NodeDef {
   type?: string;        //节点分类(Composite,Decorator,Condition,Action)
   desc?: string;        //节点说明
   args?: ArgsDefType[]; //参数列表
-  input?: string[];     //输入变量名
-  output?: string[];    //输出变量名
+  input?: string[];     //输入变量名 exp: ["target", "enemy?"]
+  output?: string[];    //输出变量名 exp: ["target", "enemy?"]
   doc?: string;         //文档说明(markdown格式)
-  color?: string;       //节点颜色
-  icon?: string;        //节点图标
+  color?: string;       //节点颜色 exp: "#ff00ff"
+  icon?: string;        //节点图标 exp: icons/cmp.svg
 }
 ```
 节点定义配置在项目创建的时候会自动生成一个配置，参照[sample/node-config.b3-setting](sample/node-config.b3-setting)，这是个json的配置文件。编辑器不提供节点定义的编辑，强烈建议节点定义文件由代码生成 (参照示例项目[behavior3lua](https://github.com/zhandouxiaojiji/behavior3lua))。
