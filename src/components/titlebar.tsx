@@ -24,7 +24,7 @@ export const TitleBar: FC<LayoutProps> = () => {
   const searchOptions = useMemo(() => {
     const options: OptionType[] = [];
     workspace.allFiles.forEach((path) => {
-      const value = Path.relative(workspace.fileTree!.path, path);
+      const value = Path.relative(workspace.fileTree!.path, path).replaceAll(Path.sep, "/");
       options.push({
         label: (
           <div>

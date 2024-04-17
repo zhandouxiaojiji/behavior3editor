@@ -89,7 +89,7 @@ export const Inspector: FC = () => {
   const subtreeOptions = useMemo(() => {
     const options: OptionType[] = [];
     workspace.allFiles.forEach((path) => {
-      const value = Path.relative(workspace.fileTree!.path, path);
+      const value = Path.relative(workspace.fileTree!.path, path).replaceAll(Path.sep, "/");
       const desc = ""; //fileNode.desc ? `(${fileNode.desc})` : "";
       options.push({
         label: `${value}${desc}`,
