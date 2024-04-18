@@ -638,23 +638,19 @@ export const Explorer: FC = () => {
   }
 
   return (
-    <div
+    <Flex
+      vertical
       ref={keysRef}
       tabIndex={-1}
       style={{ height: "100%" }}
       onContextMenuCapture={() => {
         setContextMenu(directoryContextMenu);
       }}
-      onContextMenu={(e) => {
-        if (workspace.fileTree) {
-          // setSelectedKeys([workspace.fileTree.path]);
-        }
-      }}
     >
       <div style={{ padding: "12px 24px" }}>
         <span style={{ fontSize: "18px", fontWeight: "600" }}>{t("explorer.title")}</span>
       </div>
-      <Flex vertical style={{ overflow: "auto", height: "100%" }}>
+      <Flex vertical style={{ overflow: "auto", height: "100%", paddingBottom: "20px" }}>
         <Dropdown menu={{ items: contextMenu, onClick }} trigger={["contextMenu"]}>
           <div>
             <DirectoryTree
@@ -733,6 +729,6 @@ export const Explorer: FC = () => {
           </div>
         </Dropdown>
       </Flex>
-    </div>
+    </Flex>
   );
 };

@@ -159,7 +159,7 @@ export const Inspector: FC = () => {
       def.output?.forEach((_, i) => {
         const v = values[`output.${i}`];
         data.output ||= [];
-        data.output!.push(v ?? "");
+        data.output.push(v ?? "");
       });
       workspace.editing?.dispatch?.("updateNode", {
         data: data,

@@ -24,7 +24,6 @@
   "bugs": {
     "url": "https://github.com/zhandouxiaojiji/behavior3editor/issues"
   },
- 
   "homepage": "https://github.com/zhandouxiaojiji/behavior3editor#readme",
   "devDependencies": {
     "@stylistic/eslint-plugin-js": "^1.7.0",
@@ -34,23 +33,23 @@
     "@typescript-eslint/parser": "^7.3.1",
     "@vitejs/plugin-react": "^3.1.0",
     "copy-files-from-to": "^3.9.1",
-    "electron": "^23.2.0",
-    "electron-builder": "^23.6.0",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
     "eslint": "^8.57.0",
     "eslint-plugin-react-refresh": "^0.4.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sass": "^1.60.0",
-    "typescript": "^5.0.2",
+    "typescript": "^5.4.5",
     "vite": "^4.1.4",
-    "vite-electron-plugin": "^0.8.2",
-    "vite-plugin-electron": "^0.11.1",
-    "vite-plugin-electron-renderer": "^0.13.12"
+    "vite-electron-plugin": "^0.8.3",
+    "vite-plugin-electron": "^0.28.4",
+    "vite-plugin-electron-renderer": "^0.14.5"
   },
   "dependencies": {
     "@ant-design/icons": "^5.3.3",
     "@antv/g6": "^4.8.24",
-    "@electron/remote": "^2.1.2",
+    "@electron/remote": "github:electron/remote",
     "@types/electron-localshortcut": "^3.1.3",
     "@types/node": "^20.11.27",
     "ahooks": "^3.7.10",
