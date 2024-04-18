@@ -355,12 +355,14 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       return;
     }
 
-    if (isSubtreeNode(findDataById(editor.selectedId))) {
+    const data = findDataById(editor.selectedId);
+
+    if (isSubtreeNode(data) && !data.path) {
       message.warning(t("node.editSubtreeDenied"));
       return;
     }
 
-    const parentData = findParent(findDataById(editor.selectedId))!;
+    const parentData = findParent(data)!;
     parentData.children = parentData.children!.filter((e) => e.id != editor.selectedId);
     selectNode(null);
     updateGrahp();
