@@ -1,5 +1,5 @@
 import { EditNode, EditTree, FileTreeType, useWorkspace } from "@/contexts/workspace-context";
-import { NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
+import { NodeArgType, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
 import { Hotkey, isMacos } from "@/misc/keys";
 import Path from "@/misc/path";
 import { AutoComplete, Divider, Flex, Form, Input, InputNumber, Select, Switch } from "antd";
@@ -9,8 +9,6 @@ import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 
 interface OptionType extends DefaultOptionType {}
-
-type ArgType = "string" | "int" | "float" | "boolean" | "enum" | "code";
 
 export const Inspector: FC = () => {
   const workspace = {
@@ -289,7 +287,7 @@ export const Inspector: FC = () => {
                 </Divider>
                 {def.args.map((v) => {
                   const required = v.type.indexOf("?") == -1;
-                  const type = v.type.replace("?", "") as ArgType;
+                  const type = v.type.replace("?", "") as NodeArgType;
                   return (
                     <Form.Item
                       name={`args.${v.name}`}

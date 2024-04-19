@@ -1,9 +1,9 @@
 import { useWorkspace } from "@/contexts/workspace-context";
-import { NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
+import { NodeArgType, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
 import * as fs from "fs";
 import { message } from "./hooks";
-import Path from "./path";
 import i18n from "./i18n";
+import Path from "./path";
 
 export const isSubtreeRoot = (data: TreeGraphData) => {
   return data.path && data.id.toString() !== "1";
@@ -94,30 +94,31 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
     for (let i = 0; i < conf.args.length; i++) {
       const arg = conf.args[i];
       if (arg.type.indexOf("?") === -1) {
+        const type = arg.type as NodeArgType;
         const value = data.args?.[arg.name];
-        if (arg.type === "float") {
+        if (type === "float") {
           if (typeof value !== "number") {
             console.error(`check ${data.id}|${data.name}: '${arg.name}' must be a number`);
             hasError = true;
           }
-        } else if (arg.type === "int") {
+        } else if (type === "int") {
           if (typeof value !== "number" || value !== Math.floor(value)) {
             console.error(`check ${data.id}|${data.name}: '${arg.name}' must be a int`);
             hasError = true;
           }
-        } else if (arg.type === "string") {
+        } else if (type === "string") {
           if (!value || typeof value !== "string") {
             console.error(`check ${data.id}|${data.name}: '${arg.name}' must be a string`);
             hasError = true;
           }
-        } else if (arg.type === "enum") {
+        } else if (type === "enum") {
           if (!arg.options?.find((option) => option.value === value)) {
             console.error(
               `check ${data.id}|${data.name}: '${arg.name}' must be one of option value`
             );
             hasError = true;
           }
-        } else if (arg.type == "code") {
+        } else if (type == "code") {
           if (!value || typeof value !== "string") {
             console.error(`check ${data.id}|${data.name}: '${arg.name}' must be a string`);
             hasError = true;
@@ -239,24 +240,25 @@ export const checkTreeData = (data: TreeGraphData) => {
     for (let i = 0; i < conf.args.length; i++) {
       const arg = conf.args[i];
       if (arg.type.indexOf("?") === -1) {
+        const type = arg.type as NodeArgType;
         const value = data.args?.[arg.name];
-        if (arg.type === "float") {
+        if (type === "float") {
           if (typeof value !== "number") {
             return false;
           }
-        } else if (arg.type === "int") {
+        } else if (type === "int") {
           if (typeof value !== "number" || value !== Math.floor(value)) {
             return false;
           }
-        } else if (arg.type === "string") {
+        } else if (type === "string") {
           if (!value || typeof value !== "string") {
             return false;
           }
-        } else if (arg.type === "enum") {
+        } else if (type === "enum") {
           if (!arg.options?.find((option) => option.value === value)) {
             return false;
           }
-        } else if (arg.type == "code") {
+        } else if (type === "code") {
           if (!value || typeof value !== "string") {
             return false;
           }

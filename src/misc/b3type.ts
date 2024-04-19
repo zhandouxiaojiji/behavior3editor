@@ -1,5 +1,7 @@
 import { TreeGraphData as G6TreeGraphData } from "@antv/g6";
 
+export type NodeArgType = "string" | "int" | "float" | "boolean" | "enum" | "code";
+
 export interface NodeArgOption {
   name: string;
   value: string | number;
