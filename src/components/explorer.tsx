@@ -147,7 +147,7 @@ export const Explorer: FC = () => {
           <img
             className="b3-node-icon"
             style={{ width: "14px", height: "14px", color: "white" }}
-            src={`/icons/${catalog.title}.svg`}
+            src={`./icons/${catalog.title}.svg`}
           />
         </Flex>
       );
