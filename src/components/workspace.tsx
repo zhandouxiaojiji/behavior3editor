@@ -1,7 +1,7 @@
 import { useSetting } from "@/contexts/setting-context";
 import { EditorStore, useWorkspace } from "@/contexts/workspace-context";
 import { modal } from "@/misc/hooks";
-import { Hotkey, isHotkeyPressed, setInputFocus, useHotkeys } from "@/misc/keys";
+import { Hotkey, isHotkeyPressed, isMacos, setInputFocus, useHotkeys } from "@/misc/keys";
 import Path from "@/misc/path";
 import { app } from "@electron/remote";
 import { Button, Flex, Layout, Space, Tabs, Tag, Tooltip } from "antd";
@@ -41,7 +41,6 @@ export const Workspace: FC = () => {
   const [isShowingSave, setShowingSave] = useState(false);
   const { t } = useTranslation();
   const forceUpdate = useForceUpdate();
-  const isMac = process.platform === "darwin";
   const { width = 0, height = 0 } = useWindowSize();
 
   const keysRef = useHotkeys<HTMLDivElement>(
@@ -333,8 +332,8 @@ export const Workspace: FC = () => {
                 }}
               >
                 {[
-                  { label: t("searchFile"), hotkeys: isMac ? "⌘ P" : "Ctrl + P" },
-                  { label: t("build"), hotkeys: isMac ? "⌘ B" : "Ctrl + B" },
+                  { label: t("searchFile"), hotkeys: isMacos ? "⌘ P" : "Ctrl + P" },
+                  { label: t("build"), hotkeys: isMacos ? "⌘ B" : "Ctrl + B" },
                   { label: t("insertNode"), hotkeys: "Enter" },
                   { label: t("deleteNode"), hotkeys: "Backspace" },
                 ].map((v) => (

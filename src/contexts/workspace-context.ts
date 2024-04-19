@@ -68,14 +68,24 @@ export class EditorStore {
   }
 }
 
-export type FileModel = {
+export type FileTreeType = {
   path: string;
   title: string;
   icon?: React.ReactNode;
   desc?: string;
   isLeaf?: boolean;
-  children?: FileModel[];
+  children?: FileTreeType[];
   editing?: boolean;
+  style?: React.CSSProperties;
+};
+
+export type NodeTreeType = {
+  title: string;
+  def?: NodeDef;
+  icon?: React.ReactNode;
+  isLeaf?: boolean;
+  children?: NodeTreeType[];
+  style?: React.CSSProperties;
 };
 
 export type EditNode = {
@@ -98,7 +108,8 @@ export type WorkspaceStore = {
   path: string;
 
   allFiles: string[];
-  fileTree?: FileModel;
+  nodeTree?: NodeTreeType;
+  fileTree?: FileTreeType;
   editors: EditorStore[];
   editing?: EditorStore;
 
@@ -143,7 +154,7 @@ const loadFileTree = (workdir: string, filename: string) => {
     return;
   }
 
-  const data: FileModel = {
+  const data: FileTreeType = {
     path: fullpath.replaceAll(Path.sep, "/"),
     title: Path.basename(filename),
   };
@@ -412,11 +423,15 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   loadTrees: () => {
     const workspace = get();
     const data = loadFileTree(workspace.workdir, ".")!;
-    data.title = Path.basename(workspace.workdir);
+    data.title = Path.basename(workspace.workdir).toUpperCase();
+    data.style = {
+      fontWeight: "bold",
+      fontSize: "13px",
+    };
     set({ fileTree: data });
 
     const allFiles: string[] = [];
-    const collect = (fileNode?: FileModel) => {
+    const collect = (fileNode?: FileTreeType) => {
       if (fileNode?.isLeaf) {
         allFiles.push(fileNode.path);
       }
@@ -429,10 +444,36 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   loadNodeDefs: () => {
     const workspace = get();
     const nodeDefData = readJson(`${workspace.workdir}/node-config.b3-setting`) as NodeDef[];
+    const nodeTree: NodeTreeType = {
+      title: "NODES",
+      children: [],
+      style: {
+        fontWeight: "bold",
+        fontSize: "13px",
+      },
+    };
+    const nodeDefs: Map<string, NodeDef> = new Map();
     for (const v of nodeDefData) {
-      workspace.nodeDefs.set(v.name, v);
+      nodeDefs.set(v.name, v);
+      let catalog: NodeTreeType | undefined = nodeTree.children?.find((nt) => nt.title === v.type);
+      if (!catalog) {
+        catalog = {
+          title: v.type,
+          children: [],
+        };
+        nodeTree.children?.push(catalog);
+      }
+      catalog.children?.push({
+        title: `${v.name}(${v.desc})`,
+        isLeaf: true,
+        def: v,
+      });
     }
-    set({ nodeDefs: workspace.nodeDefs });
+    nodeTree.children?.sort((a, b) => a.title.localeCompare(b.title));
+    nodeTree.children?.forEach((child) =>
+      child.children?.sort((a, b) => a.title.localeCompare(b.title))
+    );
+    set({ nodeDefs, nodeTree });
     workspace.editing?.dispatch?.("reload");
   },
 

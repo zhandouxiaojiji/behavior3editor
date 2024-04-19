@@ -14,7 +14,7 @@ export interface NodeArg {
 }
 export interface NodeDef {
   name: string;
-  type?: string;
+  type: string;
   desc?: string;
   args?: NodeArg[];
   input?: string[];

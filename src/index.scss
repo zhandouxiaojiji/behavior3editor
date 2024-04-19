@@ -16,18 +16,22 @@
   --b3-color-border: #30363d;
 }
 
-::-webkit-scrollbar {
-  width: 9px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #30363d;
-  border-radius: 9px;
-  -webkit-box-shadow: inset006pxrgba(0, 0, 0, 0.5);
-}
-
 body {
   margin: 0;
+}
+
+.b3-node-icon {
+  filter: invert(100%) sepia(5%) saturate(1%) hue-rotate(320deg) brightness(104%) contrast(100%);
+}
+
+.b3-overflow::-webkit-scrollbar {
+  width: 8px;
+}
+
+.b3-overflow::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 4px;
+  -webkit-box-shadow: inset006pxrgba(0, 0, 0, 0.5);
 }
 
 .b3-drag-region {

@@ -1,6 +1,6 @@
-import { EditNode, EditTree, FileModel, useWorkspace } from "@/contexts/workspace-context";
+import { EditNode, EditTree, FileTreeType, useWorkspace } from "@/contexts/workspace-context";
 import { NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
-import { Hotkey } from "@/misc/keys";
+import { Hotkey, isMacos } from "@/misc/keys";
 import Path from "@/misc/path";
 import { AutoComplete, Divider, Flex, Form, Input, InputNumber, Select, Switch } from "antd";
 import { DefaultOptionType } from "antd/es/select";
@@ -116,7 +116,10 @@ export const Inspector: FC = () => {
         <div style={{ padding: "12px 24px" }}>
           <span style={{ fontSize: "18px", fontWeight: "600" }}>{t("tree.overview")}</span>
         </div>
-        <div style={{ overflow: "auto", height: "100%", padding: "24px" }}>
+        <div
+          className={isMacos ? undefined : "b3-overflow"}
+          style={{ overflow: "auto", height: "100%", padding: "24px" }}
+        >
           <Form form={form} labelCol={{ span: 8 }} onFinish={finish}>
             <Form.Item name="name" label={t("tree.name")}>
               <Input disabled={true} />
@@ -197,7 +200,10 @@ export const Inspector: FC = () => {
         <div style={{ padding: "12px 24px" }}>
           <span style={{ fontSize: "18px", fontWeight: "600" }}>{def.desc}</span>
         </div>
-        <div style={{ overflow: "auto", height: "100%", padding: "24px" }}>
+        <div
+          className={isMacos ? undefined : "b3-overflow"}
+          style={{ overflow: "auto", height: "100%", padding: "24px" }}
+        >
           <Form
             form={form}
             wrapperCol={{ span: "auto" }}

@@ -2,7 +2,7 @@ import { useSetting } from "@/contexts/setting-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import * as b3util from "@/misc/b3util";
 import i18n from "@/misc/i18n";
-import { Hotkey, sendInputEvent } from "@/misc/keys";
+import { Hotkey, isMacos, sendInputEvent } from "@/misc/keys";
 import { CheckOutlined } from "@ant-design/icons";
 import { Menu as AppMenu, BrowserWindow, app, dialog } from "@electron/remote";
 import { Button, DropDownProps, Dropdown, Flex, FlexProps, LayoutProps, Space } from "antd";
@@ -61,7 +61,6 @@ export const Menu: FC<LayoutProps> = () => {
     recent: useSetting((state) => state.recent),
   };
 
-  const isMac = process.platform === "darwin";
   const menuTemplate: MenuItemConstructorOptions[] = useMemo(() => {
     const recentWorkspaces: MenuItemConstructorOptions[] = settings.recent.map((path, i) => ({
       id: "menu.file.recent" + i,
@@ -70,7 +69,7 @@ export const Menu: FC<LayoutProps> = () => {
     }));
     return [
       // { role: 'appMenu' }
-      ...(isMac
+      ...(isMacos
         ? [
             {
               id: "menu.app",
@@ -341,31 +340,15 @@ export const Menu: FC<LayoutProps> = () => {
           },
         ],
       },
-      // {
-      //   id: "menu.window",
-      //   label: t("menu.window"),
-      //   submenu: [
-      //     { id: "menu.window.minimize", role: "minimize" },
-      //     { id: "menu.window.zoom", role: "zoom" },
-      //     ...(isMac
-      //       ? [
-      //           { type: "separator" },
-      //           { id: "menu.window.front", role: "front" },
-      //           { type: "separator" },
-      //           { id: "menu.window.window", role: "window" },
-      //         ]
-      //       : [{ id: "menu.window.close", role: "close" }]),
-      //   ],
-      // },
     ] as MenuItemConstructorOptions[];
   }, [t, workspace.workdir, settings.recent, workspace.editing]);
 
-  if (isMac) {
+  if (isMacos) {
     const menu = AppMenu.buildFromTemplate(menuTemplate);
     AppMenu.setApplicationMenu(menu);
   }
 
-  if (!process.env.VITE_DEV_SERVER_URL && isMac) {
+  if (!process.env.VITE_DEV_SERVER_URL && isMacos) {
     return <div />;
   }
 
@@ -387,15 +370,15 @@ export const Menu: FC<LayoutProps> = () => {
             const keys = (option.accelerator?.split("+") ?? []).map((key) => {
               const lowerKey = key.toLowerCase();
               if (lowerKey.indexOf("alt") !== -1) {
-                return isMac ? "⌥" : "Alt";
+                return isMacos ? "⌥" : "Alt";
               } else if (
                 lowerKey.indexOf("cmdorctrl") !== -1 ||
                 lowerKey.indexOf("ctrl") !== -1 ||
                 lowerKey.indexOf("meta") !== -1
               ) {
-                return isMac ? "⌘" : "Ctrl";
+                return isMacos ? "⌘" : "Ctrl";
               } else if (lowerKey.indexOf("shift") !== -1) {
-                return isMac ? "⇧" : "Shift";
+                return isMacos ? "⇧" : "Shift";
               } else {
                 return key.toUpperCase().replace("=", "+");
               }
@@ -423,7 +406,7 @@ export const Menu: FC<LayoutProps> = () => {
                     )}
                     {option.label}
                   </div>
-                  <div>{keys.join(isMac ? " " : "+")}</div>
+                  <div>{keys.join(isMacos ? " " : "+")}</div>
                 </MenuItemLabel>
               ),
               key: option.id ?? "",

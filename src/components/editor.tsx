@@ -8,7 +8,7 @@ import {
 import { NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
 import * as b3util from "@/misc/b3util";
 import { message } from "@/misc/hooks";
-import { Hotkey, isHotkeyPressed, useHotkeys } from "@/misc/keys";
+import { Hotkey, isHotkeyPressed, isMacos, useHotkeys } from "@/misc/keys";
 import Path from "@/misc/path";
 import G6, { G6GraphEvent, Item, TreeGraph } from "@antv/g6";
 import { dialog } from "@electron/remote";
@@ -840,13 +840,13 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         ></Flex>
       );
     };
-    const isMac = process.platform === "darwin";
+
     const arr: MenuProps["items"] = [
       {
         label: (
           <MenuItem>
             <div>{t("copy")}</div>
-            <div>{isMac ? "⌘ C" : "Ctrl+C"}</div>
+            <div>{isMacos ? "⌘ C" : "Ctrl+C"}</div>
           </MenuItem>
         ),
         key: "copy",
@@ -855,7 +855,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         label: (
           <MenuItem>
             <div>{t("paste")}</div>
-            <div>{isMac ? "⌘ V" : "Ctrl+V"}</div>
+            <div>{isMacos ? "⌘ V" : "Ctrl+V"}</div>
           </MenuItem>
         ),
         key: "paste",
@@ -864,7 +864,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         label: (
           <MenuItem>
             <div>{t("replace")}</div>
-            <div>{isMac ? "⇧ ⌘ V" : "Ctrl+Shift+V"} </div>
+            <div>{isMacos ? "⇧ ⌘ V" : "Ctrl+Shift+V"} </div>
           </MenuItem>
         ),
         key: "replace",
@@ -873,7 +873,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         label: (
           <MenuItem>
             <div>{t("insertNode")}</div>
-            <div>{isMac ? <IoMdReturnLeft /> : "Enter"}</div>
+            <div>{isMacos ? <IoMdReturnLeft /> : "Enter"}</div>
           </MenuItem>
         ),
         key: "insert",
@@ -882,7 +882,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         label: (
           <MenuItem>
             <div>{t("deleteNode")}</div>
-            <div>{isMac ? <FiDelete /> : "Backspace"}</div>
+            <div>{isMacos ? <FiDelete /> : "Backspace"}</div>
           </MenuItem>
         ),
         key: "delete",

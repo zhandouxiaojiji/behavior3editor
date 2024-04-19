@@ -1,4 +1,4 @@
-import { FileModel, useWorkspace } from "@/contexts/workspace-context";
+import { FileTreeType, useWorkspace } from "@/contexts/workspace-context";
 import * as b3util from "@/misc/b3util";
 import { modal } from "@/misc/hooks";
 import { Hotkey, isHotkeyPressed, isMacos, useHotkeys } from "@/misc/keys";
@@ -10,9 +10,11 @@ import { ipcRenderer, shell } from "electron";
 import * as fs from "fs";
 import React, { FC, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BsBoxFill } from "react-icons/bs";
 import { FaExclamationTriangle, FaSwatchbook } from "react-icons/fa";
 import { FiCommand, FiDelete } from "react-icons/fi";
 import { IoMdReturnLeft } from "react-icons/io";
+import { PiTreeStructureFill } from "react-icons/pi";
 
 const { DirectoryTree } = Tree;
 
@@ -29,7 +31,7 @@ type MenuEvent =
   | "move"
   | "duplicate";
 
-const findFile = (path: string | undefined, node: FileModel): FileModel | undefined => {
+const findFile = (path: string | undefined, node: FileTreeType): FileTreeType | undefined => {
   if (!path) {
     return;
   } else if (node.path === path) {
@@ -45,7 +47,7 @@ const findFile = (path: string | undefined, node: FileModel): FileModel | undefi
   }
 };
 
-const findParent = (node: FileModel, parent?: FileModel): FileModel | undefined => {
+const findParent = (node: FileTreeType, parent?: FileTreeType): FileTreeType | undefined => {
   if (parent && parent.children) {
     if (parent.children?.indexOf(node) >= 0) {
       return parent;
@@ -59,7 +61,7 @@ const findParent = (node: FileModel, parent?: FileModel): FileModel | undefined 
   }
 };
 
-const resolveKeys = (path: string, node: FileModel, keys: React.Key[]) => {
+const resolveKeys = (path: string, node: FileTreeType, keys: React.Key[]) => {
   if (node.path === path) {
     return true;
   }
@@ -103,13 +105,18 @@ const renameFile = (oldPath: string, newPath: string) => {
   return false;
 };
 
+const getSvgIcon = (path: string) => {};
+
 export const Explorer: FC = () => {
   const workspace = {
     close: useWorkspace((state) => state.close),
     editing: useWorkspace((state) => state.editing),
     editors: useWorkspace((state) => state.editors),
-    open: useWorkspace((state) => state.open),
     fileTree: useWorkspace((state) => state.fileTree),
+    nodeDefs: useWorkspace((state) => state.nodeDefs),
+    nodeTree: useWorkspace((state) => state.nodeTree),
+    workdir: useWorkspace((state) => state.workdir),
+    open: useWorkspace((state) => state.open),
   };
   const { t } = useTranslation();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -121,7 +128,54 @@ export const Explorer: FC = () => {
   const [contextMenu, setContextMenu] = useState<ItemType[]>([]);
 
   if (workspace.fileTree) {
-    workspace.fileTree.icon = <FaSwatchbook style={{ marginTop: "5px" }} />;
+    workspace.fileTree.icon = (
+      <Flex justify="center" align="center" style={{ height: "100%" }}>
+        <FaSwatchbook />
+      </Flex>
+    );
+  }
+
+  if (workspace.nodeTree) {
+    workspace.nodeTree.icon = (
+      <Flex justify="center" align="center" style={{ height: "100%" }}>
+        <PiTreeStructureFill size={19} />
+      </Flex>
+    );
+    workspace.nodeTree.children?.forEach((catalog) => {
+      catalog.icon = (
+        <Flex justify="center" align="center" style={{ height: "100%" }}>
+          <img
+            className="b3-node-icon"
+            style={{ width: "14px", height: "14px", color: "white" }}
+            src={`/icons/${catalog.title}.svg`}
+          />
+        </Flex>
+      );
+      catalog.children?.forEach((node) => {
+        if (node.def?.icon) {
+          node.icon = (
+            <Flex justify="center" align="center" style={{ height: "100%" }}>
+              <img
+                className="b3-node-icon"
+                key={catalog.title}
+                style={{ width: "13px", height: "13px", color: "white" }}
+                src={
+                  process.env.VITE_DEV_SERVER_URL && isMacos
+                    ? `${Path.basename(workspace.workdir)}/${node.def?.icon}`
+                    : `${workspace.workdir}/${node.def?.icon}`
+                }
+              />
+            </Flex>
+          );
+        } else {
+          node.icon = (
+            <Flex justify="center" align="center" style={{ height: "100%" }}>
+              <BsBoxFill style={{ width: "12px", height: "12px", color: "white" }} />{" "}
+            </Flex>
+          );
+        }
+      });
+    });
   }
 
   useEffect(() => {
@@ -182,7 +236,7 @@ export const Explorer: FC = () => {
     }
   );
 
-  const submitRename = (node: FileModel) => {
+  const submitRename = (node: FileTreeType) => {
     if (!newName) {
       if (fs.existsSync(node.path)) {
         node.editing = false;
@@ -214,14 +268,14 @@ export const Explorer: FC = () => {
     setNewName(null);
   };
 
-  const dispatch = (event: MenuEvent, node: FileModel, dest?: FileModel) => {
+  const dispatch = (event: MenuEvent, node: FileTreeType, dest?: FileTreeType) => {
     switch (event) {
       case "open": {
         workspace.open(node.path);
         break;
       }
       case "newFolder": {
-        const folderNode: FileModel = {
+        const folderNode: FileTreeType = {
           path: node.path + "/:",
           title: "",
           children: [],
@@ -235,7 +289,7 @@ export const Explorer: FC = () => {
         break;
       }
       case "newFile": {
-        const folderNode: FileModel = {
+        const folderNode: FileTreeType = {
           path: node.path + "/.json",
           title: "",
           isLeaf: true,
@@ -489,7 +543,7 @@ export const Explorer: FC = () => {
         ></Flex>
       );
     };
-    const isMac = process.platform === "darwin";
+
     const arr: MenuProps["items"] = [
       {
         label: (
@@ -503,7 +557,7 @@ export const Explorer: FC = () => {
         label: (
           <MenuItem>
             <div>{t("copy")}</div>
-            <div>{isMac ? "⌘ C" : "Ctrl+C"}</div>
+            <div>{isMacos ? "⌘ C" : "Ctrl+C"}</div>
           </MenuItem>
         ),
         key: "copy",
@@ -512,7 +566,7 @@ export const Explorer: FC = () => {
         label: (
           <MenuItem>
             <div>{t("duplicate")}</div>
-            <div>{isMac ? "⌘ D" : "Ctrl+D"}</div>
+            <div>{isMacos ? "⌘ D" : "Ctrl+D"}</div>
           </MenuItem>
         ),
         key: "duplicate",
@@ -520,7 +574,7 @@ export const Explorer: FC = () => {
       {
         label: (
           <MenuItem>
-            <div>{isMac ? t("revealFileOnMac") : t("revealFileOnWindows")}</div>
+            <div>{isMacos ? t("revealFileOnMac") : t("revealFileOnWindows")}</div>
           </MenuItem>
         ),
         key: "revealFile",
@@ -529,8 +583,8 @@ export const Explorer: FC = () => {
         label: (
           <MenuItem>
             <div>{t("rename")}</div>
-            {isMac && <IoMdReturnLeft />}
-            {!isMac && <div>F2</div>}
+            {isMacos && <IoMdReturnLeft />}
+            {!isMacos && <div>F2</div>}
           </MenuItem>
         ),
         key: "rename",
@@ -539,7 +593,7 @@ export const Explorer: FC = () => {
         label: (
           <MenuItem>
             <div>{t("delete")}</div>
-            {isMac && (
+            {isMacos && (
               <Space size={6}>
                 <FiCommand />
                 <FiDelete />
@@ -563,7 +617,7 @@ export const Explorer: FC = () => {
         ></Flex>
       );
     };
-    const isMac = process.platform === "darwin";
+
     const arr: MenuProps["items"] = [
       {
         label: (
@@ -584,7 +638,7 @@ export const Explorer: FC = () => {
       {
         label: (
           <MenuItem>
-            <div>{isMac ? t("revealFileOnMac") : t("revealFileOnWindows")}</div>
+            <div>{isMacos ? t("revealFileOnMac") : t("revealFileOnWindows")}</div>
           </MenuItem>
         ),
         key: "revealFile",
@@ -593,7 +647,7 @@ export const Explorer: FC = () => {
         label: (
           <MenuItem>
             <div style={{ color: copyFile ? "inherit" : "gray" }}>{t("paste")}</div>
-            <div style={{ color: copyFile ? "inherit" : "gray" }}>{isMac ? "⌘ V" : "Ctrl+V"}</div>
+            <div style={{ color: copyFile ? "inherit" : "gray" }}>{isMacos ? "⌘ V" : "Ctrl+V"}</div>
           </MenuItem>
         ),
         key: "paste",
@@ -602,8 +656,8 @@ export const Explorer: FC = () => {
         label: (
           <MenuItem>
             <div>{t("rename")}</div>
-            {isMac && <IoMdReturnLeft />}
-            {!isMac && <div>F2</div>}
+            {isMacos && <IoMdReturnLeft />}
+            {!isMacos && <div>F2</div>}
           </MenuItem>
         ),
         key: "rename",
@@ -612,7 +666,7 @@ export const Explorer: FC = () => {
         label: (
           <MenuItem>
             <div>{t("delete")}</div>
-            {isMac && (
+            {isMacos && (
               <Space size={6}>
                 <FiCommand />
                 <FiDelete />
@@ -625,6 +679,8 @@ export const Explorer: FC = () => {
     ];
     return arr;
   }, [t, copyFile]);
+
+  const nodeConfs = useMemo(() => {}, [workspace.nodeDefs]);
 
   const onClick = (info: MenuInfo) => {
     const node = findFile(selectedKeys[0], workspace.fileTree!) ?? workspace.fileTree;
@@ -650,7 +706,11 @@ export const Explorer: FC = () => {
       <div style={{ padding: "12px 24px" }}>
         <span style={{ fontSize: "18px", fontWeight: "600" }}>{t("explorer.title")}</span>
       </div>
-      <Flex vertical style={{ overflow: "auto", height: "100%", paddingBottom: "20px" }}>
+      <Flex
+        vertical
+        className={isMacos ? undefined : "b3-overflow"}
+        style={{ overflow: "auto", height: "100%", paddingBottom: "20px" }}
+      >
         <Dropdown menu={{ items: contextMenu, onClick }} trigger={["contextMenu"]}>
           <div>
             <DirectoryTree
@@ -728,6 +788,12 @@ export const Explorer: FC = () => {
             />
           </div>
         </Dropdown>
+        <DirectoryTree
+          tabIndex={-1}
+          fieldNames={{ key: "title" }}
+          treeData={workspace.nodeTree ? [workspace.nodeTree] : []}
+          switcherIcon={<DownOutlined />}
+        />
       </Flex>
     </Flex>
   );
