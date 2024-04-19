@@ -445,7 +445,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const workspace = get();
     const nodeDefData = readJson(`${workspace.workdir}/node-config.b3-setting`) as NodeDef[];
     const nodeTree: NodeTreeType = {
-      title: "NODES",
+      title: i18n.t("nodeDefinition"),
       children: [],
       style: {
         fontWeight: "bold",
@@ -455,7 +455,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const nodeDefs: Map<string, NodeDef> = new Map();
     for (const v of nodeDefData) {
       nodeDefs.set(v.name, v);
-      let catalog: NodeTreeType | undefined = nodeTree.children?.find((nt) => nt.title === v.type);
+      let catalog = nodeTree.children?.find((nt) => nt.title === v.type);
       if (!catalog) {
         catalog = {
           title: v.type,

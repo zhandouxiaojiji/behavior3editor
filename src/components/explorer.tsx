@@ -136,6 +136,7 @@ export const Explorer: FC = () => {
   }
 
   if (workspace.nodeTree) {
+    workspace.nodeTree.title = t("nodeDefinition");
     workspace.nodeTree.icon = (
       <Flex justify="center" align="center" style={{ height: "100%" }}>
         <PiTreeStructureFill size={19} />
