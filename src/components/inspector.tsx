@@ -10,11 +10,60 @@ import Markdown from "react-markdown";
 
 interface OptionType extends DefaultOptionType {}
 
-export const Inspector: FC = () => {
+const TreeInspector: FC = () => {
   const workspace = {
     editing: useWorkspace((state) => state.editing),
-    editingNode: useWorkspace((state) => state.editingNode),
-    editingTree: useWorkspace((state) => state.editingTree),
+    editingTree: useWorkspace((state) => state.editingTree)!,
+  };
+  const { t } = useTranslation();
+  const [form] = Form.useForm();
+
+  // set form values
+  useEffect(() => {
+    const data = workspace.editingTree.data;
+    form.resetFields();
+    form.setFieldValue("name", data.name);
+    form.setFieldValue("desc", data.desc);
+  }, [workspace.editingTree]);
+
+  const finish = (values: any) => {
+    const data = {} as TreeModel;
+    data.name = values.name;
+    data.desc = values.desc || undefined;
+    workspace.editing?.dispatch?.("updateTree", {
+      data: {
+        name: values.name,
+        desc: values.desc || undefined,
+      },
+    } as EditTree);
+  };
+
+  return (
+    <>
+      <div style={{ padding: "12px 24px" }}>
+        <span style={{ fontSize: "18px", fontWeight: "600" }}>{t("tree.overview")}</span>
+      </div>
+      <div
+        className={isMacos ? undefined : "b3-overflow"}
+        style={{ overflow: "auto", height: "100%", padding: "24px" }}
+      >
+        <Form form={form} labelCol={{ span: 8 }} onFinish={finish}>
+          <Form.Item name="name" label={t("tree.name")}>
+            <Input disabled={true} />
+          </Form.Item>
+          <Form.Item name="desc" label={t("tree.desc")}>
+            <Input onBlur={form.submit} />
+          </Form.Item>
+        </Form>
+      </div>
+    </>
+  );
+};
+
+const NodeInspector: FC = () => {
+  const workspace = {
+    editing: useWorkspace((state) => state.editing),
+    editingNode: useWorkspace((state) => state.editingNode)!,
     getNodeDef: useWorkspace((state) => state.getNodeDef),
     nodeDefs: useWorkspace((state) => state.nodeDefs),
     onEditingNode: useWorkspace((state) => state.onEditingNode),
@@ -26,31 +75,24 @@ export const Inspector: FC = () => {
 
   // set form values
   useEffect(() => {
-    if (workspace.editingTree) {
-      const data = workspace.editingTree.data;
-      form.resetFields();
-      form.setFieldValue("name", data.name);
-      form.setFieldValue("desc", data.desc);
-    } else if (workspace.editingNode) {
-      const data = workspace.editingNode.data;
-      const def = workspace.getNodeDef(workspace.editingNode.data.name);
-      form.resetFields();
-      form.setFieldValue("id", data.id);
-      form.setFieldValue("name", data.name);
-      form.setFieldValue("desc", data.desc);
-      form.setFieldValue("debug", data.debug);
-      form.setFieldValue("path", data.path);
-      def.args?.forEach((v) => {
-        form.setFieldValue(`args.${v.name}`, data.args?.[v.name]);
-      });
-      def.input?.forEach((_, i) => {
-        form.setFieldValue(`input.${i}`, data.input?.[i]);
-      });
-      def.output?.forEach((_, i) => {
-        form.setFieldValue(`output.${i}`, data.output?.[i]);
-      });
-    }
-  }, [workspace.editingNode, workspace.editingTree]);
+    const data = workspace.editingNode.data;
+    const def = workspace.getNodeDef(workspace.editingNode.data.name);
+    form.resetFields();
+    form.setFieldValue("id", data.id);
+    form.setFieldValue("name", data.name);
+    form.setFieldValue("desc", data.desc);
+    form.setFieldValue("debug", data.debug);
+    form.setFieldValue("path", data.path);
+    def.args?.forEach((v) => {
+      form.setFieldValue(`args.${v.name}`, data.args?.[v.name]);
+    });
+    def.input?.forEach((_, i) => {
+      form.setFieldValue(`input.${i}`, data.input?.[i]);
+    });
+    def.output?.forEach((_, i) => {
+      form.setFieldValue(`output.${i}`, data.output?.[i]);
+    });
+  }, [workspace.editingNode]);
 
   // auto complete for node
   const nodeOptions = useMemo(() => {
@@ -99,264 +141,279 @@ export const Inspector: FC = () => {
     return options;
   }, [workspace.allFiles, workspace.fileTree]);
 
-  if (workspace.editingTree) {
-    const finish = (values: any) => {
-      const data = {} as TreeModel;
-      data.name = values.name;
-      data.desc = values.desc || undefined;
-      workspace.editing?.dispatch?.("updateTree", {
+  const editingNode = workspace.editingNode;
+  const def = workspace.getNodeDef(editingNode.data.name);
+  const disabled = !editingNode.editable;
+
+  // update value
+  const finish = (values: any) => {
+    const data = {} as NodeModel;
+    data.id = editingNode.data.id;
+    data.name = values.name;
+    data.debug = values.debug || undefined;
+    data.desc = values.desc || undefined;
+    data.path = values.path || undefined;
+
+    def.args?.forEach((arg) => {
+      const v = values[`args.${arg.name}`];
+      if (v !== null && v !== undefined && v !== "") {
+        data.args ||= {};
+        data.args[arg.name] = v;
+      }
+    });
+
+    def.input?.forEach((_, i) => {
+      const v = values[`input.${i}`];
+      data.input ||= [];
+      data.input.push(v ?? "");
+    });
+
+    def.output?.forEach((_, i) => {
+      const v = values[`output.${i}`];
+      data.output ||= [];
+      data.output.push(v ?? "");
+    });
+    workspace.editing?.dispatch?.("updateNode", {
+      data: data,
+    } as EditNode);
+  };
+
+  // change node def
+  const changeNodeDef = (newname: string) => {
+    if (editingNode.data.name !== newname) {
+      workspace.onEditingNode({
         data: {
-          name: values.name,
-          desc: values.desc || undefined,
+          id: editingNode.data.id,
+          name: workspace.nodeDefs.get(newname)?.name ?? newname,
+          desc: editingNode.data.desc,
+          debug: editingNode.data.debug,
         },
-      } as EditTree);
-    };
-    return (
-      <Flex className="b3-inspector" vertical style={{ height: "100%" }}>
-        <div style={{ padding: "12px 24px" }}>
-          <span style={{ fontSize: "18px", fontWeight: "600" }}>{t("tree.overview")}</span>
-        </div>
-        <div
-          className={isMacos ? undefined : "b3-overflow"}
-          style={{ overflow: "auto", height: "100%", padding: "24px" }}
+        editable: editingNode.editable,
+      });
+      finish(form.getFieldsValue());
+    } else {
+      form.submit();
+    }
+  };
+
+  const changeSubtree = () => {
+    if (form.getFieldValue("path") !== editingNode.data.path) {
+      finish(form.getFieldsValue());
+    } else {
+      form.submit();
+    }
+  };
+
+  return (
+    <>
+      <div style={{ padding: "12px 24px" }}>
+        <span style={{ fontSize: "18px", fontWeight: "600" }}>{def.desc}</span>
+      </div>
+      <div
+        className={isMacos ? undefined : "b3-overflow"}
+        style={{ overflow: "auto", height: "100%", padding: "24px" }}
+      >
+        <Form
+          form={form}
+          wrapperCol={{ span: "auto" }}
+          labelCol={{ span: "auto" }}
+          onFinish={finish}
         >
-          <Form form={form} labelCol={{ span: 8 }} onFinish={finish}>
-            <Form.Item name="name" label={t("tree.name")}>
-              <Input disabled={true} />
-            </Form.Item>
-            <Form.Item name="desc" label={t("tree.desc")}>
-              <Input onBlur={form.submit} />
-            </Form.Item>
-          </Form>
-        </div>
-      </Flex>
-    );
-  } else if (workspace.editingNode) {
-    const editingNode = workspace.editingNode;
-    const def = workspace.getNodeDef(editingNode.data.name);
-    const disabled = !editingNode.editable;
-
-    // update value
-    const finish = (values: any) => {
-      const data = {} as NodeModel;
-      data.id = editingNode.data.id;
-      data.name = values.name;
-      data.debug = values.debug || undefined;
-      data.desc = values.desc || undefined;
-      data.path = values.path || undefined;
-
-      def.args?.forEach((arg) => {
-        const v = values[`args.${arg.name}`];
-        if (v !== null && v !== undefined && v !== "") {
-          data.args ||= {};
-          data.args[arg.name] = v;
-        }
-      });
-
-      def.input?.forEach((_, i) => {
-        const v = values[`input.${i}`];
-        data.input ||= [];
-        data.input.push(v ?? "");
-      });
-
-      def.output?.forEach((_, i) => {
-        const v = values[`output.${i}`];
-        data.output ||= [];
-        data.output.push(v ?? "");
-      });
-      workspace.editing?.dispatch?.("updateNode", {
-        data: data,
-      } as EditNode);
-    };
-
-    // change node def
-    const changeNodeDef = (newname: string) => {
-      if (editingNode.data.name !== newname) {
-        workspace.onEditingNode({
-          data: {
-            id: editingNode.data.id,
-            name: workspace.nodeDefs.get(newname)?.name ?? newname,
-            desc: editingNode.data.desc,
-            debug: editingNode.data.debug,
-          },
-          editable: editingNode.editable,
-        });
-        finish(form.getFieldsValue());
-      } else {
-        form.submit();
-      }
-    };
-
-    const changeSubtree = () => {
-      if (form.getFieldValue("path") !== editingNode.data.path) {
-        finish(form.getFieldsValue());
-      } else {
-        form.submit();
-      }
-    };
-
-    return (
-      <Flex className="b3-inspector" vertical style={{ height: "100%" }}>
-        <div style={{ padding: "12px 24px" }}>
-          <span style={{ fontSize: "18px", fontWeight: "600" }}>{def.desc}</span>
-        </div>
-        <div
-          className={isMacos ? undefined : "b3-overflow"}
-          style={{ overflow: "auto", height: "100%", padding: "24px" }}
-        >
-          <Form
-            form={form}
-            wrapperCol={{ span: "auto" }}
-            labelCol={{ span: "auto" }}
-            onFinish={finish}
+          <Form.Item
+            name="id"
+            label={
+              <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.id")}</div>
+            }
           >
-            <Form.Item
-              name="id"
-              label={
-                <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.id")}</div>
-              }
-            >
-              <Input disabled={true} />
-            </Form.Item>
-            <Form.Item label={t("node.name")} name="name">
-              <AutoComplete
-                disabled={disabled}
-                options={nodeOptions}
-                onBlur={() => changeNodeDef(form.getFieldValue("name"))}
-                onSelect={changeNodeDef}
-                onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
-                filterOption={(inputValue: string, option?: OptionType) => {
-                  const label = option!.label as string;
-                  return label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1;
-                }}
-              />
-            </Form.Item>
-            <Form.Item name="desc" label={t("node.desc")}>
-              <Input disabled={disabled} onBlur={form.submit} />
-            </Form.Item>
-            <Form.Item label={t("node.debug")} name="debug" valuePropName="checked">
-              <Switch disabled={disabled && !editingNode.data.path} onChange={form.submit} />
-            </Form.Item>
-            <Form.Item label={t("node.subtree")} name="path">
-              <AutoComplete
-                disabled={disabled && !editingNode.data.path}
-                options={subtreeOptions}
-                onBlur={changeSubtree}
-                onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
-                filterOption={(inputValue: string, option?: OptionType) => {
-                  const label = option!.label as string;
-                  return label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1;
-                }}
-              />
-            </Form.Item>
-            <Markdown>{def.doc}</Markdown>
-            {def.input && def.input.length > 0 && (
-              <>
-                <Divider orientation="left">
-                  <h4>{t("node.inputVariable")}</h4>
-                </Divider>
-                {def.input.map((v, i) => {
-                  const required = v.indexOf("?") == -1;
-                  const desc = v.replace("?", "");
-                  return (
-                    <Form.Item
-                      label={desc}
-                      name={`input.${i}`}
-                      key={`input.${i}`}
-                      rules={[{ required, message: t("node.fileRequired", { field: desc }) }]}
-                    >
-                      <AutoComplete
-                        disabled={disabled}
-                        options={inoutVarOptions}
-                        onBlur={form.submit}
-                        onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
-                        filterOption={(inputValue: string, option?: OptionType) => {
-                          const label = option!.label as string;
-                          return label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1;
-                        }}
-                      />
-                    </Form.Item>
-                  );
-                })}
-              </>
-            )}
-            {def.args && def.args.length > 0 && (
-              <>
-                <Divider orientation="left">
-                  <h4>{t("node.args")}</h4>
-                </Divider>
-                {def.args.map((v) => {
-                  const required = v.type.indexOf("?") == -1;
-                  const type = v.type.replace("?", "") as NodeArgType;
-                  return (
-                    <Form.Item
-                      name={`args.${v.name}`}
-                      label={v.desc}
-                      key={`args.${v.name}`}
-                      initialValue={type === "boolean" ? v.default ?? false : v.default}
-                      valuePropName={type === "boolean" ? "checked" : undefined}
-                      rules={[{ required, message: t("node.fileRequired", { field: v.desc }) }]}
-                    >
-                      {type === "string" && <Input disabled={disabled} onBlur={form.submit} />}
-                      {type === "int" && (
-                        <InputNumber disabled={disabled} onBlur={form.submit} precision={0} />
-                      )}
-                      {type === "float" && <InputNumber disabled={disabled} onBlur={form.submit} />}
-                      {type === "boolean" && <Switch disabled={disabled} onChange={form.submit} />}
-                      {type === "code" && (
-                        <Input onBlur={form.submit} placeholder={t("node.codePlaceholder")} />
-                      )}
-                      {type === "enum" && (
-                        <Select disabled={disabled} onBlur={form.submit} onChange={form.submit}>
-                          {v.options?.map((value) => {
-                            return (
-                              <Select.Option key={value.name} value={value.value}>
-                                {value.name}
-                              </Select.Option>
-                            );
-                          })}
-                        </Select>
-                      )}
-                    </Form.Item>
-                  );
-                })}
-              </>
-            )}
-            {def.output && def.output.length > 0 && (
-              <>
-                <Divider orientation="left">
-                  <h4>{t("node.outputVariable")}</h4>
-                </Divider>
-                {def.output.map((v, i) => {
-                  const required = v.indexOf("?") == -1;
-                  const desc = v.replace("?", "");
-                  return (
-                    <Form.Item
-                      label={desc}
-                      name={`output.${i}`}
-                      key={`output.${i}`}
-                      rules={[{ required, message: t("node.fileRequired", { field: desc }) }]}
-                    >
-                      <AutoComplete
-                        disabled={disabled}
-                        options={inoutVarOptions}
-                        onBlur={form.submit}
-                        onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
-                        filterOption={(inputValue: string, option?: OptionType) => {
-                          const label = option!.label as string;
-                          return label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1;
-                        }}
-                      />
-                    </Form.Item>
-                  );
-                })}
-              </>
-            )}
-          </Form>
-        </div>
-      </Flex>
-    );
-  } else {
-    return null;
+            <Input disabled={true} />
+          </Form.Item>
+          <Form.Item label={t("node.name")} name="name">
+            <AutoComplete
+              disabled={disabled}
+              options={nodeOptions}
+              onBlur={() => changeNodeDef(form.getFieldValue("name"))}
+              onSelect={changeNodeDef}
+              onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
+              filterOption={(inputValue: string, option?: OptionType) => {
+                const label = option!.label as string;
+                return label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1;
+              }}
+            />
+          </Form.Item>
+          <Form.Item name="desc" label={t("node.desc")}>
+            <Input disabled={disabled} onBlur={form.submit} />
+          </Form.Item>
+          <Form.Item label={t("node.debug")} name="debug" valuePropName="checked">
+            <Switch disabled={disabled && !editingNode.data.path} onChange={form.submit} />
+          </Form.Item>
+          <Form.Item label={t("node.subtree")} name="path">
+            <AutoComplete
+              disabled={disabled && !editingNode.data.path}
+              options={subtreeOptions}
+              onBlur={changeSubtree}
+              onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
+              filterOption={(inputValue: string, option?: OptionType) => {
+                const label = option!.label as string;
+                return label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1;
+              }}
+            />
+          </Form.Item>
+          <Markdown>{def.doc}</Markdown>
+          {def.input && def.input.length > 0 && (
+            <>
+              <Divider orientation="left">
+                <h4>{t("node.inputVariable")}</h4>
+              </Divider>
+              {def.input.map((v, i) => {
+                const required = v.indexOf("?") == -1;
+                const desc = v.replace("?", "");
+                return (
+                  <Form.Item
+                    label={desc}
+                    name={`input.${i}`}
+                    key={`input.${i}`}
+                    rules={[{ required, message: t("node.fileRequired", { field: desc }) }]}
+                  >
+                    <AutoComplete
+                      disabled={disabled}
+                      options={inoutVarOptions}
+                      onBlur={form.submit}
+                      onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
+                      filterOption={(inputValue: string, option?: OptionType) => {
+                        const label = option!.label as string;
+                        return label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1;
+                      }}
+                    />
+                  </Form.Item>
+                );
+              })}
+            </>
+          )}
+          {def.args && def.args.length > 0 && (
+            <>
+              <Divider orientation="left">
+                <h4>{t("node.args")}</h4>
+              </Divider>
+              {def.args.map((v) => {
+                const required = v.type.indexOf("?") == -1;
+                const type = v.type.replace("?", "") as NodeArgType;
+                return (
+                  <Form.Item
+                    name={`args.${v.name}`}
+                    label={v.desc}
+                    key={`args.${v.name}`}
+                    initialValue={type === "boolean" ? v.default ?? false : v.default}
+                    valuePropName={type === "boolean" ? "checked" : undefined}
+                    rules={[{ required, message: t("node.fileRequired", { field: v.desc }) }]}
+                  >
+                    {type === "string" && <Input disabled={disabled} onBlur={form.submit} />}
+                    {type === "int" && (
+                      <InputNumber disabled={disabled} onBlur={form.submit} precision={0} />
+                    )}
+                    {type === "float" && <InputNumber disabled={disabled} onBlur={form.submit} />}
+                    {type === "boolean" && <Switch disabled={disabled} onChange={form.submit} />}
+                    {type === "code" && (
+                      <Input onBlur={form.submit} placeholder={t("node.codePlaceholder")} />
+                    )}
+                    {type === "enum" && (
+                      <Select disabled={disabled} onBlur={form.submit} onChange={form.submit}>
+                        {v.options?.map((value) => {
+                          return (
+                            <Select.Option key={value.name} value={value.value}>
+                              {value.name}
+                            </Select.Option>
+                          );
+                        })}
+                      </Select>
+                    )}
+                  </Form.Item>
+                );
+              })}
+            </>
+          )}
+          {def.output && def.output.length > 0 && (
+            <>
+              <Divider orientation="left">
+                <h4>{t("node.outputVariable")}</h4>
+              </Divider>
+              {def.output.map((v, i) => {
+                const required = v.indexOf("?") == -1;
+                const desc = v.replace("?", "");
+                return (
+                  <Form.Item
+                    label={desc}
+                    name={`output.${i}`}
+                    key={`output.${i}`}
+                    rules={[{ required, message: t("node.fileRequired", { field: desc }) }]}
+                  >
+                    <AutoComplete
+                      disabled={disabled}
+                      options={inoutVarOptions}
+                      onBlur={form.submit}
+                      onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
+                      filterOption={(inputValue: string, option?: OptionType) => {
+                        const label = option!.label as string;
+                        return label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1;
+                      }}
+                    />
+                  </Form.Item>
+                );
+              })}
+            </>
+          )}
+        </Form>
+      </div>
+    </>
+  );
+};
+
+const NodeDefInspector: FC = () => {
+  const [form] = Form.useForm();
+  return (
+    <>
+      <div style={{ padding: "12px 24px" }}>
+        <span style={{ fontSize: "18px", fontWeight: "600" }}>Node Definition</span>
+      </div>
+      <div
+        className={isMacos ? undefined : "b3-overflow"}
+        style={{ overflow: "auto", height: "100%", padding: "24px" }}
+      >
+        <Form
+          form={form}
+          wrapperCol={{ span: "auto" }}
+          labelCol={{ span: "auto" }}
+          // onFinish={finish}
+        ></Form>
+      </div>
+    </>
+  );
+};
+
+export const Inspector: FC = () => {
+  const workspace = {
+    editingNode: useWorkspace((state) => state.editingNode),
+    editingTree: useWorkspace((state) => state.editingTree),
+    editingNodeDef: useWorkspace((state) => state.editingNodeDef),
+  };
+  let isEditingNode = false;
+  let isEditingTree = false;
+  let isEditingNodeDef = false;
+  if (workspace.editingNodeDef) {
+    isEditingNodeDef = true;
+  } else if (workspace.editingTree) {
+    isEditingTree = true;
+  } else if (workspace.editingNode) {
+    isEditingNode = true;
   }
+  return (
+    <Flex
+      vertical
+      className="b3-inspector"
+      style={{ height: "100%", width: "340px", borderLeft: `1px solid var(--b3-color-border)` }}
+    >
+      {isEditingNodeDef && <NodeDefInspector />}
+      {isEditingTree && <TreeInspector />}
+      {isEditingNode && <NodeInspector />}
+    </Flex>
+  );
 };

@@ -105,8 +105,6 @@ const renameFile = (oldPath: string, newPath: string) => {
   return false;
 };
 
-const getSvgIcon = (path: string) => {};
-
 export const Explorer: FC = () => {
   const workspace = {
     close: useWorkspace((state) => state.close),
@@ -116,6 +114,7 @@ export const Explorer: FC = () => {
     nodeDefs: useWorkspace((state) => state.nodeDefs),
     nodeTree: useWorkspace((state) => state.nodeTree),
     workdir: useWorkspace((state) => state.workdir),
+    onEditingNodeDef: useWorkspace((state) => state.onEditingNodeDef),
     open: useWorkspace((state) => state.open),
   };
   const { t } = useTranslation();
@@ -798,6 +797,14 @@ export const Explorer: FC = () => {
           fieldNames={{ key: "title" }}
           treeData={workspace.nodeTree ? [workspace.nodeTree] : []}
           draggable={{ icon: false, nodeDraggable: (node) => !!node.isLeaf }}
+          onSelect={(_, info) => {
+            const node = info.node;
+            if (node && node.isLeaf) {
+              workspace.onEditingNodeDef({
+                data: node.def!,
+              });
+            }
+          }}
           onDragStart={(e) => {
             e.event.dataTransfer.setData("explore-node", e.node.def?.name ?? "");
           }}

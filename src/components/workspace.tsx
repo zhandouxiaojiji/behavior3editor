@@ -409,18 +409,7 @@ export const Workspace: FC = () => {
             />
           )}
         </Content>
-        {workspace.editors.length > 0 && (
-          <Sider
-            className="b3-inspector-wrapper"
-            width={340}
-            style={{
-              height: "100%",
-              borderLeft: `1px solid var(--b3-color-border)`,
-            }}
-          >
-            <Inspector />
-          </Sider>
-        )}
+        <Inspector />
       </Layout>
     </Layout>
   );

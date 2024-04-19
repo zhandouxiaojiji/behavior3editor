@@ -93,6 +93,10 @@ export type EditNode = {
   editable: boolean;
 };
 
+export type EditNodeDef = {
+  data: NodeDef;
+};
+
 export type EditTree = {
   data: TreeModel;
 };
@@ -132,6 +136,10 @@ export type WorkspaceStore = {
   // edit node
   editingNode?: EditNode | null;
   onEditingNode: (node: EditNode) => void;
+
+  // edit node def
+  editingNodeDef?: EditNodeDef | null;
+  onEditingNodeDef: (node: EditNodeDef) => void;
 
   // edit tree
   editingTree?: EditTree | null;
@@ -373,7 +381,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     }
     if (editors.length === 0) {
       editting = undefined;
-      set({ editingNode: undefined });
+      set({ editingNode: undefined, editingTree: undefined });
     }
     set({ editing: editting, editors: editors });
   },
@@ -479,12 +487,16 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
 
   // node edit
   onEditingNode: (node) => {
-    set({ editingNode: node });
+    set({ editingNode: node, editingNodeDef: null });
+  },
+
+  onEditingNodeDef: (nodeDef) => {
+    set({ editingNodeDef: nodeDef });
   },
 
   // tree edit
   onEditingTree: (tree) => {
-    set({ editingTree: tree });
+    set({ editingTree: tree, editingNodeDef: null });
   },
 
   // node def
