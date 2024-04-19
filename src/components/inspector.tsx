@@ -10,6 +10,8 @@ import Markdown from "react-markdown";
 
 interface OptionType extends DefaultOptionType {}
 
+type ArgType = "string" | "int" | "float" | "boolean" | "enum" | "code";
+
 export const Inspector: FC = () => {
   const workspace = {
     editing: useWorkspace((state) => state.editing),
@@ -287,31 +289,26 @@ export const Inspector: FC = () => {
                 </Divider>
                 {def.args.map((v) => {
                   const required = v.type.indexOf("?") == -1;
+                  const type = v.type.replace("?", "") as ArgType;
                   return (
                     <Form.Item
-                      initialValue={v.default}
                       name={`args.${v.name}`}
                       label={v.desc}
                       key={`args.${v.name}`}
-                      valuePropName={v.type.indexOf("boolean") >= 0 ? "checked" : undefined}
+                      initialValue={type === "boolean" ? v.default ?? false : v.default}
+                      valuePropName={type === "boolean" ? "checked" : undefined}
                       rules={[{ required, message: t("node.fileRequired", { field: v.desc }) }]}
                     >
-                      {v.type.indexOf("string") >= 0 && (
-                        <Input disabled={disabled} onBlur={form.submit} />
-                      )}
-                      {v.type.indexOf("int") >= 0 && (
+                      {type === "string" && <Input disabled={disabled} onBlur={form.submit} />}
+                      {type === "int" && (
                         <InputNumber disabled={disabled} onBlur={form.submit} precision={0} />
                       )}
-                      {v.type.indexOf("float") >= 0 && (
-                        <InputNumber disabled={disabled} onBlur={form.submit} />
-                      )}
-                      {v.type.indexOf("boolean") >= 0 && (
-                        <Switch disabled={disabled} onChange={form.submit} />
-                      )}
-                      {v.type.indexOf("code") >= 0 && (
+                      {type === "float" && <InputNumber disabled={disabled} onBlur={form.submit} />}
+                      {type === "boolean" && <Switch disabled={disabled} onChange={form.submit} />}
+                      {type === "code" && (
                         <Input onBlur={form.submit} placeholder={t("node.codePlaceholder")} />
                       )}
-                      {v.type.indexOf("enum") >= 0 && (
+                      {type === "enum" && (
                         <Select disabled={disabled} onBlur={form.submit} onChange={form.submit}>
                           {v.options?.map((value) => {
                             return (
