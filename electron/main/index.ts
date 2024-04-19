@@ -103,6 +103,8 @@ async function createWindow(projectPath?: string) {
       nextWin.focus();
       nextWin.webContents.send("refresh-app-men");
     }
+
+    win.focus();
   });
 
   win.on("closed", () => {

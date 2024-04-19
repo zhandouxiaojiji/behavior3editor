@@ -451,18 +451,22 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       return;
     }
     setTimeout(() => {
-      const subpath = dialog.showSaveDialogSync({
+      let subpath = dialog.showSaveDialogSync({
         defaultPath: workspace.workdir,
         properties: ["showOverwriteConfirmation"],
         filters: [{ name: "Json", extensions: ["json"] }],
       });
+
       if (!subpath) {
         return;
       }
+
+      subpath = subpath.replaceAll(Path.sep, "/");
       if (subpath.indexOf(workspace.workdir) == -1) {
         message.warning(t("node.subtreePathError"));
         return;
       }
+
       const data = findDataById(editor.selectedId!);
       const subroot = b3util.createFileData(data);
       const subtreeModel = {
@@ -471,7 +475,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         desc: data.desc,
       } as TreeModel;
       fs.writeFileSync(subpath, JSON.stringify(subtreeModel, null, 2));
-      data.path = subpath.substring(workspace.workdir.length + 1);
+      data.path = Path.relative(workspace.workdir, subpath).replaceAll(Path.sep, "/");
       reload();
       pushHistory();
       onChange();
