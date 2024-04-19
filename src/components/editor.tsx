@@ -632,9 +632,9 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     });
 
     editor.graph.on("node:drop", (e: G6GraphEvent) => {
-      const srcNodeId = editor.dragSrcId;
       const dstNode = e.item;
 
+      let srcNodeId = editor.dragSrcId;
       let dragDir;
       if (dstNode.hasState("dragRight")) {
         dragDir = "dragRight";
@@ -646,6 +646,39 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
       clearDragSrcState();
       clearDragDstState();
+
+      if (e.originalEvent instanceof DragEvent) {
+        const dragEvent = e.originalEvent as DragEvent;
+        const exploreFile = dragEvent.dataTransfer?.getData("explore-file");
+        const exploreNode = dragEvent.dataTransfer?.getData("explore-node");
+        const dstData = findDataById(dstNode.getID());
+
+        if (exploreNode) {
+          const newTreeData: TreeGraphData = b3util.createTreeData(
+            {
+              id: editor.autoId++,
+              name: exploreNode,
+            },
+            dstData.id
+          );
+          dstData.children ||= [];
+          dstData.children.push(newTreeData);
+          srcNodeId = newTreeData.id;
+        } else if (exploreFile && exploreFile !== editor.path) {
+          const newTreeData: TreeGraphData = b3util.createTreeData(
+            {
+              id: editor.autoId++,
+              name: "unknow",
+              path: Path.relative(workspace.workdir, exploreFile).replaceAll(Path.sep, "/"),
+            },
+            dstData.id
+          );
+          dstData.children ||= [];
+          dstData.children.push(newTreeData);
+          srcNodeId = newTreeData.id;
+          editor.autoId = b3util.refreshTreeDataId(newTreeData, Number(srcNodeId));
+        }
+      }
 
       if (!srcNodeId) {
         console.log("no drag src");

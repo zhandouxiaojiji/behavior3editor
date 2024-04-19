@@ -271,7 +271,6 @@ export const Menu: FC<LayoutProps> = () => {
           {
             id: "menu.view.zoomIn",
             label: t("zoomIn"),
-            role: "zoomIn",
             click: () => {
               const webContents = getFocusedWebContents();
               if (webContents) {

@@ -147,7 +147,7 @@ export const Explorer: FC = () => {
         <Flex justify="center" align="center" style={{ height: "100%" }}>
           <img
             className="b3-node-icon"
-            style={{ width: "14px", height: "14px", color: "white" }}
+            style={{ width: "13px", height: "13px", color: "white" }}
             src={`./icons/${catalog.title}.svg`}
           />
         </Flex>
@@ -696,6 +696,7 @@ export const Explorer: FC = () => {
 
   return (
     <Flex
+      className="b3-explorer"
       vertical
       ref={keysRef}
       tabIndex={-1}
@@ -781,6 +782,9 @@ export const Explorer: FC = () => {
               allowDrop={(options) => {
                 return !options.dropNode.isLeaf;
               }}
+              onDragStart={(e) => {
+                e.event.dataTransfer.setData("explore-file", e.node.path);
+              }}
               defaultExpandedKeys={[workspace.fileTree.path]}
               draggable={newName !== null ? false : { icon: false }}
               expandedKeys={expandedKeys}
@@ -793,6 +797,10 @@ export const Explorer: FC = () => {
           tabIndex={-1}
           fieldNames={{ key: "title" }}
           treeData={workspace.nodeTree ? [workspace.nodeTree] : []}
+          draggable={{ icon: false, nodeDraggable: (node) => !!node.isLeaf }}
+          onDragStart={(e) => {
+            e.event.dataTransfer.setData("explore-node", e.node.def?.name ?? "");
+          }}
           switcherIcon={<DownOutlined />}
         />
       </Flex>

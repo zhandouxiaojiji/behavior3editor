@@ -310,6 +310,8 @@ export const createTreeData = (node: NodeModel, parent?: string) => {
       treeData.lastModified = fs.statSync(subtreePath).mtimeMs;
       treeData.path = node.path;
       treeData.debug = node.debug;
+      treeData.parent = parent;
+      treeData.id = node.id.toFixed();
       treeData.size = calcTreeDataSize(treeData);
     } catch (error) {
       message.error(`解析子树失败：${node.path}`);
