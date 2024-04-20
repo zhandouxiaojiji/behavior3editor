@@ -84,6 +84,7 @@
   "node.id": "Node id",
   "node.inputVariable": "Input variables",
   "node.name": "Node name",
+  "node.type": "Node type",
   "node.noNodeSelected": "No node selected",
   "node.outputVariable": "Output variables",
   "node.pasteDataError": "Paste data error",

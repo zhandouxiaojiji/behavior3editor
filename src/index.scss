@@ -109,6 +109,11 @@ body {
   min-width: 100px;
 }
 
+.b3-inspector .b3-node-def-label {
+  min-width: 100px;
+  text-align: end;
+}
+
 :focus {
   outline: none;
 }

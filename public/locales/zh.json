@@ -84,6 +84,7 @@
   "node.id": "节点标识",
   "node.inputVariable": "输入变量",
   "node.name": "节点名称",
+  "node.type": "节点类型",
   "node.noNodeSelected": "未选择任务节点",
   "node.outputVariable": "输出变量",
   "node.pasteDataError": "粘贴数据出错",

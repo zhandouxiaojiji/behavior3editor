@@ -368,11 +368,34 @@ const NodeInspector: FC = () => {
 };
 
 const NodeDefInspector: FC = () => {
+  const workspace = {
+    editingNodeDef: useWorkspace((state) => state.editingNodeDef)!,
+  };
+  const { t } = useTranslation();
   const [form] = Form.useForm();
+  const data = workspace.editingNodeDef.data;
+
+  // set form values
+  useEffect(() => {
+    form.resetFields();
+    form.setFieldValue("name", data.name);
+    form.setFieldValue("type", data.type);
+    form.setFieldValue("desc", data.desc);
+    form.setFieldValue("doc", data.doc);
+    data.input?.forEach((v, i) => {
+      form.setFieldValue(`input.${i}.name`, v.replaceAll("?", ""));
+    });
+    data.output?.forEach((v, i) => {
+      form.setFieldValue(`output.${i}.name`, v.replaceAll("?", ""));
+    });
+    data.args?.forEach((v, i) => {
+      form.setFieldValue(`args.${i}.type`, v.type.replaceAll("?", ""));
+    });
+  }, [workspace.editingNodeDef]);
   return (
     <>
       <div style={{ padding: "12px 24px" }}>
-        <span style={{ fontSize: "18px", fontWeight: "600" }}>Node Definition</span>
+        <span style={{ fontSize: "18px", fontWeight: "600" }}>{t("nodeDefinition")}</span>
       </div>
       <div
         className={isMacos ? undefined : "b3-overflow"}
@@ -383,7 +406,102 @@ const NodeDefInspector: FC = () => {
           wrapperCol={{ span: "auto" }}
           labelCol={{ span: "auto" }}
           // onFinish={finish}
-        ></Form>
+        >
+          <Form.Item
+            name="name"
+            label={
+              <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.name")}</div>
+            }
+          >
+            <Input disabled={true} />
+          </Form.Item>
+          <Form.Item
+            name="type"
+            label={
+              <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.type")}</div>
+            }
+          >
+            <Input disabled={true} />
+          </Form.Item>
+          <Form.Item
+            name="desc"
+            label={
+              <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.desc")}</div>
+            }
+          >
+            <Input disabled={true} />
+          </Form.Item>
+          <Markdown>{data.doc}</Markdown>
+          {data.input && data.input.length > 0 && (
+            <>
+              <Divider orientation="left">
+                <h4>{t("node.inputVariable")}</h4>
+              </Divider>
+              {data.input.map((v, i) => {
+                const required = v.indexOf("?") == -1;
+                return (
+                  <Form.Item
+                    label={`[${i}]`}
+                    name={`input.${i}.name`}
+                    key={`input.${i}.name`}
+                    required={required}
+                  >
+                    <Input disabled={true} />
+                  </Form.Item>
+                );
+              })}
+            </>
+          )}
+          {data.args && data.args.length > 0 && (
+            <>
+              <Divider orientation="left">
+                <h4>{t("node.args")}</h4>
+              </Divider>
+              {data.args.map((v, i) => {
+                const required = v.type.indexOf("?") == -1;
+                const type = v.type.replace("?", "") as NodeArgType;
+                return (
+                  <Form.Item
+                    name={`args.${i}.type`}
+                    label={v.desc}
+                    key={`args.${i}.type`}
+                    rules={[{ required }]}
+                  >
+                    <Select disabled={true}>
+                      {["float", "int", "string", "code", "enum", "boolean"].map((value) => {
+                        return (
+                          <Select.Option key={value} value={value}>
+                            {value}
+                          </Select.Option>
+                        );
+                      })}
+                    </Select>
+                  </Form.Item>
+                );
+              })}
+            </>
+          )}
+          {data.output && data.output.length > 0 && (
+            <>
+              <Divider orientation="left">
+                <h4>{t("node.outputVariable")}</h4>
+              </Divider>
+              {data.output.map((v, i) => {
+                const required = v.indexOf("?") == -1;
+                return (
+                  <Form.Item
+                    label={`[${i}]`}
+                    name={`output.${i}.name`}
+                    key={`output.${i}.name`}
+                    required={required}
+                  >
+                    <Input disabled={true} />
+                  </Form.Item>
+                );
+              })}
+            </>
+          )}
+        </Form>
       </div>
     </>
   );
