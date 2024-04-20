@@ -1,5 +1,5 @@
 import { useWorkspace } from "@/contexts/workspace-context";
-import { Hotkey } from "@/misc/keys";
+import { Hotkey, isMacos } from "@/misc/keys";
 import Path from "@/misc/path";
 import { SearchOutlined } from "@ant-design/icons";
 import { Button, Flex, LayoutProps, Select } from "antd";
@@ -52,7 +52,7 @@ export const TitleBar: FC<LayoutProps> = () => {
           position: "absolute",
         }}
       />
-      <div style={{ width: "100%" }}>{process.platform !== "darwin" && <Menu />}</div>
+      <div style={{ width: "100%" }}>{!isMacos && <Menu />}</div>
       <Flex style={{ width: "100%", alignItems: "center", justifyContent: "center" }}>
         <Button
           className="b3-no-drag-region"
@@ -111,7 +111,7 @@ export const TitleBar: FC<LayoutProps> = () => {
           />
         )}
       </Flex>
-      <div style={{ width: "100%" }}>{process.platform === "darwin" && <Menu />}</div>
+      <div style={{ width: "100%" }}>{isMacos && <Menu />}</div>
     </Flex>
   );
 };
