@@ -79,15 +79,6 @@ export type FileTreeType = {
   style?: React.CSSProperties;
 };
 
-export type NodeTreeType = {
-  title: string;
-  def?: NodeDef;
-  icon?: React.ReactNode;
-  isLeaf?: boolean;
-  children?: NodeTreeType[];
-  style?: React.CSSProperties;
-};
-
 export type EditNode = {
   data: NodeModel;
   editable: boolean;
@@ -112,7 +103,6 @@ export type WorkspaceStore = {
   path: string;
 
   allFiles: string[];
-  nodeTree?: NodeTreeType;
   fileTree?: FileTreeType;
   editors: EditorStore[];
   editing?: EditorStore;
@@ -452,36 +442,11 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   loadNodeDefs: () => {
     const workspace = get();
     const nodeDefData = readJson(`${workspace.workdir}/node-config.b3-setting`) as NodeDef[];
-    const nodeTree: NodeTreeType = {
-      title: i18n.t("nodeDefinition"),
-      children: [],
-      style: {
-        fontWeight: "bold",
-        fontSize: "13px",
-      },
-    };
     const nodeDefs: Map<string, NodeDef> = new Map();
     for (const v of nodeDefData) {
       nodeDefs.set(v.name, v);
-      let catalog = nodeTree.children?.find((nt) => nt.title === v.type);
-      if (!catalog) {
-        catalog = {
-          title: v.type,
-          children: [],
-        };
-        nodeTree.children?.push(catalog);
-      }
-      catalog.children?.push({
-        title: `${v.name}(${v.desc})`,
-        isLeaf: true,
-        def: v,
-      });
     }
-    nodeTree.children?.sort((a, b) => a.title.localeCompare(b.title));
-    nodeTree.children?.forEach((child) =>
-      child.children?.sort((a, b) => a.title.localeCompare(b.title))
-    );
-    set({ nodeDefs, nodeTree });
+    set({ nodeDefs });
     workspace.editing?.dispatch?.("reload");
   },
 

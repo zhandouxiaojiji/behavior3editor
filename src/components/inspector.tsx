@@ -80,6 +80,7 @@ const NodeInspector: FC = () => {
     form.resetFields();
     form.setFieldValue("id", data.id);
     form.setFieldValue("name", data.name);
+    form.setFieldValue("type", def.type);
     form.setFieldValue("desc", data.desc);
     form.setFieldValue("debug", data.debug);
     form.setFieldValue("path", data.path);
@@ -223,6 +224,14 @@ const NodeInspector: FC = () => {
             name="id"
             label={
               <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.id")}</div>
+            }
+          >
+            <Input disabled={true} />
+          </Form.Item>
+          <Form.Item
+            name="type"
+            label={
+              <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.type")}</div>
             }
           >
             <Input disabled={true} />

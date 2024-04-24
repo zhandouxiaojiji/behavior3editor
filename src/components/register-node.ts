@@ -1,7 +1,9 @@
 import { useWorkspace } from "@/contexts/workspace-context";
-import { TreeGraphData } from "@/misc/b3type";
+import { TreeGraphData, getNodeType } from "@/misc/b3type";
 import { checkTreeData, toBreakWord } from "@/misc/b3util";
 import i18n from "@/misc/i18n";
+import { isMacos } from "@/misc/keys";
+import Path from "@/misc/path";
 import G6 from "@antv/g6";
 
 const NODE_COLORS: any = {
@@ -73,7 +75,7 @@ G6.registerNode(
     draw(cfg, group) {
       const workspace = useWorkspace.getState();
       const nodeDef = workspace.getNodeDef(cfg.name as string);
-      let classify = nodeDef.type || "Other";
+      let classify = getNodeType(nodeDef);
       let color = nodeDef.color || NODE_COLORS[classify] || NODE_COLORS["Other"];
       if (
         !workspace.hasNodeDef(cfg.name as string) ||
@@ -176,7 +178,11 @@ G6.registerNode(
       });
 
       // icon
-      const img = nodeDef.icon ? workspace.workdir + "/" + nodeDef.icon : `./icons/${classify}.svg`;
+      const img = nodeDef.icon
+        ? process.env.VITE_DEV_SERVER_URL && isMacos
+          ? `${Path.basename(workspace.workdir)}/${nodeDef.icon}`
+          : `${workspace.workdir}/${nodeDef.icon}`
+        : `./icons/${classify}.svg`;
       addShape("image", {
         attrs: {
           x: 5,

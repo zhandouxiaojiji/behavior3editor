@@ -124,7 +124,7 @@
   },
   {
     "name": "MoveToPos",
-    "type": "Action",
+    "type": "Action (Client)",
     "args": [
       {
         "name": "x",
@@ -141,7 +141,7 @@
   },
   {
     "name": "MoveToTarget",
-    "type": "Action",
+    "type": "Action (Server)",
     "input": [
       "{目标}"
     ],
