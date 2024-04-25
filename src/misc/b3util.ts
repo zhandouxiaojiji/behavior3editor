@@ -368,22 +368,40 @@ export const createNewTree = (filename: string) => {
   return tree;
 };
 
-export const toBreakWord = (str: string, len: number, char = "\n") => {
-  let strTemp = "";
+const isAsciiChar = (c: number) => {
+  return (c >= 0x0001 && c <= 0x007e) || (0xff60 <= c && c <= 0xff9f);
+};
+
+export const toBreakWord = (str: string, maxlen: number, char = "\n") => {
+  const chars: string[] = [];
   let line = 1;
-  if (str.length <= len) {
-    return { str, line };
+  let len = 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    len += isAsciiChar(c) ? 1 : 2;
+    chars.push(String.fromCharCode(c));
+    if (len >= maxlen) {
+      len = 0;
+      line++;
+      chars.push("\n");
+    }
   }
-  while (str.length > len) {
-    strTemp += str.slice(0, len) + char;
-    str = str.slice(len, str.length);
-    line++;
-  }
-  strTemp += str;
   return {
-    str: strTemp,
+    str: chars.join(""),
     line,
   };
+};
+
+export const cutWordTo = (str: string, maxlen: number) => {
+  let i = 0;
+  for (; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    maxlen -= isAsciiChar(c) ? 1 : 2;
+    if (maxlen <= 0) {
+      break;
+    }
+  }
+  return str.slice(0, i) + (i < str.length - 1 ? "..." : "");
 };
 
 export const createProject = (path: string) => {

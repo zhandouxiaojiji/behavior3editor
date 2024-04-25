@@ -1,6 +1,6 @@
 import { useWorkspace } from "@/contexts/workspace-context";
 import { TreeGraphData, getNodeType } from "@/misc/b3type";
-import { checkTreeData, toBreakWord } from "@/misc/b3util";
+import { checkTreeData, cutWordTo, toBreakWord } from "@/misc/b3util";
 import i18n from "@/misc/i18n";
 import { isMacos } from "@/misc/keys";
 import Path from "@/misc/path";
@@ -222,11 +222,13 @@ G6.registerNode(
         name: "name-text",
       });
 
-      const x = 5;
+      const x = 6;
       let y = 24;
       // desc text
-      const desc = cfg.desc || nodeDef.desc;
+      let desc = (cfg.desc || nodeDef.desc) as string;
       if (desc) {
+        desc = i18n.t("regnode.mark") + desc;
+        desc = cutWordTo(desc, 31);
         addShape("text", {
           attrs: {
             textBaseline: "top",
@@ -234,7 +236,7 @@ G6.registerNode(
             y,
             lineHeight: 20,
             fontWeight: 800,
-            text: `${i18n.t("regnode.mark")}${desc}`,
+            text: `${desc}`,
             fill: "black",
           },
           name: "desc-text",
@@ -333,13 +335,15 @@ G6.registerNode(
       }
 
       if (cfg.path) {
+        let path = (i18n.t("regnode.subtree") + cfg.path) as string;
+        path = cutWordTo(path, 33);
         addShape("text", {
           attrs: {
             textBaseline: "top",
             x,
             y: y + 20,
             lineHeight: 20,
-            text: `${i18n.t("regnode.subtree")}${cfg.path}`,
+            text: `${path}`,
             fill: "black",
           },
           name: "subtree-text",
