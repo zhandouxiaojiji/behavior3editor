@@ -21,6 +21,9 @@ import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from "re
 import { useTranslation } from "react-i18next";
 import { FiDelete } from "react-icons/fi";
 import { IoMdReturnLeft } from "react-icons/io";
+import { PiCubeFocus } from "react-icons/pi";
+import { RiFocus3Fill, RiFocus3Line } from "react-icons/ri";
+import { VscCaseSensitive } from "react-icons/vsc";
 import { mergeRefs } from "react-merge-refs";
 import { useDebounceCallback } from "usehooks-ts";
 import "./register-node";
@@ -1002,69 +1005,96 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         <Flex
           style={{
             position: "absolute",
-            marginTop: "10px",
-            marginLeft: "10px",
-            backgroundColor: "#161b22",
-            padding: "4px 10px 4px 10px",
-            borderRadius: "4px",
-            borderLeft: "4px solid #f78166",
-            boxShadow: "0 0 8px 2px #0000005c",
-            alignItems: "center",
+            width: "100%",
+            justifyContent: "end",
+            paddingRight: "10px",
+            paddingTop: "10px",
           }}
         >
-          <Input
-            autoFocus
-            allowClear
-            size="small"
-            style={{ borderRadius: "2px" }}
-            onChange={(e) => onSearchChange(e.currentTarget.value)}
-          />
-          <div style={{ padding: "0 10px 0 5px" }}>
-            {results.length ? `${resultIndex + 1}/${results.length}` : ""}
-          </div>
-          <Button
-            icon={<ArrowDownOutlined />}
-            type="text"
-            size="small"
-            style={{ width: "30px" }}
-            disabled={results.length == 0}
-            onClick={() => {
-              if (results.length > 0) {
-                const idx = (resultIndex + 1) % results.length;
-                setResultIndex(idx);
-                editor.graph.focusItem(results[idx]);
-                selectNode(results[idx]);
+          <Flex
+            style={{
+              backgroundColor: "#161b22",
+              padding: "4px 10px 4px 10px",
+              borderRadius: "4px",
+              borderLeft: "3px solid #f78166",
+              boxShadow: "0 0 8px 2px #0000005c",
+              alignItems: "center",
+            }}
+          >
+            <Input
+              autoFocus
+              size="small"
+              style={{
+                borderRadius: "2px",
+                paddingTop: "1px",
+                paddingBottom: "1px",
+                paddingRight: "2px",
+              }}
+              onChange={(e) => onSearchChange(e.currentTarget.value)}
+              suffix={
+                <Flex style={{ alignItems: "center" }}>
+                  <Button
+                    type="text"
+                    size="small"
+                    style={{ width: "20px", height: "20px" }}
+                    icon={<VscCaseSensitive style={{ width: "18px", height: "18px" }} />}
+                  />
+                  <Button
+                    type="text"
+                    size="small"
+                    style={{ width: "20px", height: "20px" }}
+                    icon={<RiFocus3Line />}
+                  />
+                </Flex>
               }
-            }}
-          />
-          <Button
-            icon={<ArrowUpOutlined />}
-            type="text"
-            size="small"
-            style={{ width: "30px" }}
-            disabled={results.length == 0}
-            onClick={() => {
-              if (results.length > 0) {
-                const idx = (resultIndex + results.length - 1) % results.length;
-                setResultIndex(idx);
-                console.log(idx, results[idx]);
-                editor.graph.focusItem(results[idx]);
-                selectNode(results[idx]);
-              }
-            }}
-          />
-          <Button
-            icon={<CloseOutlined />}
-            type="text"
-            size="small"
-            style={{ width: "30px" }}
-            onClick={() => {
-              setShowingSearch(false);
-              setResults([]);
-              setResultIndex(0);
-              keysRef.current?.focus();
-            }}
-          />
+            />
+            <div style={{ padding: "0 10px 0 5px", minWidth: "40px" }}>
+              {results.length ? `${resultIndex + 1}/${results.length}` : ""}
+            </div>
+            <Button
+              icon={<ArrowDownOutlined />}
+              type="text"
+              size="small"
+              style={{ width: "30px" }}
+              disabled={results.length == 0}
+              onClick={() => {
+                if (results.length > 0) {
+                  const idx = (resultIndex + 1) % results.length;
+                  setResultIndex(idx);
+                  editor.graph.focusItem(results[idx]);
+                  selectNode(results[idx]);
+                }
+              }}
+            />
+            <Button
+              icon={<ArrowUpOutlined />}
+              type="text"
+              size="small"
+              style={{ width: "30px" }}
+              disabled={results.length == 0}
+              onClick={() => {
+                if (results.length > 0) {
+                  const idx = (resultIndex + results.length - 1) % results.length;
+                  setResultIndex(idx);
+                  console.log(idx, results[idx]);
+                  editor.graph.focusItem(results[idx]);
+                  selectNode(results[idx]);
+                }
+              }}
+            />
+            <Button
+              icon={<CloseOutlined />}
+              type="text"
+              size="small"
+              style={{ width: "30px" }}
+              onClick={() => {
+                setShowingSearch(false);
+                setResults([]);
+                setResultIndex(0);
+                keysRef.current?.focus();
+              }}
+            />
+          </Flex>
         </Flex>
       )}
 

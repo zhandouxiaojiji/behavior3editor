@@ -7,9 +7,9 @@ import { app } from "@electron/remote";
 import { Button, Flex, Layout, Space, Tabs, Tag, Tooltip } from "antd";
 import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { BiAddToQueue } from "react-icons/bi";
 import { FaExclamationTriangle, FaRegFolderOpen } from "react-icons/fa";
 import { PiTreeStructureFill } from "react-icons/pi";
+import { VscNewFolder, VscRepo } from "react-icons/vsc";
 import useForceUpdate from "use-force-update";
 import { useWindowSize } from "usehooks-ts";
 import { Editor } from "./editor";
@@ -275,7 +275,7 @@ export const Workspace: FC = () => {
                     }}
                     onClick={() => workspace.createProject()}
                   >
-                    <BiAddToQueue size="20px" />
+                    <VscNewFolder size="20px" />
                     {t("createProject")}
                   </Flex>
                   <Flex
@@ -289,7 +289,7 @@ export const Workspace: FC = () => {
                     }}
                     onClick={() => workspace.openProject()}
                   >
-                    <FaRegFolderOpen size="19px" />
+                    <VscRepo size="19px" />
                     {t("openProject")}
                   </Flex>
                 </Flex>
@@ -337,6 +337,7 @@ export const Workspace: FC = () => {
                 {[
                   { label: t("searchFile"), hotkeys: isMacos ? "⌘ P" : "Ctrl + P" },
                   { label: t("build"), hotkeys: isMacos ? "⌘ B" : "Ctrl + B" },
+                  { label: t("searchNode"), hotkeys: isMacos ? "⌘ F" : "Ctrl + F" },
                   { label: t("insertNode"), hotkeys: "Enter" },
                   { label: t("deleteNode"), hotkeys: "Backspace" },
                 ].map((v) => (
