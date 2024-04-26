@@ -30,7 +30,7 @@ const TreeInspector: FC = () => {
     const data = {} as TreeModel;
     data.name = values.name;
     data.desc = values.desc || undefined;
-    workspace.editing?.dispatch?.("updateTree", {
+    workspace.editing?.dispatch("updateTree", {
       data: {
         name: values.name,
         desc: values.desc || undefined,
@@ -80,6 +80,7 @@ const NodeInspector: FC = () => {
     form.resetFields();
     form.setFieldValue("id", data.id);
     form.setFieldValue("name", data.name);
+    form.setFieldValue("type", def.type);
     form.setFieldValue("desc", data.desc);
     form.setFieldValue("debug", data.debug);
     form.setFieldValue("path", data.path);
@@ -173,7 +174,7 @@ const NodeInspector: FC = () => {
       data.output ||= [];
       data.output.push(v ?? "");
     });
-    workspace.editing?.dispatch?.("updateNode", {
+    workspace.editing?.dispatch("updateNode", {
       data: data,
     } as EditNode);
   };
@@ -223,6 +224,14 @@ const NodeInspector: FC = () => {
             name="id"
             label={
               <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.id")}</div>
+            }
+          >
+            <Input disabled={true} />
+          </Form.Item>
+          <Form.Item
+            name="type"
+            label={
+              <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.type")}</div>
             }
           >
             <Input disabled={true} />

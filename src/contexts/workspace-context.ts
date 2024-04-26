@@ -32,6 +32,7 @@ export type EditEvent =
   | "rename"
   | "updateTree"
   | "updateNode"
+  | "searchNode"
   | "editSubtree"
   | "saveAsSubtree";
 
@@ -53,7 +54,7 @@ export class EditorStore {
   graphMatrix?: Matrix;
   graph!: TreeGraph;
 
-  dispatch?: (event: EditEvent, data?: unknown) => void;
+  dispatch!: (event: EditEvent, data?: unknown) => void;
 
   constructor(path: string) {
     this.path = path;
@@ -76,15 +77,6 @@ export type FileTreeType = {
   isLeaf?: boolean;
   children?: FileTreeType[];
   editing?: boolean;
-  style?: React.CSSProperties;
-};
-
-export type NodeTreeType = {
-  title: string;
-  def?: NodeDef;
-  icon?: React.ReactNode;
-  isLeaf?: boolean;
-  children?: NodeTreeType[];
   style?: React.CSSProperties;
 };
 
@@ -112,7 +104,6 @@ export type WorkspaceStore = {
   path: string;
 
   allFiles: string[];
-  nodeTree?: NodeTreeType;
   fileTree?: FileTreeType;
   editors: EditorStore[];
   editing?: EditorStore;
@@ -191,7 +182,7 @@ const loadFileTree = (workdir: string, filename: string) => {
 
 const saveFile = (editor?: EditorStore) => {
   if (editor?.unsave) {
-    editor.dispatch?.("save");
+    editor.dispatch("save");
   }
 };
 
@@ -260,7 +251,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       }
     if (buildDir) {
       for (const editor of workspace.editors) {
-        editor.dispatch?.("save");
+        editor.dispatch("save");
       }
       try {
         let hasError = false;
@@ -452,37 +443,12 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   loadNodeDefs: () => {
     const workspace = get();
     const nodeDefData = readJson(`${workspace.workdir}/node-config.b3-setting`) as NodeDef[];
-    const nodeTree: NodeTreeType = {
-      title: i18n.t("nodeDefinition"),
-      children: [],
-      style: {
-        fontWeight: "bold",
-        fontSize: "13px",
-      },
-    };
     const nodeDefs: Map<string, NodeDef> = new Map();
     for (const v of nodeDefData) {
       nodeDefs.set(v.name, v);
-      let catalog = nodeTree.children?.find((nt) => nt.title === v.type);
-      if (!catalog) {
-        catalog = {
-          title: v.type,
-          children: [],
-        };
-        nodeTree.children?.push(catalog);
-      }
-      catalog.children?.push({
-        title: `${v.name}(${v.desc})`,
-        isLeaf: true,
-        def: v,
-      });
     }
-    nodeTree.children?.sort((a, b) => a.title.localeCompare(b.title));
-    nodeTree.children?.forEach((child) =>
-      child.children?.sort((a, b) => a.title.localeCompare(b.title))
-    );
-    set({ nodeDefs, nodeTree });
-    workspace.editing?.dispatch?.("reload");
+    set({ nodeDefs });
+    workspace.editing?.dispatch("reload");
   },
 
   // node edit

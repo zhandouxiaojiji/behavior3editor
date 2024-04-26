@@ -221,7 +221,7 @@ export const Menu: FC<LayoutProps> = () => {
             label: t("insertNode"),
             enabled: enabled,
             click: () => {
-              workspace.editing?.dispatch?.("insert");
+              workspace.editing?.dispatch("insert");
             },
           },
           {
@@ -229,7 +229,7 @@ export const Menu: FC<LayoutProps> = () => {
             label: t("deleteNode"),
             enabled: enabled,
             click: () => {
-              workspace.editing?.dispatch?.("delete");
+              workspace.editing?.dispatch("delete");
             },
           },
         ],

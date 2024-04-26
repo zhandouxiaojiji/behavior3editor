@@ -10,17 +10,19 @@ import * as b3util from "@/misc/b3util";
 import { message } from "@/misc/hooks";
 import { Hotkey, isHotkeyPressed, isMacos, useHotkeys } from "@/misc/keys";
 import Path from "@/misc/path";
+import { ArrowDownOutlined, ArrowUpOutlined, CloseOutlined } from "@ant-design/icons";
 import G6, { G6GraphEvent, Item, TreeGraph } from "@antv/g6";
 import { dialog } from "@electron/remote";
 import { useSize } from "ahooks";
-import { Dropdown, Flex, FlexProps, MenuProps } from "antd";
+import { Button, Dropdown, Flex, FlexProps, Input, MenuProps } from "antd";
 import { clipboard } from "electron";
 import * as fs from "fs";
-import React, { FC, useCallback, useEffect, useMemo, useRef } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FiDelete } from "react-icons/fi";
 import { IoMdReturnLeft } from "react-icons/io";
 import { mergeRefs } from "react-merge-refs";
+import { useDebounceCallback } from "usehooks-ts";
 import "./register-node";
 
 export interface EditorProps extends React.HTMLAttributes<HTMLElement> {
@@ -36,10 +38,26 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     open: useWorkspace((state) => state.open),
     workdir: useWorkspace((state) => state.workdir),
   };
+  const [results, setResults] = useState<string[]>([]);
+  const [resultIndex, setResultIndex] = useState(0);
+  const [showingSearch, setShowingSearch] = useState(false);
   const graphRef = useRef(null);
   const sizeRef = useRef(null);
   const editorSize = useSize(sizeRef);
   const { t } = useTranslation();
+
+  const onSearchChange = useDebounceCallback((filter: string) => {
+    const ids = filterNodes(filter, findDataById("1"));
+    setResults(ids);
+    setResultIndex(0);
+    if (ids.length > 0) {
+      editor.graph.focusItem(ids[0]);
+      selectNode(ids[0]);
+    }
+    if (filter.length == 0) {
+      restoreViewport();
+    }
+  }, 200);
 
   const onChange = () => {
     if (!editor.unsave) {
@@ -91,6 +109,17 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const findDataById = (id: string) => {
     return editor.graph.findDataById(id) as TreeGraphData;
+  };
+
+  const filterNodes = (str: string, node: TreeGraphData | null, ids?: string[]): string[] => {
+    ids ||= [];
+    if (node && str) {
+      if (node.name.toLocaleLowerCase().indexOf(str) >= 0) {
+        ids.push(node.id);
+      }
+      node.children?.forEach((child: TreeGraphData) => filterNodes(str, child, ids));
+    }
+    return ids;
   };
 
   const isAncestor = (ancestor: TreeGraphData, node: TreeGraphData): boolean => {
@@ -782,68 +811,70 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
   );
 
-  if (!editor.dispatch) {
-    editor.dispatch = (event: EditEvent, data: unknown) => {
-      switch (event) {
-        case "copy": {
-          copyNode();
-          break;
-        }
-        case "paste": {
-          pasteNode();
-          break;
-        }
-        case "delete": {
-          deleteNode();
-          break;
-        }
-        case "insert": {
-          createNode();
-          break;
-        }
-        case "replace": {
-          replaceNode();
-          break;
-        }
-        case "save": {
-          save();
-          break;
-        }
-        case "undo": {
-          undo();
-          break;
-        }
-        case "redo": {
-          redo();
-          break;
-        }
-        case "reload": {
-          reload();
-          break;
-        }
-        case "rename": {
-          rename(data as string);
-          break;
-        }
-        case "updateTree": {
-          updateTree(data as EditTree);
-          break;
-        }
-        case "updateNode": {
-          updateNode(data as EditNode);
-          break;
-        }
-        case "editSubtree": {
-          editSubtree();
-          break;
-        }
-        case "saveAsSubtree": {
-          saveAsSubtree();
-          break;
-        }
+  editor.dispatch = (event: EditEvent, data: unknown) => {
+    switch (event) {
+      case "copy": {
+        copyNode();
+        break;
       }
-    };
-  }
+      case "paste": {
+        pasteNode();
+        break;
+      }
+      case "delete": {
+        deleteNode();
+        break;
+      }
+      case "insert": {
+        createNode();
+        break;
+      }
+      case "replace": {
+        replaceNode();
+        break;
+      }
+      case "save": {
+        save();
+        break;
+      }
+      case "undo": {
+        undo();
+        break;
+      }
+      case "redo": {
+        redo();
+        break;
+      }
+      case "reload": {
+        reload();
+        break;
+      }
+      case "rename": {
+        rename(data as string);
+        break;
+      }
+      case "updateTree": {
+        updateTree(data as EditTree);
+        break;
+      }
+      case "updateNode": {
+        updateNode(data as EditNode);
+        break;
+      }
+      case "searchNode": {
+        setShowingSearch(true);
+        break;
+      }
+      case "editSubtree": {
+        editSubtree();
+        break;
+      }
+      case "saveAsSubtree": {
+        saveAsSubtree();
+        break;
+      }
+    }
+  };
 
   useEffect(() => {
     if (!editorSize || (editorSize.width === 0 && editorSize.height === 0)) {
@@ -956,7 +987,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   type MenuInfo = Parameters<Exclude<MenuProps["onClick"], undefined>>[0];
   const onClick = useCallback((info: MenuInfo) => {
-    editor.dispatch?.(info.key as EditEvent);
+    editor.dispatch(info.key as EditEvent);
   }, []);
 
   return (
@@ -967,6 +998,76 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       tabIndex={-1}
       style={{ maxWidth: "inherit", maxHeight: "inherit" }}
     >
+      {showingSearch && (
+        <Flex
+          style={{
+            position: "absolute",
+            marginTop: "10px",
+            marginLeft: "10px",
+            backgroundColor: "#161b22",
+            padding: "4px 10px 4px 10px",
+            borderRadius: "4px",
+            borderLeft: "4px solid #f78166",
+            boxShadow: "0 0 8px 2px #0000005c",
+            alignItems: "center",
+          }}
+        >
+          <Input
+            autoFocus
+            allowClear
+            size="small"
+            style={{ borderRadius: "2px" }}
+            onChange={(e) => onSearchChange(e.currentTarget.value)}
+          />
+          <div style={{ padding: "0 10px 0 5px" }}>
+            {results.length ? `${resultIndex + 1}/${results.length}` : ""}
+          </div>
+          <Button
+            icon={<ArrowDownOutlined />}
+            type="text"
+            size="small"
+            style={{ width: "30px" }}
+            disabled={results.length == 0}
+            onClick={() => {
+              if (results.length > 0) {
+                const idx = (resultIndex + 1) % results.length;
+                setResultIndex(idx);
+                editor.graph.focusItem(results[idx]);
+                selectNode(results[idx]);
+              }
+            }}
+          />
+          <Button
+            icon={<ArrowUpOutlined />}
+            type="text"
+            size="small"
+            style={{ width: "30px" }}
+            disabled={results.length == 0}
+            onClick={() => {
+              if (results.length > 0) {
+                const idx = (resultIndex + results.length - 1) % results.length;
+                setResultIndex(idx);
+                console.log(idx, results[idx]);
+                editor.graph.focusItem(results[idx]);
+                selectNode(results[idx]);
+              }
+            }}
+          />
+          <Button
+            icon={<CloseOutlined />}
+            type="text"
+            size="small"
+            style={{ width: "30px" }}
+            onClick={() => {
+              setShowingSearch(false);
+              setResults([]);
+              setResultIndex(0);
+              keysRef.current?.focus();
+            }}
+          />
+        </Flex>
+      )}
+
       <Dropdown menu={{ items: menuItems, onClick }} trigger={["contextMenu"]}>
         <div tabIndex={-1} style={{ width: "100%", height: "100%" }} ref={graphRef} />
       </Dropdown>

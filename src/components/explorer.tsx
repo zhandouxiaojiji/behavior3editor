@@ -1,4 +1,5 @@
 import { FileTreeType, useWorkspace } from "@/contexts/workspace-context";
+import { NodeDef, getNodeType } from "@/misc/b3type";
 import * as b3util from "@/misc/b3util";
 import { modal } from "@/misc/hooks";
 import { Hotkey, isHotkeyPressed, isMacos, useHotkeys } from "@/misc/keys";
@@ -30,6 +31,15 @@ type MenuEvent =
   | "copy"
   | "move"
   | "duplicate";
+
+export type NodeTreeType = {
+  title: string;
+  def?: NodeDef;
+  icon?: React.ReactNode;
+  isLeaf?: boolean;
+  children?: NodeTreeType[];
+  style?: React.CSSProperties;
+};
 
 const findFile = (path: string | undefined, node: FileTreeType): FileTreeType | undefined => {
   if (!path) {
@@ -89,11 +99,11 @@ const renameFile = (oldPath: string, newPath: string) => {
       for (const editor of workspace.editors) {
         if (isDirectory) {
           if (editor.path.startsWith(oldPath)) {
-            editor.dispatch?.("rename", editor.path.replace(oldPath, newPath));
+            editor.dispatch("rename", editor.path.replace(oldPath, newPath));
           }
         } else {
           if (editor.path === oldPath) {
-            editor.dispatch?.("rename", newPath);
+            editor.dispatch("rename", newPath);
           }
         }
       }
@@ -112,7 +122,6 @@ export const Explorer: FC = () => {
     editors: useWorkspace((state) => state.editors),
     fileTree: useWorkspace((state) => state.fileTree),
     nodeDefs: useWorkspace((state) => state.nodeDefs),
-    nodeTree: useWorkspace((state) => state.nodeTree),
     workdir: useWorkspace((state) => state.workdir),
     onEditingNodeDef: useWorkspace((state) => state.onEditingNodeDef),
     open: useWorkspace((state) => state.open),
@@ -134,49 +143,69 @@ export const Explorer: FC = () => {
     );
   }
 
-  if (workspace.nodeTree) {
-    workspace.nodeTree.title = t("nodeDefinition");
-    workspace.nodeTree.icon = (
-      <Flex justify="center" align="center" style={{ height: "100%" }}>
-        <PiTreeStructureFill size={19} />
-      </Flex>
-    );
-    workspace.nodeTree.children?.forEach((catalog) => {
-      catalog.icon = (
+  const nodeTree = useMemo(() => {
+    const data: NodeTreeType = {
+      title: t("nodeDefinition"),
+      icon: (
         <Flex justify="center" align="center" style={{ height: "100%" }}>
-          <img
-            className="b3-node-icon"
-            style={{ width: "13px", height: "13px", color: "white" }}
-            src={`./icons/${catalog.title}.svg`}
-          />
+          <PiTreeStructureFill size={19} />
         </Flex>
-      );
-      catalog.children?.forEach((node) => {
-        if (node.def?.icon) {
-          node.icon = (
+      ),
+      children: [],
+      style: {
+        fontWeight: "bold",
+        fontSize: "13px",
+      },
+    };
+    workspace.nodeDefs.forEach((nodeDef) => {
+      let catalog = data.children?.find((nt) => nt.title === nodeDef.type);
+      if (!catalog) {
+        const type = getNodeType(nodeDef);
+        catalog = {
+          title: nodeDef.type,
+          children: [],
+          icon: (
             <Flex justify="center" align="center" style={{ height: "100%" }}>
               <img
                 className="b3-node-icon"
-                key={catalog.title}
                 style={{ width: "13px", height: "13px", color: "white" }}
-                src={
-                  process.env.VITE_DEV_SERVER_URL && isMacos
-                    ? `${Path.basename(workspace.workdir)}/${node.def?.icon}`
-                    : `${workspace.workdir}/${node.def?.icon}`
-                }
+                src={`./icons/${type}.svg`}
               />
             </Flex>
-          );
-        } else {
-          node.icon = (
-            <Flex justify="center" align="center" style={{ height: "100%" }}>
-              <BsBoxFill style={{ width: "12px", height: "12px", color: "white" }} />{" "}
-            </Flex>
-          );
-        }
+          ),
+        };
+        data.children?.push(catalog);
+      }
+      catalog.children?.push({
+        title: `${nodeDef.name}(${nodeDef.desc})`,
+        isLeaf: true,
+        def: nodeDef,
+        icon: nodeDef.icon ? (
+          <Flex justify="center" align="center" style={{ height: "100%" }}>
+            <img
+              className="b3-node-icon"
+              key={catalog.title}
+              style={{ width: "13px", height: "13px", color: "white" }}
+              src={
+                process.env.VITE_DEV_SERVER_URL && isMacos
+                  ? `${Path.basename(workspace.workdir)}/${nodeDef.icon}`
+                  : `${workspace.workdir}/${nodeDef.icon}`
+              }
+            />
+          </Flex>
+        ) : (
+          <Flex justify="center" align="center" style={{ height: "100%" }}>
+            <BsBoxFill style={{ width: "12px", height: "12px", color: "white" }} />{" "}
+          </Flex>
+        ),
       });
     });
-  }
+    data.children?.sort((a, b) => a.title.localeCompare(b.title));
+    data.children?.forEach((child) =>
+      child.children?.sort((a, b) => a.title.localeCompare(b.title))
+    );
+    return data;
+  }, [t, workspace.nodeDefs]);
 
   useEffect(() => {
     if (workspace.editing) {
@@ -467,12 +496,12 @@ export const Explorer: FC = () => {
             fs.renameSync(node.path, newPath);
             for (const editor of workspace.editors) {
               if (editor.path.startsWith(node.path)) {
-                editor.dispatch?.("rename", dest!.path + "/" + Path.basename(editor.path));
+                editor.dispatch("rename", dest!.path + "/" + Path.basename(editor.path));
               }
               console.log("editor move", editor.path === newPath, editor.path, newPath);
               if (editor.path.startsWith(newPath)) {
                 console.log("editor reload", editor.path === newPath, editor.path, newPath);
-                editor.dispatch?.("reload");
+                editor.dispatch("reload");
               }
             }
           };
@@ -795,7 +824,7 @@ export const Explorer: FC = () => {
         <DirectoryTree
           tabIndex={-1}
           fieldNames={{ key: "title" }}
-          treeData={workspace.nodeTree ? [workspace.nodeTree] : []}
+          treeData={nodeTree ? [nodeTree] : []}
           draggable={{ icon: false, nodeDraggable: (node) => !!node.isLeaf }}
           onSelect={(_, info) => {
             const node = info.node;

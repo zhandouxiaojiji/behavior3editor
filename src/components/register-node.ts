@@ -1,7 +1,9 @@
 import { useWorkspace } from "@/contexts/workspace-context";
-import { TreeGraphData } from "@/misc/b3type";
-import { checkTreeData, toBreakWord } from "@/misc/b3util";
+import { TreeGraphData, getNodeType } from "@/misc/b3type";
+import { checkTreeData, cutWordTo, toBreakWord } from "@/misc/b3util";
 import i18n from "@/misc/i18n";
+import { isMacos } from "@/misc/keys";
+import Path from "@/misc/path";
 import G6 from "@antv/g6";
 
 const NODE_COLORS: any = {
@@ -73,7 +75,7 @@ G6.registerNode(
     draw(cfg, group) {
       const workspace = useWorkspace.getState();
       const nodeDef = workspace.getNodeDef(cfg.name as string);
-      let classify = nodeDef.type || "Other";
+      let classify = getNodeType(nodeDef);
       let color = nodeDef.color || NODE_COLORS[classify] || NODE_COLORS["Other"];
       if (
         !workspace.hasNodeDef(cfg.name as string) ||
@@ -176,7 +178,11 @@ G6.registerNode(
       });
 
       // icon
-      const img = nodeDef.icon ? workspace.workdir + "/" + nodeDef.icon : `./icons/${classify}.svg`;
+      const img = nodeDef.icon
+        ? process.env.VITE_DEV_SERVER_URL && isMacos
+          ? `${Path.basename(workspace.workdir)}/${nodeDef.icon}`
+          : `${workspace.workdir}/${nodeDef.icon}`
+        : `./icons/${classify}.svg`;
       addShape("image", {
         attrs: {
           x: 5,
@@ -216,11 +222,13 @@ G6.registerNode(
         name: "name-text",
       });
 
-      const x = 5;
+      const x = 6;
       let y = 24;
       // desc text
-      const desc = cfg.desc || nodeDef.desc;
+      let desc = (cfg.desc || nodeDef.desc) as string;
       if (desc) {
+        desc = i18n.t("regnode.mark") + desc;
+        desc = cutWordTo(desc, 31);
         addShape("text", {
           attrs: {
             textBaseline: "top",
@@ -228,7 +236,7 @@ G6.registerNode(
             y,
             lineHeight: 20,
             fontWeight: 800,
-            text: `${i18n.t("regnode.mark")}${desc}`,
+            text: `${desc}`,
             fill: "black",
           },
           name: "desc-text",
@@ -327,13 +335,15 @@ G6.registerNode(
       }
 
       if (cfg.path) {
+        let path = (i18n.t("regnode.subtree") + cfg.path) as string;
+        path = cutWordTo(path, 33);
         addShape("text", {
           attrs: {
             textBaseline: "top",
             x,
             y: y + 20,
             lineHeight: 20,
-            text: `${i18n.t("regnode.subtree")}${cfg.path}`,
+            text: `${path}`,
             fill: "black",
           },
           name: "subtree-text",
