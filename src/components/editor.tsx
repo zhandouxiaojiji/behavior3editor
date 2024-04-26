@@ -790,7 +790,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       Hotkey.Delete,
       Hotkey.Enter,
       Hotkey.Backspace,
-      Hotkey.SearchNode,
     ],
     (event) => {
       event.preventDefault();
@@ -808,74 +807,74 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         createNode();
       } else if (isHotkeyPressed(Hotkey.Delete) || isHotkeyPressed(Hotkey.Backspace)) {
         deleteNode();
-      } else if (isHotkeyPressed(Hotkey.SearchNode)) {
-        setShowingSearch(true);
       }
     }
   );
 
-  if (!editor.dispatch) {
-    editor.dispatch = (event: EditEvent, data: unknown) => {
-      switch (event) {
-        case "copy": {
-          copyNode();
-          break;
-        }
-        case "paste": {
-          pasteNode();
-          break;
-        }
-        case "delete": {
-          deleteNode();
-          break;
-        }
-        case "insert": {
-          createNode();
-          break;
-        }
-        case "replace": {
-          replaceNode();
-          break;
-        }
-        case "save": {
-          save();
-          break;
-        }
-        case "undo": {
-          undo();
-          break;
-        }
-        case "redo": {
-          redo();
-          break;
-        }
-        case "reload": {
-          reload();
-          break;
-        }
-        case "rename": {
-          rename(data as string);
-          break;
-        }
-        case "updateTree": {
-          updateTree(data as EditTree);
-          break;
-        }
-        case "updateNode": {
-          updateNode(data as EditNode);
-          break;
-        }
-        case "editSubtree": {
-          editSubtree();
-          break;
-        }
-        case "saveAsSubtree": {
-          saveAsSubtree();
-          break;
-        }
+  editor.dispatch = (event: EditEvent, data: unknown) => {
+    switch (event) {
+      case "copy": {
+        copyNode();
+        break;
       }
-    };
-  }
+      case "paste": {
+        pasteNode();
+        break;
+      }
+      case "delete": {
+        deleteNode();
+        break;
+      }
+      case "insert": {
+        createNode();
+        break;
+      }
+      case "replace": {
+        replaceNode();
+        break;
+      }
+      case "save": {
+        save();
+        break;
+      }
+      case "undo": {
+        undo();
+        break;
+      }
+      case "redo": {
+        redo();
+        break;
+      }
+      case "reload": {
+        reload();
+        break;
+      }
+      case "rename": {
+        rename(data as string);
+        break;
+      }
+      case "updateTree": {
+        updateTree(data as EditTree);
+        break;
+      }
+      case "updateNode": {
+        updateNode(data as EditNode);
+        break;
+      }
+      case "searchNode": {
+        setShowingSearch(true);
+        break;
+      }
+      case "editSubtree": {
+        editSubtree();
+        break;
+      }
+      case "saveAsSubtree": {
+        saveAsSubtree();
+        break;
+      }
+    }
+  };
 
   useEffect(() => {
     if (!editorSize || (editorSize.width === 0 && editorSize.height === 0)) {
@@ -988,7 +987,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   type MenuInfo = Parameters<Exclude<MenuProps["onClick"], undefined>>[0];
   const onClick = useCallback((info: MenuInfo) => {
-    editor.dispatch?.(info.key as EditEvent);
+    editor.dispatch(info.key as EditEvent);
   }, []);
 
   return (

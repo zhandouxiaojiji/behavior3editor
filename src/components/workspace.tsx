@@ -44,7 +44,7 @@ export const Workspace: FC = () => {
   const { width = 0, height = 0 } = useWindowSize();
 
   const keysRef = useHotkeys<HTMLDivElement>(
-    [Hotkey.Save, Hotkey.CloseEditor, Hotkey.SearchTree, Hotkey.Build],
+    [Hotkey.Save, Hotkey.CloseEditor, Hotkey.SearchTree, Hotkey.Build, Hotkey.SearchNode],
     (event) => {
       if (isHotkeyPressed(Hotkey.Save)) {
         event.preventDefault();
@@ -64,6 +64,9 @@ export const Workspace: FC = () => {
       } else if (isHotkeyPressed(Hotkey.Build)) {
         event.preventDefault();
         workspace.buildProject();
+      } else if (isHotkeyPressed(Hotkey.SearchNode)) {
+        event.preventDefault();
+        workspace.editing?.dispatch("searchNode");
       }
     }
   );
@@ -95,7 +98,7 @@ export const Workspace: FC = () => {
             <Button
               type="primary"
               onClick={() => {
-                editor.dispatch?.("save");
+                editor.dispatch("save");
                 workspace.close(editor.path);
                 alert.destroy();
                 keysRef.current?.focus();
@@ -163,7 +166,7 @@ export const Workspace: FC = () => {
             <Button
               type="primary"
               onClick={() => {
-                unsaves.forEach((editor) => editor.dispatch?.("save"));
+                unsaves.forEach((editor) => editor.dispatch("save"));
                 alert.destroy();
                 window.close();
                 setShowingSave(false);

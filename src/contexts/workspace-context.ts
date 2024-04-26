@@ -54,7 +54,7 @@ export class EditorStore {
   graphMatrix?: Matrix;
   graph!: TreeGraph;
 
-  dispatch?: (event: EditEvent, data?: unknown) => void;
+  dispatch!: (event: EditEvent, data?: unknown) => void;
 
   constructor(path: string) {
     this.path = path;
@@ -182,7 +182,7 @@ const loadFileTree = (workdir: string, filename: string) => {
 
 const saveFile = (editor?: EditorStore) => {
   if (editor?.unsave) {
-    editor.dispatch?.("save");
+    editor.dispatch("save");
   }
 };
 
@@ -251,7 +251,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       }
     if (buildDir) {
       for (const editor of workspace.editors) {
-        editor.dispatch?.("save");
+        editor.dispatch("save");
       }
       try {
         let hasError = false;
@@ -448,7 +448,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       nodeDefs.set(v.name, v);
     }
     set({ nodeDefs });
-    workspace.editing?.dispatch?.("reload");
+    workspace.editing?.dispatch("reload");
   },
 
   // node edit

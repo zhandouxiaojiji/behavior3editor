@@ -30,7 +30,7 @@ const TreeInspector: FC = () => {
     const data = {} as TreeModel;
     data.name = values.name;
     data.desc = values.desc || undefined;
-    workspace.editing?.dispatch?.("updateTree", {
+    workspace.editing?.dispatch("updateTree", {
       data: {
         name: values.name,
         desc: values.desc || undefined,
@@ -174,7 +174,7 @@ const NodeInspector: FC = () => {
       data.output ||= [];
       data.output.push(v ?? "");
     });
-    workspace.editing?.dispatch?.("updateNode", {
+    workspace.editing?.dispatch("updateNode", {
       data: data,
     } as EditNode);
   };
