@@ -32,6 +32,7 @@ export type EditEvent =
   | "rename"
   | "updateTree"
   | "updateNode"
+  | "searchNode"
   | "editSubtree"
   | "saveAsSubtree";
 

@@ -44,7 +44,7 @@ export const Workspace: FC = () => {
   const { width = 0, height = 0 } = useWindowSize();
 
   const keysRef = useHotkeys<HTMLDivElement>(
-    [Hotkey.Save, Hotkey.CloseEditor, Hotkey.Search, Hotkey.Build],
+    [Hotkey.Save, Hotkey.CloseEditor, Hotkey.SearchTree, Hotkey.Build],
     (event) => {
       if (isHotkeyPressed(Hotkey.Save)) {
         event.preventDefault();
@@ -58,7 +58,7 @@ export const Workspace: FC = () => {
             workspace.close(workspace.editing.path);
           }
         }
-      } else if (isHotkeyPressed(Hotkey.Search)) {
+      } else if (isHotkeyPressed(Hotkey.SearchTree)) {
         event.preventDefault();
         workspace.onShowingSearch(true);
       } else if (isHotkeyPressed(Hotkey.Build)) {

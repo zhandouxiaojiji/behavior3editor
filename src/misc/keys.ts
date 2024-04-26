@@ -57,7 +57,8 @@ export const Hotkey = {
   Redo: isMacos ? hotkey("shift+ctrl+z") : hotkey("ctrl+y"),
   Replace: hotkey("shift+ctrl+v"),
   Save: hotkey("ctrl+s"),
-  Search: hotkey("ctrl+p"),
+  SearchTree: hotkey("ctrl+p"),
+  SearchNode: hotkey("ctrl+f"),
   Undo: hotkey("ctrl+z"),
 };
 
