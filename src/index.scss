@@ -14,6 +14,7 @@
   -webkit-text-size-adjust: 100%;
 
   --b3-color-border: #30363d;
+  --b3-color-selected: #1668dc;
 }
 
 body {
@@ -175,4 +176,14 @@ body {
 .b3-app-menu .ant-dropdown-menu-submenu-title {
   display: flex;
   align-items: center;
+}
+
+// editor
+.b3-editor-button-filter {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.b3-editor-button-filter-selected {
+  background-color: var(--b3-color-selected) !important;
 }

@@ -27,6 +27,7 @@ import { VscCaseSensitive } from "react-icons/vsc";
 import { mergeRefs } from "react-merge-refs";
 import { useDebounceCallback } from "usehooks-ts";
 import "./register-node";
+import { mergeClassNames } from "@/misc/util";
 
 export interface EditorProps extends React.HTMLAttributes<HTMLElement> {
   data: EditorStore;
@@ -121,17 +122,23 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     open: useWorkspace((state) => state.open),
     workdir: useWorkspace((state) => state.workdir),
   };
-  const [results, setResults] = useState<string[]>([]);
-  const [resultIndex, setResultIndex] = useState(0);
-  const [showingSearch, setShowingSearch] = useState(false);
+
   const graphRef = useRef(null);
   const sizeRef = useRef(null);
   const editorSize = useSize(sizeRef);
   const { t } = useTranslation();
   const menuItems = useMemo(() => createMenu(), [t]);
 
+  const [results, setResults] = useState<string[]>([]);
+  const [resultIndex, setResultIndex] = useState(0);
+  const [searchString, setSearchString] = useState("");
+  const [showingSearch, setShowingSearch] = useState(false);
+  const [filterCase, setFilterCase] = useState(false);
+  const [filterFocus, setFilterFocus] = useState(false);
+
   const onSearchChange = useDebounceCallback((filter: string) => {
     const ids = filterNodes(filter, findDataById("1"));
+    setSearchString(filter);
     setResults(ids);
     setResultIndex(0);
     if (ids.length > 0) {
@@ -195,13 +202,37 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     return editor.graph.findDataById(id) as TreeGraphData;
   };
 
-  const filterNodes = (str: string, node: TreeGraphData | null, ids?: string[]): string[] => {
+  const includeString = (content: string | undefined, search: string) => {
+    if (!content) {
+      return false;
+    } else if (filterCase) {
+      return content.includes(search);
+    } else {
+      return content.toLowerCase().includes(search.toLowerCase());
+    }
+  };
+
+  const filterNodes = (search: string, node: TreeGraphData | null, ids?: string[]): string[] => {
     ids ||= [];
-    if (node && str) {
-      if (node.name.toLocaleLowerCase().indexOf(str) >= 0) {
+    if (node && search) {
+      if (includeString(node.name, search) || includeString(node.desc || node.def.desc, search)) {
         ids.push(node.id);
+      } else if (node.input) {
+        for (const str of node.input) {
+          if (includeString(str, search)) {
+            ids.push(node.id);
+            break;
+          }
+        }
+      } else if (node.output) {
+        for (const str of node.output) {
+          if (includeString(str, search)) {
+            ids.push(node.id);
+            break;
+          }
+        }
       }
-      node.children?.forEach((child: TreeGraphData) => filterNodes(str, child, ids));
+      node.children?.forEach((child: TreeGraphData) => filterNodes(search, child, ids));
     }
     return ids;
   };
@@ -1054,18 +1085,29 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
               onChange={(e) => onSearchChange(e.currentTarget.value)}
               onKeyDown={(e) => e.code === Hotkey.Enter && nextResult()}
               suffix={
-                <Flex style={{ alignItems: "center" }}>
+                <Flex gap="2px" style={{ alignItems: "center" }}>
                   <Button
                     type="text"
                     size="small"
-                    style={{ width: "20px", height: "20px" }}
+                    className={mergeClassNames(
+                      "b3-editor-button-filter",
+                      filterCase ? "b3-editor-button-filter-selected" : ""
+                    )}
                     icon={<VscCaseSensitive style={{ width: "18px", height: "18px" }} />}
+                    onClick={() => {
+                      setFilterCase(!filterCase);
+                      onSearchChange(searchString);
+                    }}
                   />
                   <Button
                     type="text"
                     size="small"
-                    style={{ width: "20px", height: "20px" }}
+                    className={mergeClassNames(
+                      "b3-editor-button-filter",
+                      filterFocus ? "b3-editor-button-filter-selected" : ""
+                    )}
                     icon={<RiFocus3Line />}
+                    onClick={() => setFilterFocus(!filterFocus)}
                   />
                 </Flex>
               }

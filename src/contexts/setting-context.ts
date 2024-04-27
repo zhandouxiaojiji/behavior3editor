@@ -1,4 +1,4 @@
-import { readJson, writeJson } from "@/misc/json";
+import { readJson, writeJson } from "@/misc/util";
 import { app } from "@electron/remote";
 import { create } from "zustand";
 import * as fs from "fs";

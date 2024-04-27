@@ -9,3 +9,7 @@ export const writeJson = (path: string, data: any) => {
   const str = JSON.stringify(data, undefined, 2);
   fs.writeFileSync(path, str, "utf-8");
 };
+
+export function mergeClassNames(...cls: string[]): string {
+  return cls.filter((v) => !!v).join(" ");
+}

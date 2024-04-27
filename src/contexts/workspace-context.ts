@@ -2,7 +2,7 @@ import { NodeDef, NodeModel, TreeGraphData, TreeModel, unknownNodeDef } from "@/
 import * as b3util from "@/misc/b3util";
 import { message } from "@/misc/hooks";
 import i18n from "@/misc/i18n";
-import { readJson } from "@/misc/json";
+import { readJson } from "@/misc/util";
 import Path from "@/misc/path";
 import { Matrix, TreeGraph } from "@antv/g6";
 import { BrowserWindow, dialog } from "@electron/remote";
