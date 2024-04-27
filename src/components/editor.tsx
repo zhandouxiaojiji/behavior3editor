@@ -8,6 +8,7 @@ import {
 import { NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
 import * as b3util from "@/misc/b3util";
 import { message } from "@/misc/hooks";
+import i18n from "@/misc/i18n";
 import { Hotkey, isHotkeyPressed, isMacos, useHotkeys } from "@/misc/keys";
 import Path from "@/misc/path";
 import { ArrowDownOutlined, ArrowUpOutlined, CloseOutlined } from "@ant-design/icons";
@@ -21,8 +22,7 @@ import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from "re
 import { useTranslation } from "react-i18next";
 import { FiDelete } from "react-icons/fi";
 import { IoMdReturnLeft } from "react-icons/io";
-import { PiCubeFocus } from "react-icons/pi";
-import { RiFocus3Fill, RiFocus3Line } from "react-icons/ri";
+import { RiFocus3Line } from "react-icons/ri";
 import { VscCaseSensitive } from "react-icons/vsc";
 import { mergeRefs } from "react-merge-refs";
 import { useDebounceCallback } from "usehooks-ts";
@@ -32,6 +32,86 @@ export interface EditorProps extends React.HTMLAttributes<HTMLElement> {
   data: EditorStore;
   onUpdate: () => void;
 }
+
+const createMenu = () => {
+  const t = i18n.t;
+  const MenuItem: FC<FlexProps> = (itemProps) => {
+    return (
+      <Flex
+        gap="50px"
+        style={{ minWidth: "200px", justifyContent: "space-between", alignItems: "center" }}
+        {...itemProps}
+      ></Flex>
+    );
+  };
+
+  const arr: MenuProps["items"] = [
+    {
+      label: (
+        <MenuItem>
+          <div>{t("copy")}</div>
+          <div>{isMacos ? "⌘ C" : "Ctrl+C"}</div>
+        </MenuItem>
+      ),
+      key: "copy",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{t("paste")}</div>
+          <div>{isMacos ? "⌘ V" : "Ctrl+V"}</div>
+        </MenuItem>
+      ),
+      key: "paste",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{t("replace")}</div>
+          <div>{isMacos ? "⇧ ⌘ V" : "Ctrl+Shift+V"} </div>
+        </MenuItem>
+      ),
+      key: "replace",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{t("insertNode")}</div>
+          <div>{isMacos ? <IoMdReturnLeft /> : "Enter"}</div>
+        </MenuItem>
+      ),
+      key: "insert",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{t("deleteNode")}</div>
+          <div>{isMacos ? <FiDelete /> : "Backspace"}</div>
+        </MenuItem>
+      ),
+      key: "delete",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{t("editSubtree")}</div>
+          <div></div>
+        </MenuItem>
+      ),
+      key: "editSubtree",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{t("saveAsSubtree")}</div>
+          <div></div>
+        </MenuItem>
+      ),
+      key: "saveAsSubtree",
+    },
+  ];
+  return arr;
+};
 
 export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, ...props }) => {
   const workspace = {
@@ -48,6 +128,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   const sizeRef = useRef(null);
   const editorSize = useSize(sizeRef);
   const { t } = useTranslation();
+  const menuItems = useMemo(() => createMenu(), [t]);
 
   const onSearchChange = useDebounceCallback((filter: string) => {
     const ids = filterNodes(filter, findDataById("1"));
@@ -465,7 +546,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       message.warning(t("node.noNodeSelected"));
       return;
     }
-    const d1 = findDataById(editor.selectedId);
+
     const data = findSubtree(findDataById(editor.selectedId));
     if (data?.path) {
       const path = `${workspace.workdir}/${data.path}`;
@@ -901,85 +982,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
   }, [workspace.editing]);
 
-  const menuItems = useMemo(() => {
-    const MenuItem: FC<FlexProps> = (itemProps) => {
-      return (
-        <Flex
-          gap="50px"
-          style={{ minWidth: "200px", justifyContent: "space-between", alignItems: "center" }}
-          {...itemProps}
-        ></Flex>
-      );
-    };
-
-    const arr: MenuProps["items"] = [
-      {
-        label: (
-          <MenuItem>
-            <div>{t("copy")}</div>
-            <div>{isMacos ? "⌘ C" : "Ctrl+C"}</div>
-          </MenuItem>
-        ),
-        key: "copy",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("paste")}</div>
-            <div>{isMacos ? "⌘ V" : "Ctrl+V"}</div>
-          </MenuItem>
-        ),
-        key: "paste",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("replace")}</div>
-            <div>{isMacos ? "⇧ ⌘ V" : "Ctrl+Shift+V"} </div>
-          </MenuItem>
-        ),
-        key: "replace",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("insertNode")}</div>
-            <div>{isMacos ? <IoMdReturnLeft /> : "Enter"}</div>
-          </MenuItem>
-        ),
-        key: "insert",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("deleteNode")}</div>
-            <div>{isMacos ? <FiDelete /> : "Backspace"}</div>
-          </MenuItem>
-        ),
-        key: "delete",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("editSubtree")}</div>
-            <div></div>
-          </MenuItem>
-        ),
-        key: "editSubtree",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("saveAsSubtree")}</div>
-            <div></div>
-          </MenuItem>
-        ),
-        key: "saveAsSubtree",
-      },
-    ];
-    return arr;
-  }, [t]);
-
   useEffect(() => {
     if (editor.graph) {
       editor.graph.changeData(editor.data);
@@ -992,6 +994,25 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   const onClick = useCallback((info: MenuInfo) => {
     editor.dispatch(info.key as EditEvent);
   }, []);
+
+  const nextResult = () => {
+    if (results.length > 0) {
+      const idx = (resultIndex + 1) % results.length;
+      setResultIndex(idx);
+      editor.graph.focusItem(results[idx]);
+      selectNode(results[idx]);
+    }
+  };
+
+  const prevResult = () => {
+    if (results.length > 0) {
+      const idx = (resultIndex + results.length - 1) % results.length;
+      setResultIndex(idx);
+      console.log(idx, results[idx]);
+      editor.graph.focusItem(results[idx]);
+      selectNode(results[idx]);
+    }
+  };
 
   return (
     <div
@@ -1031,6 +1052,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                 paddingRight: "2px",
               }}
               onChange={(e) => onSearchChange(e.currentTarget.value)}
+              onKeyDown={(e) => e.code === Hotkey.Enter && nextResult()}
               suffix={
                 <Flex style={{ alignItems: "center" }}>
                   <Button
@@ -1057,14 +1079,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
               size="small"
               style={{ width: "30px" }}
               disabled={results.length == 0}
-              onClick={() => {
-                if (results.length > 0) {
-                  const idx = (resultIndex + 1) % results.length;
-                  setResultIndex(idx);
-                  editor.graph.focusItem(results[idx]);
-                  selectNode(results[idx]);
-                }
-              }}
+              onClick={nextResult}
             />
             <Button
               icon={<ArrowUpOutlined />}
@@ -1072,15 +1087,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
               size="small"
               style={{ width: "30px" }}
               disabled={results.length == 0}
-              onClick={() => {
-                if (results.length > 0) {
-                  const idx = (resultIndex + results.length - 1) % results.length;
-                  setResultIndex(idx);
-                  console.log(idx, results[idx]);
-                  editor.graph.focusItem(results[idx]);
-                  selectNode(results[idx]);
-                }
-              }}
+              onClick={prevResult}
             />
             <Button
               icon={<CloseOutlined />}
