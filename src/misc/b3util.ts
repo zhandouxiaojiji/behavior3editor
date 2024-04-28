@@ -372,7 +372,7 @@ const isAsciiChar = (c: number) => {
   return (c >= 0x0001 && c <= 0x007e) || (0xff60 <= c && c <= 0xff9f);
 };
 
-export const toBreakWord = (str: string, maxlen: number, char = "\n") => {
+export const toBreakWord = (str: string, maxlen: number) => {
   const chars: string[] = [];
   let line = 1;
   let len = 0;
@@ -380,7 +380,7 @@ export const toBreakWord = (str: string, maxlen: number, char = "\n") => {
     const c = str.charCodeAt(i);
     len += isAsciiChar(c) ? 1 : 2;
     chars.push(String.fromCharCode(c));
-    if (len >= maxlen) {
+    if (len >= maxlen && i < str.length - 1) {
       len = 0;
       line++;
       chars.push("\n");
