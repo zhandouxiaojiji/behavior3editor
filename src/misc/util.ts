@@ -10,6 +10,6 @@ export const writeJson = (path: string, data: any) => {
   fs.writeFileSync(path, str, "utf-8");
 };
 
-export function mergeClassNames(...cls: string[]): string {
+export function mergeClassNames(...cls: (string | boolean)[]): string {
   return cls.filter((v) => !!v).join(" ");
 }

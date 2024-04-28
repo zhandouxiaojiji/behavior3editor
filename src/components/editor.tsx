@@ -991,6 +991,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
   };
 
+  // check should rebuild graph
   useEffect(() => {
     if (!editorSize || (editorSize.width === 0 && editorSize.height === 0)) {
       return;
@@ -1007,12 +1008,14 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
   });
 
+  // check should subtree
   useEffect(() => {
     if (workspace.editing === editor) {
       checkSubtree();
     }
   }, [workspace.editing]);
 
+  // check should repaint node
   useEffect(() => {
     if (editor.graph) {
       editor.graph.changeData(editor.data);
@@ -1020,11 +1023,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       restoreViewport();
     }
   }, [t]);
-
-  type MenuInfo = Parameters<Exclude<MenuProps["onClick"], undefined>>[0];
-  const onClick = useCallback((info: MenuInfo) => {
-    editor.dispatch(info.key as EditEvent);
-  }, []);
 
   const nextResult = () => {
     if (results.length > 0) {
@@ -1091,7 +1089,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                     size="small"
                     className={mergeClassNames(
                       "b3-editor-button-filter",
-                      filterCase ? "b3-editor-button-filter-selected" : ""
+                      filterCase && "b3-editor-button-filter-selected"
                     )}
                     icon={<VscCaseSensitive style={{ width: "18px", height: "18px" }} />}
                     onClick={() => {
@@ -1104,7 +1102,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                     size="small"
                     className={mergeClassNames(
                       "b3-editor-button-filter",
-                      filterFocus ? "b3-editor-button-filter-selected" : ""
+                      filterFocus && "b3-editor-button-filter-selected"
                     )}
                     icon={<RiFocus3Line />}
                     onClick={() => setFilterFocus(!filterFocus)}
@@ -1147,7 +1145,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         </Flex>
       )}
 
-      <Dropdown menu={{ items: menuItems, onClick }} trigger={["contextMenu"]}>
+      <Dropdown
+        menu={{ items: menuItems, onClick: (info) => editor.dispatch(info.key as EditEvent) }}
+        trigger={["contextMenu"]}
+      >
         <div tabIndex={-1} style={{ width: "100%", height: "100%" }} ref={graphRef} />
       </Dropdown>
     </div>
