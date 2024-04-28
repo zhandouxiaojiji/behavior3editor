@@ -151,11 +151,11 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     filterNodes(option, findDataById("1"));
     setFilterOption({
       ...option,
-      index: 0,
     });
     if (option.results.length > 0) {
-      editor.graph.focusItem(option.results[0]);
-      selectNode(option.results[0]);
+      const idx = option.index < option.results.length ? option.index : 0;
+      editor.graph.focusItem(option.results[idx]);
+      selectNode(option.results[idx]);
     } else {
       selectNode(null);
     }
@@ -1105,6 +1105,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                 onSearchChange({
                   ...filterOption,
                   filterStr: e.currentTarget.value,
+                  index: 0,
                 })
               }
               onKeyDown={(e) => e.code === Hotkey.Enter && nextResult()}
