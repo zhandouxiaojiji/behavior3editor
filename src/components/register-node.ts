@@ -97,7 +97,6 @@ G6.registerNode(
         bgColor = "#0d1117";
         color = "#30363d";
         textColor = "#666";
-        console.log("hdight", cfg.id);
       }
 
       type ShapeCfg = Parameters<typeof group.addShape>[1];
