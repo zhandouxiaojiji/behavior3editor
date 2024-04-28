@@ -146,7 +146,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     filterFocus: false,
   });
 
-  const onSearchChange = useDebounceCallback((option: FilterOption) => {
+  const onSearchChange = (option: FilterOption) => {
     option.results.length = 0;
     filterNodes(option, findDataById("1"));
     setFilterOption({
@@ -159,7 +159,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     } else {
       selectNode(null);
     }
-  }, 200);
+    editor.graph.findAll("node", () => true).forEach((item) => item.draw());
+  };
+
+  const onDebounceSearchChange = useDebounceCallback(onSearchChange, 200);
 
   const onChange = () => {
     if (!editor.unsave) {
@@ -224,33 +227,41 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const filterNodes = (option: FilterOption, node: TreeGraphData | null) => {
-    if (node && option.filterStr) {
-      if (includeString(node.name, option) || includeString(node.desc || node.def.desc, option)) {
-        option.results.push(node.id);
-      } else if (node.input) {
-        for (const str of node.input) {
-          if (includeString(str, option)) {
-            option.results.push(node.id);
-            break;
+    if (node) {
+      node.highlightGray = option.filterFocus;
+      if (option.filterStr) {
+        let found = false;
+        if (includeString(node.name, option) || includeString(node.desc || node.def.desc, option)) {
+          found = true;
+        } else if (node.input) {
+          for (const str of node.input) {
+            if (includeString(str, option)) {
+              found = true;
+              break;
+            }
+          }
+        } else if (node.args) {
+          for (const str in node.args) {
+            if (includeString(str, option)) {
+              found = true;
+              break;
+            }
+          }
+        } else if (node.output) {
+          for (const str of node.output) {
+            if (includeString(str, option)) {
+              found = true;
+              break;
+            }
+          }
+        } else if (node.path) {
+          if (includeString(node.path, option)) {
+            found = true;
           }
         }
-      } else if (node.args) {
-        for (const str in node.args) {
-          if (includeString(str, option)) {
-            option.results.push(node.id);
-            break;
-          }
-        }
-      } else if (node.output) {
-        for (const str of node.output) {
-          if (includeString(str, option)) {
-            option.results.push(node.id);
-            break;
-          }
-        }
-      } else if (node.path) {
-        if (includeString(node.path, option)) {
+        if (found) {
           option.results.push(node.id);
+          node.highlightGray = false;
         }
       }
       node.children?.forEach((child: TreeGraphData) => filterNodes(option, child));
@@ -1102,7 +1113,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                 paddingRight: "2px",
               }}
               onChange={(e) =>
-                onSearchChange({
+                onDebounceSearchChange({
                   ...filterOption,
                   filterStr: e.currentTarget.value,
                   index: 0,
@@ -1172,7 +1183,13 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
               style={{ width: "30px" }}
               onClick={() => {
                 setShowingSearch(false);
-                setFilterOption({ ...filterOption, results: [], index: 0 });
+                onSearchChange({
+                  results: [],
+                  index: 0,
+                  filterCase: false,
+                  filterFocus: false,
+                  filterStr: "",
+                });
                 keysRef.current?.focus();
               }}
             />

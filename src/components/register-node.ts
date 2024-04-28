@@ -90,6 +90,16 @@ G6.registerNode(
       const h = size[1];
       const r = 4;
 
+      let bgColor = "white";
+      let textColor = "black";
+
+      if (cfg.highlightGray) {
+        bgColor = "#0d1117";
+        color = "#30363d";
+        textColor = "#666";
+        console.log("hdight", cfg.id);
+      }
+
       type ShapeCfg = Parameters<typeof group.addShape>[1];
       const addShape = (type: string, shapeCfg: ShapeCfg, clickEnabled: boolean = false) => {
         shapeCfg.draggable = clickEnabled;
@@ -107,7 +117,7 @@ G6.registerNode(
             height: h,
             stroke: color,
             lineWidth: 2,
-            fill: "white",
+            fill: bgColor,
             radius: r,
           },
           name: "main-box",
@@ -171,7 +181,7 @@ G6.registerNode(
           text: cfg.id,
           textAlign: "right",
           fill: "white",
-          stroke: "black",
+          stroke: textColor,
           lineWidth: 2,
         },
         name: "id-text",
@@ -217,7 +227,7 @@ G6.registerNode(
           fontWeight: 800,
           lineHeight: 20,
           text: cfg.name,
-          fill: "black",
+          fill: textColor,
         },
         name: "name-text",
       });
@@ -237,7 +247,7 @@ G6.registerNode(
             lineHeight: 20,
             fontWeight: 800,
             text: `${desc}`,
-            fill: "black",
+            fill: textColor,
           },
           name: "desc-text",
         });
@@ -254,7 +264,7 @@ G6.registerNode(
             w,
             lineHeight: 20,
             text: str,
-            fill: "black",
+            fill: textColor,
           },
           name: "args-text",
         });
@@ -286,7 +296,7 @@ G6.registerNode(
               y: y + 20,
               lineHeight: 20,
               text: str,
-              fill: cfg.highlightInput ? "white" : "black",
+              fill: cfg.highlightInput ? "white" : textColor,
               fontWeight: cfg.highlightInput ? "bolder" : undefined,
             },
             name: "input-text",
@@ -324,7 +334,7 @@ G6.registerNode(
               y: y + 20,
               lineHeight: 20,
               text: str,
-              fill: cfg.highlightOutput ? "white" : "black",
+              fill: cfg.highlightOutput ? "white" : textColor,
               fontWeight: cfg.highlightOutput ? "bolder" : undefined,
             },
             name: "output-text",
@@ -344,7 +354,7 @@ G6.registerNode(
             y: y + 20,
             lineHeight: 20,
             text: `${path}`,
-            fill: "black",
+            fill: textColor,
           },
           name: "subtree-text",
         });
