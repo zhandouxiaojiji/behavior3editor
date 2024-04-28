@@ -34,6 +34,14 @@ export interface EditorProps extends React.HTMLAttributes<HTMLElement> {
   onUpdate: () => void;
 }
 
+interface FilterOption {
+  results: string[];
+  index: number;
+  filterStr: string;
+  filterCase: boolean;
+  filterFocus: boolean;
+}
+
 const createMenu = () => {
   const t = i18n.t;
   const MenuItem: FC<FlexProps> = (itemProps) => {
@@ -129,24 +137,27 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   const { t } = useTranslation();
   const menuItems = useMemo(() => createMenu(), [t]);
 
-  const [results, setResults] = useState<string[]>([]);
-  const [resultIndex, setResultIndex] = useState(0);
-  const [searchString, setSearchString] = useState("");
   const [showingSearch, setShowingSearch] = useState(false);
-  const [filterCase, setFilterCase] = useState(false);
-  const [filterFocus, setFilterFocus] = useState(false);
+  const [filterOption, setFilterOption] = useState<FilterOption>({
+    results: [],
+    index: 0,
+    filterStr: "",
+    filterCase: false,
+    filterFocus: false,
+  });
 
-  const onSearchChange = useDebounceCallback((filter: string) => {
-    const ids = filterNodes(filter, findDataById("1"));
-    setSearchString(filter);
-    setResults(ids);
-    setResultIndex(0);
-    if (ids.length > 0) {
-      editor.graph.focusItem(ids[0]);
-      selectNode(ids[0]);
-    }
-    if (filter.length == 0) {
-      restoreViewport();
+  const onSearchChange = useDebounceCallback((option: FilterOption) => {
+    option.results.length = 0;
+    filterNodes(option, findDataById("1"));
+    setFilterOption({
+      ...option,
+      index: 0,
+    });
+    if (option.results.length > 0) {
+      editor.graph.focusItem(option.results[0]);
+      selectNode(option.results[0]);
+    } else {
+      selectNode(null);
     }
   }, 200);
 
@@ -202,39 +213,48 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     return editor.graph.findDataById(id) as TreeGraphData;
   };
 
-  const includeString = (content: string | undefined, search: string) => {
+  const includeString = (content: string | undefined, option: FilterOption) => {
     if (!content) {
       return false;
-    } else if (filterCase) {
-      return content.includes(search);
+    } else if (option.filterCase) {
+      return content.includes(option.filterStr);
     } else {
-      return content.toLowerCase().includes(search.toLowerCase());
+      return content.toLowerCase().includes(option.filterStr.toLowerCase());
     }
   };
 
-  const filterNodes = (search: string, node: TreeGraphData | null, ids?: string[]): string[] => {
-    ids ||= [];
-    if (node && search) {
-      if (includeString(node.name, search) || includeString(node.desc || node.def.desc, search)) {
-        ids.push(node.id);
+  const filterNodes = (option: FilterOption, node: TreeGraphData | null) => {
+    if (node && option.filterStr) {
+      if (includeString(node.name, option) || includeString(node.desc || node.def.desc, option)) {
+        option.results.push(node.id);
       } else if (node.input) {
         for (const str of node.input) {
-          if (includeString(str, search)) {
-            ids.push(node.id);
+          if (includeString(str, option)) {
+            option.results.push(node.id);
+            break;
+          }
+        }
+      } else if (node.args) {
+        for (const str in node.args) {
+          if (includeString(str, option)) {
+            option.results.push(node.id);
             break;
           }
         }
       } else if (node.output) {
         for (const str of node.output) {
-          if (includeString(str, search)) {
-            ids.push(node.id);
+          if (includeString(str, option)) {
+            option.results.push(node.id);
             break;
           }
         }
+      } else if (node.path) {
+        if (includeString(node.path, option)) {
+          option.results.push(node.id);
+        }
       }
-      node.children?.forEach((child: TreeGraphData) => filterNodes(search, child, ids));
+      node.children?.forEach((child: TreeGraphData) => filterNodes(option, child));
     }
-    return ids;
   };
 
   const isAncestor = (ancestor: TreeGraphData, node: TreeGraphData): boolean => {
@@ -1025,21 +1045,22 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   }, [t]);
 
   const nextResult = () => {
+    const { results, index } = filterOption;
     if (results.length > 0) {
-      const idx = (resultIndex + 1) % results.length;
-      setResultIndex(idx);
+      const idx = (index + 1) % results.length;
       editor.graph.focusItem(results[idx]);
       selectNode(results[idx]);
+      setFilterOption({ ...filterOption, index: idx });
     }
   };
 
   const prevResult = () => {
+    const { results, index } = filterOption;
     if (results.length > 0) {
-      const idx = (resultIndex + results.length - 1) % results.length;
-      setResultIndex(idx);
-      console.log(idx, results[idx]);
+      const idx = (index + results.length - 1) % results.length;
       editor.graph.focusItem(results[idx]);
       selectNode(results[idx]);
+      setFilterOption({ ...filterOption, index: idx });
     }
   };
 
@@ -1080,7 +1101,12 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                 paddingBottom: "1px",
                 paddingRight: "2px",
               }}
-              onChange={(e) => onSearchChange(e.currentTarget.value)}
+              onChange={(e) =>
+                onSearchChange({
+                  ...filterOption,
+                  filterStr: e.currentTarget.value,
+                })
+              }
               onKeyDown={(e) => e.code === Hotkey.Enter && nextResult()}
               suffix={
                 <Flex gap="2px" style={{ alignItems: "center" }}>
@@ -1089,36 +1115,45 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                     size="small"
                     className={mergeClassNames(
                       "b3-editor-button-filter",
-                      filterCase && "b3-editor-button-filter-selected"
+                      filterOption.filterCase && "b3-editor-button-filter-selected"
                     )}
                     icon={<VscCaseSensitive style={{ width: "18px", height: "18px" }} />}
-                    onClick={() => {
-                      setFilterCase(!filterCase);
-                      onSearchChange(searchString);
-                    }}
+                    onClick={() =>
+                      onSearchChange({
+                        ...filterOption,
+                        filterCase: !filterOption.filterCase,
+                      })
+                    }
                   />
                   <Button
                     type="text"
                     size="small"
                     className={mergeClassNames(
                       "b3-editor-button-filter",
-                      filterFocus && "b3-editor-button-filter-selected"
+                      filterOption.filterFocus && "b3-editor-button-filter-selected"
                     )}
                     icon={<RiFocus3Line />}
-                    onClick={() => setFilterFocus(!filterFocus)}
+                    onClick={() =>
+                      onSearchChange({
+                        ...filterOption,
+                        filterFocus: !filterOption.filterFocus,
+                      })
+                    }
                   />
                 </Flex>
               }
             />
             <div style={{ padding: "0 10px 0 5px", minWidth: "40px" }}>
-              {results.length ? `${resultIndex + 1}/${results.length}` : ""}
+              {filterOption.results.length
+                ? `${filterOption.index + 1}/${filterOption.results.length}`
+                : ""}
             </div>
             <Button
               icon={<ArrowDownOutlined />}
               type="text"
               size="small"
               style={{ width: "30px" }}
-              disabled={results.length == 0}
+              disabled={filterOption.results.length == 0}
               onClick={nextResult}
             />
             <Button
@@ -1126,7 +1161,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
               type="text"
               size="small"
               style={{ width: "30px" }}
-              disabled={results.length == 0}
+              disabled={filterOption.results.length == 0}
               onClick={prevResult}
             />
             <Button
@@ -1136,8 +1171,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
               style={{ width: "30px" }}
               onClick={() => {
                 setShowingSearch(false);
-                setResults([]);
-                setResultIndex(0);
+                setFilterOption({ ...filterOption, results: [], index: 0 });
                 keysRef.current?.focus();
               }}
             />
