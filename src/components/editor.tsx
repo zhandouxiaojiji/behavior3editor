@@ -40,7 +40,7 @@ interface FilterOption {
   filterStr: string;
   filterCase: boolean;
   filterFocus: boolean;
-  filterType: string;
+  filterType: "content" | "id";
   placeholder: string;
 }
 
@@ -133,7 +133,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     workdir: useWorkspace((state) => state.workdir),
   };
 
-  const searchIptRef = useRef<InputRef>(null);
+  const searchInputRef = useRef<InputRef>(null);
   const graphRef = useRef(null);
   const sizeRef = useRef(null);
   const editorSize = useSize(sizeRef);
@@ -147,7 +147,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     filterStr: "",
     filterCase: false,
     filterFocus: false,
-    filterType: "",
+    filterType: "content",
     placeholder: "",
   });
 
@@ -236,7 +236,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       node.highlightGray = option.filterFocus;
       if (option.filterStr) {
         let found = false;
-        if (option.filterType === "nodeId") {
+        if (option.filterType === "id") {
           if (option.filterStr === node.id) {
             found = true;
           }
@@ -1022,11 +1022,11 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         break;
       }
       case "searchNode": {
-        searchByType("");
+        searchByType("content");
         break;
       }
       case "jumpNode": {
-        searchByType("nodeId");
+        searchByType("id");
         break;
       }
       case "editSubtree": {
@@ -1093,12 +1093,12 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
   };
 
-  const searchByType = (type: string) => {
+  const searchByType = (type: FilterOption["filterType"]) => {
     let placeholder = "";
     const filterType = type;
     // todo multiple parameter format judgment
     switch (type) {
-      case "nodeId":
+      case "id":
         placeholder = t("jumpNode");
         break;
       default:
@@ -1110,12 +1110,14 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       setShowingSearch(true);
       return;
     }
-    if (filterOption.filterType === type) return searchIptRef.current?.focus();
+    if (filterOption.filterType === type) {
+      return searchInputRef.current?.focus();
+    }
     setShowingSearch(false);
     setTimeout(() => {
       setShowingSearch(true);
       setFilterOption({ ...filterOption, placeholder, filterType });
-      searchIptRef.current?.focus();
+      searchInputRef.current?.focus();
     }, 50);
   };
 
@@ -1123,9 +1125,9 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     if (e.code === Hotkey.Enter) {
       nextResult();
     } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyF") {
-      searchByType("");
+      searchByType("content");
     } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyG") {
-      searchByType("nodeId");
+      searchByType("id");
     }
   };
 
@@ -1158,7 +1160,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
             }}
           >
             <Input
-              ref={searchIptRef}
+              ref={searchInputRef}
               placeholder={filterOption.placeholder}
               autoFocus
               size="small"
@@ -1178,7 +1180,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
               onKeyDown={handleKeyDown}
               suffix={
                 <Flex gap="2px" style={{ alignItems: "center" }}>
-                  {filterOption.filterType !== "nodeId" && (
+                  {filterOption.filterType !== "id" && (
                     <Button
                       type="text"
                       size="small"
@@ -1218,7 +1220,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                 ? `${filterOption.index + 1}/${filterOption.results.length}`
                 : ""}
             </div>
-            {filterOption.filterType !== "nodeId" && (
+            {filterOption.filterType !== "id" && (
               <Button
                 icon={<ArrowDownOutlined />}
                 type="text"
@@ -1228,7 +1230,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                 onClick={nextResult}
               />
             )}
-            {filterOption.filterType !== "nodeId" && (
+            {filterOption.filterType !== "id" && (
               <Button
                 icon={<ArrowUpOutlined />}
                 type="text"
@@ -1251,7 +1253,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                   filterCase: false,
                   filterFocus: false,
                   filterStr: "",
-                  filterType: "",
+                  filterType: "content",
                   placeholder: "",
                 });
                 keysRef.current?.focus();
