@@ -33,7 +33,7 @@ export function useHotkeys<T extends HTMLElement>(
   keys: Keys,
   callback: HotkeyCallback,
   options?: OptionsOrDependencyArray,
-  dependencies?: OptionsOrDependencyArray,
+  dependencies?: OptionsOrDependencyArray
 ): MutableRefObject<RefType<T>> {
   if (keys instanceof Array) {
     keys = keys.filter((v) => !!v);
