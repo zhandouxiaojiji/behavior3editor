@@ -19,6 +19,7 @@
   "hide": "隐藏 Behavior3",
   "hideOthers": "隐藏其它",
   "insertNode": "插入节点",
+  "jumpNode": "跳转节点",
   "language": "语言",
   "moveToTrash": "移至回收站",
   "newFile": "新建行为树...",

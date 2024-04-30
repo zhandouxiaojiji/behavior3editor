@@ -33,7 +33,7 @@ export function useHotkeys<T extends HTMLElement>(
   keys: Keys,
   callback: HotkeyCallback,
   options?: OptionsOrDependencyArray,
-  dependencies?: OptionsOrDependencyArray
+  dependencies?: OptionsOrDependencyArray,
 ): MutableRefObject<RefType<T>> {
   if (keys instanceof Array) {
     keys = keys.filter((v) => !!v);
@@ -52,6 +52,7 @@ export const Hotkey = {
   Escape: Key.Escape,
   F2: Key.F2,
   Insert: Key.Insert,
+  JumpNode: hotkey("ctrl+g"),
   MacDelete: isMacos ? hotkey("ctrl+backspace") : "",
   Paste: hotkey("ctrl+v"),
   Redo: isMacos ? hotkey("shift+ctrl+z") : hotkey("ctrl+y"),
