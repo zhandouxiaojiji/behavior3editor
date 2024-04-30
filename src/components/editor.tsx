@@ -11,6 +11,7 @@ import { message } from "@/misc/hooks";
 import i18n from "@/misc/i18n";
 import { Hotkey, isHotkeyPressed, isMacos, useHotkeys } from "@/misc/keys";
 import Path from "@/misc/path";
+import { mergeClassNames } from "@/misc/util";
 import { ArrowDownOutlined, ArrowUpOutlined, CloseOutlined } from "@ant-design/icons";
 import G6, { G6GraphEvent, Item, TreeGraph } from "@antv/g6";
 import { dialog } from "@electron/remote";
@@ -18,7 +19,7 @@ import { useSize } from "ahooks";
 import { Button, Dropdown, Flex, FlexProps, Input, InputRef, MenuProps } from "antd";
 import { clipboard } from "electron";
 import * as fs from "fs";
-import React, { FC, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { FC, KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FiDelete } from "react-icons/fi";
 import { IoMdReturnLeft } from "react-icons/io";
@@ -27,7 +28,6 @@ import { VscCaseSensitive } from "react-icons/vsc";
 import { mergeRefs } from "react-merge-refs";
 import { useDebounceCallback } from "usehooks-ts";
 import "./register-node";
-import { mergeClassNames } from "@/misc/util";
 
 export interface EditorProps extends React.HTMLAttributes<HTMLElement> {
   data: EditorStore;
@@ -40,7 +40,7 @@ interface FilterOption {
   filterStr: string;
   filterCase: boolean;
   filterFocus: boolean;
-  filterType: string;
+  filterType: "content" | "id";
   placeholder: string;
 }
 
@@ -133,7 +133,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     workdir: useWorkspace((state) => state.workdir),
   };
 
-  const searchIptRef = useRef<InputRef>(null);
+  const searchInputRef = useRef<InputRef>(null);
   const graphRef = useRef(null);
   const sizeRef = useRef(null);
   const editorSize = useSize(sizeRef);
@@ -147,8 +147,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     filterStr: "",
     filterCase: false,
     filterFocus: false,
-    filterType: "",
-    placeholder: ""
+    filterType: "content",
+    placeholder: "",
   });
 
   const onSearchChange = (option: FilterOption) => {
@@ -236,12 +236,15 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       node.highlightGray = option.filterFocus;
       if (option.filterStr) {
         let found = false;
-        if (option.filterType === "nodeId") {
+        if (option.filterType === "id") {
           if (option.filterStr === node.id) {
-            found = true
+            found = true;
           }
         } else {
-          if (includeString(node.name, option) || includeString(node.desc || node.def.desc, option)) {
+          if (
+            includeString(node.name, option) ||
+            includeString(node.desc || node.def.desc, option)
+          ) {
             found = true;
           } else if (node.input) {
             for (const str of node.input) {
@@ -1019,11 +1022,11 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         break;
       }
       case "searchNode": {
-        searchByType("");
+        searchByType("content");
         break;
       }
       case "jumpNode": {
-        searchByType("nodeId");
+        searchByType("id");
         break;
       }
       case "editSubtree": {
@@ -1090,41 +1093,43 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
   };
 
-  const searchByType = (type: string) => {
-    let placeholder = ""
-    const filterType = type
+  const searchByType = (type: FilterOption["filterType"]) => {
+    let placeholder = "";
+    const filterType = type;
     // todo multiple parameter format judgment
     switch (type) {
-      case "nodeId":
-        placeholder = t("jumpNode")
-        break
+      case "id":
+        placeholder = t("jumpNode");
+        break;
       default:
-        placeholder = t("searchNode")
-        break
+        placeholder = t("searchNode");
+        break;
     }
     if (!showingSearch) {
-      setFilterOption({ ...filterOption, placeholder, filterType })
-      setShowingSearch(true)
-      return
+      setFilterOption({ ...filterOption, placeholder, filterType });
+      setShowingSearch(true);
+      return;
     }
-    if (filterOption.filterType === type) return searchIptRef.current?.focus()
-    setShowingSearch(false)
+    if (filterOption.filterType === type) {
+      return searchInputRef.current?.focus();
+    }
+    setShowingSearch(false);
     setTimeout(() => {
-      setShowingSearch(true)
-      setFilterOption({ ...filterOption, placeholder, filterType })
-      searchIptRef.current?.focus()
-    }, 50)
-  }
+      setShowingSearch(true);
+      setFilterOption({ ...filterOption, placeholder, filterType });
+      searchInputRef.current?.focus();
+    }, 50);
+  };
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.code === Hotkey.Enter) {
-      nextResult()
+      nextResult();
     } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyF") {
-      searchByType("")
+      searchByType("content");
     } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyG") {
-      searchByType("nodeId")
+      searchByType("id");
     }
-  }
+  };
 
   return (
     <div
@@ -1155,8 +1160,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
             }}
           >
             <Input
-              ref={searchIptRef}
-              placeholder={ filterOption.placeholder }
+              ref={searchInputRef}
+              placeholder={filterOption.placeholder}
               autoFocus
               size="small"
               style={{
@@ -1172,10 +1177,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                   index: 0,
                 })
               }
-              onKeyDown={ handleKeyDown }
+              onKeyDown={handleKeyDown}
               suffix={
                 <Flex gap="2px" style={{ alignItems: "center" }}>
-                  {filterOption.filterType !== "nodeId" && (
+                  {filterOption.filterType !== "id" && (
                     <Button
                       type="text"
                       size="small"
@@ -1215,7 +1220,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                 ? `${filterOption.index + 1}/${filterOption.results.length}`
                 : ""}
             </div>
-            {filterOption.filterType !== "nodeId" && (
+            {filterOption.filterType !== "id" && (
               <Button
                 icon={<ArrowDownOutlined />}
                 type="text"
@@ -1225,7 +1230,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                 onClick={nextResult}
               />
             )}
-            {filterOption.filterType !== "nodeId" && (
+            {filterOption.filterType !== "id" && (
               <Button
                 icon={<ArrowUpOutlined />}
                 type="text"
@@ -1248,8 +1253,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                   filterCase: false,
                   filterFocus: false,
                   filterStr: "",
-                  filterType: "",
-                  placeholder: ""
+                  filterType: "content",
+                  placeholder: "",
                 });
                 keysRef.current?.focus();
               }}

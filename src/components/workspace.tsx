@@ -7,7 +7,7 @@ import { app } from "@electron/remote";
 import { Button, Flex, Layout, Space, Tabs, Tag, Tooltip } from "antd";
 import { FC, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FaExclamationTriangle, FaRegFolderOpen } from "react-icons/fa";
+import { FaExclamationTriangle } from "react-icons/fa";
 import { PiTreeStructureFill } from "react-icons/pi";
 import { VscNewFolder, VscRepo } from "react-icons/vsc";
 import useForceUpdate from "use-force-update";
@@ -44,7 +44,14 @@ export const Workspace: FC = () => {
   const { width = 0, height = 0 } = useWindowSize();
 
   const keysRef = useHotkeys<HTMLDivElement>(
-    [Hotkey.Save, Hotkey.CloseEditor, Hotkey.SearchTree, Hotkey.Build, Hotkey.SearchNode, Hotkey.JumpNode],
+    [
+      Hotkey.Save,
+      Hotkey.CloseEditor,
+      Hotkey.SearchTree,
+      Hotkey.Build,
+      Hotkey.SearchNode,
+      Hotkey.JumpNode,
+    ],
     (event) => {
       if (isHotkeyPressed(Hotkey.Save)) {
         event.preventDefault();
@@ -68,8 +75,8 @@ export const Workspace: FC = () => {
         event.preventDefault();
         workspace.editing?.dispatch("searchNode");
       } else if (isHotkeyPressed(Hotkey.JumpNode)) {
-        event.preventDefault()
-        workspace.editing?.dispatch("jumpNode")
+        event.preventDefault();
+        workspace.editing?.dispatch("jumpNode");
       }
     }
   );

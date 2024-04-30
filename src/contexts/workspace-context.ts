@@ -145,13 +145,13 @@ export type WorkspaceStore = {
 };
 
 const loadFileTree = (workdir: string, filename: string) => {
-  const fullpath = fs.realpathSync(`${ workdir }/${ filename }`);
+  const fullpath = fs.realpathSync(`${workdir}/${filename}`);
   if (!fs.existsSync(fullpath)) {
     return;
   }
 
   const stat = fs.statSync(fullpath);
-  if (!( stat.isDirectory() || fullpath.endsWith(".json") )) {
+  if (!(stat.isDirectory() || fullpath.endsWith(".json"))) {
     return;
   }
 
@@ -164,13 +164,13 @@ const loadFileTree = (workdir: string, filename: string) => {
     data.children = [];
     const files = fs.readdirSync(data.path);
     files.forEach((v) => {
-      const child = loadFileTree(workdir, `${ filename }/${ v }`);
+      const child = loadFileTree(workdir, `${filename}/${v}`);
       if (child) {
         data.children?.push(child);
       }
     });
     data.children.sort((a, b) => {
-      if (( a.children && b.children ) || ( !a.children && !b.children )) {
+      if ((a.children && b.children) || (!a.children && !b.children)) {
         return a.title.localeCompare(b.title);
       } else {
         return a.children ? -1 : 1;
@@ -188,7 +188,7 @@ const saveFile = (editor?: EditorStore) => {
   }
 };
 
-export const useWorkspace = create<WorkspaceStore>((set, get) => ( {
+export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   allFiles: [],
   fileTree: undefined,
   editors: [],
@@ -210,15 +210,15 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ( {
         if (!fs.existsSync(path)) {
           useSetting.getState().removeRecent(path);
         }
-        message.error(`load workspace error: ${ path }`);
+        message.error(`load workspace error: ${path}`);
       }
     }
   },
 
   createProject: () => {
     const path = dialog.showSaveDialogSync({
-      properties: [ "showOverwriteConfirmation", "createDirectory" ],
-      filters: [ { name: "Behavior3 Workspace", extensions: [ "b3-workspace" ] } ],
+      properties: ["showOverwriteConfirmation", "createDirectory"],
+      filters: [{ name: "Behavior3 Workspace", extensions: ["b3-workspace"] }],
     });
     if (path) {
       const workspace = get();
@@ -234,7 +234,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ( {
       const win = BrowserWindow.getFocusedWindow();
       if (win) {
         const path = dialog.showOpenDialogSync(win, {
-          filters: [ { name: "workspace", extensions: [ "b3-workspace" ] } ],
+          filters: [{ name: "workspace", extensions: ["b3-workspace"] }],
         });
         if (path?.length) {
           ipcRenderer.invoke("open-win", path[0]);
@@ -248,7 +248,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ( {
     if (workspace.path)
       if (!buildDir) {
         buildDir = dialog.showOpenDialogSync({
-          properties: [ "openDirectory", "createDirectory" ],
+          properties: ["openDirectory", "createDirectory"],
         })?.[0];
       }
     if (buildDir) {
@@ -281,9 +281,9 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ( {
   batchProject: () => {
     const workspace = get();
     const scriptPath = dialog.showOpenDialogSync({
-      properties: [ "openFile" ],
+      properties: ["openFile"],
       defaultPath: workspace.workdir,
-      filters: [ { name: "Javascript", extensions: [ "js" ] } ],
+      filters: [{ name: "Javascript", extensions: ["js"] }],
     })?.[0];
     if (scriptPath) {
       try {
@@ -329,7 +329,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ( {
         workspace.edit(editor.path);
       } catch (error) {
         console.error(error);
-        message.error(`invalid file: ${ path }`);
+        message.error(`invalid file: ${path}`);
       }
     } else if (workspace.editing !== editor) {
       workspace.edit(editor.path);
@@ -389,8 +389,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ( {
     saveFile(workspace.editing);
   },
 
-  saveAs: () => {
-  },
+  saveAs: () => {},
 
   saveAll: () => {
     const workspace = get();
@@ -445,7 +444,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ( {
 
   loadNodeDefs: () => {
     const workspace = get();
-    const nodeDefData = readJson(`${ workspace.workdir }/node-config.b3-setting`) as NodeDef[];
+    const nodeDefData = readJson(`${workspace.workdir}/node-config.b3-setting`) as NodeDef[];
     const nodeDefs: Map<string, NodeDef> = new Map();
     for (const v of nodeDefData) {
       nodeDefs.set(v.name, v);
@@ -479,4 +478,4 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ( {
     const workspace = get();
     return workspace.nodeDefs.has(name);
   },
-} ));
+}));

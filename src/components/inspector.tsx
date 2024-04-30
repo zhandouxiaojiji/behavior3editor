@@ -1,4 +1,4 @@
-import { EditNode, EditTree, FileTreeType, useWorkspace } from "@/contexts/workspace-context";
+import { EditNode, EditTree, useWorkspace } from "@/contexts/workspace-context";
 import { NodeArgType, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
 import { Hotkey, isMacos } from "@/misc/keys";
 import Path from "@/misc/path";
