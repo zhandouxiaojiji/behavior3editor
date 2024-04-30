@@ -44,7 +44,7 @@ export const Workspace: FC = () => {
   const { width = 0, height = 0 } = useWindowSize();
 
   const keysRef = useHotkeys<HTMLDivElement>(
-    [Hotkey.Save, Hotkey.CloseEditor, Hotkey.SearchTree, Hotkey.Build, Hotkey.SearchNode],
+    [Hotkey.Save, Hotkey.CloseEditor, Hotkey.SearchTree, Hotkey.Build, Hotkey.SearchNode, Hotkey.JumpNode],
     (event) => {
       if (isHotkeyPressed(Hotkey.Save)) {
         event.preventDefault();
@@ -67,6 +67,9 @@ export const Workspace: FC = () => {
       } else if (isHotkeyPressed(Hotkey.SearchNode)) {
         event.preventDefault();
         workspace.editing?.dispatch("searchNode");
+      } else if (isHotkeyPressed(Hotkey.JumpNode)) {
+        event.preventDefault()
+        workspace.editing?.dispatch("jumpNode")
       }
     }
   );
@@ -338,6 +341,7 @@ export const Workspace: FC = () => {
                   { label: t("searchFile"), hotkeys: isMacos ? "⌘ P" : "Ctrl + P" },
                   { label: t("build"), hotkeys: isMacos ? "⌘ B" : "Ctrl + B" },
                   { label: t("searchNode"), hotkeys: isMacos ? "⌘ F" : "Ctrl + F" },
+                  { label: t("jumpNode"), hotkeys: isMacos ? "⌘ G" : "Ctrl + G" },
                   { label: t("insertNode"), hotkeys: "Enter" },
                   { label: t("deleteNode"), hotkeys: "Backspace" },
                 ].map((v) => (

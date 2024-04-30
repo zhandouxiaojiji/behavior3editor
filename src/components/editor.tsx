@@ -15,10 +15,10 @@ import { ArrowDownOutlined, ArrowUpOutlined, CloseOutlined } from "@ant-design/i
 import G6, { G6GraphEvent, Item, TreeGraph } from "@antv/g6";
 import { dialog } from "@electron/remote";
 import { useSize } from "ahooks";
-import { Button, Dropdown, Flex, FlexProps, Input, MenuProps } from "antd";
+import { Button, Dropdown, Flex, FlexProps, Input, InputRef, MenuProps } from "antd";
 import { clipboard } from "electron";
 import * as fs from "fs";
-import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { FC, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FiDelete } from "react-icons/fi";
 import { IoMdReturnLeft } from "react-icons/io";
@@ -40,6 +40,8 @@ interface FilterOption {
   filterStr: string;
   filterCase: boolean;
   filterFocus: boolean;
+  filterType: string;
+  placeholder: string;
 }
 
 const createMenu = () => {
@@ -131,6 +133,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     workdir: useWorkspace((state) => state.workdir),
   };
 
+  const searchIptRef = useRef<InputRef>(null);
   const graphRef = useRef(null);
   const sizeRef = useRef(null);
   const editorSize = useSize(sizeRef);
@@ -144,6 +147,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     filterStr: "",
     filterCase: false,
     filterFocus: false,
+    filterType: "",
+    placeholder: ""
   });
 
   const onSearchChange = (option: FilterOption) => {
@@ -231,32 +236,38 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       node.highlightGray = option.filterFocus;
       if (option.filterStr) {
         let found = false;
-        if (includeString(node.name, option) || includeString(node.desc || node.def.desc, option)) {
-          found = true;
-        } else if (node.input) {
-          for (const str of node.input) {
-            if (includeString(str, option)) {
-              found = true;
-              break;
-            }
+        if (option.filterType === "nodeId") {
+          if (option.filterStr === node.id) {
+            found = true
           }
-        } else if (node.args) {
-          for (const str in node.args) {
-            if (includeString(str, option)) {
-              found = true;
-              break;
-            }
-          }
-        } else if (node.output) {
-          for (const str of node.output) {
-            if (includeString(str, option)) {
-              found = true;
-              break;
-            }
-          }
-        } else if (node.path) {
-          if (includeString(node.path, option)) {
+        } else {
+          if (includeString(node.name, option) || includeString(node.desc || node.def.desc, option)) {
             found = true;
+          } else if (node.input) {
+            for (const str of node.input) {
+              if (includeString(str, option)) {
+                found = true;
+                break;
+              }
+            }
+          } else if (node.args) {
+            for (const str in node.args) {
+              if (includeString(str, option)) {
+                found = true;
+                break;
+              }
+            }
+          } else if (node.output) {
+            for (const str of node.output) {
+              if (includeString(str, option)) {
+                found = true;
+                break;
+              }
+            }
+          } else if (node.path) {
+            if (includeString(node.path, option)) {
+              found = true;
+            }
           }
         }
         if (found) {
@@ -1008,7 +1019,11 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         break;
       }
       case "searchNode": {
-        setShowingSearch(true);
+        searchByType("");
+        break;
+      }
+      case "jumpNode": {
+        searchByType("nodeId");
         break;
       }
       case "editSubtree": {
@@ -1075,6 +1090,42 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
   };
 
+  const searchByType = (type: string) => {
+    let placeholder = ""
+    const filterType = type
+    // todo multiple parameter format judgment
+    switch (type) {
+      case "nodeId":
+        placeholder = t("jumpNode")
+        break
+      default:
+        placeholder = t("searchNode")
+        break
+    }
+    if (!showingSearch) {
+      setFilterOption({ ...filterOption, placeholder, filterType })
+      setShowingSearch(true)
+      return
+    }
+    if (filterOption.filterType === type) return searchIptRef.current?.focus()
+    setShowingSearch(false)
+    setTimeout(() => {
+      setShowingSearch(true)
+      setFilterOption({ ...filterOption, placeholder, filterType })
+      searchIptRef.current?.focus()
+    }, 50)
+  }
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.code === Hotkey.Enter) {
+      nextResult()
+    } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyF") {
+      searchByType("")
+    } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyG") {
+      searchByType("nodeId")
+    }
+  }
+
   return (
     <div
       {...props}
@@ -1104,6 +1155,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
             }}
           >
             <Input
+              ref={searchIptRef}
+              placeholder={ filterOption.placeholder }
               autoFocus
               size="small"
               style={{
@@ -1119,24 +1172,26 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                   index: 0,
                 })
               }
-              onKeyDown={(e) => e.code === Hotkey.Enter && nextResult()}
+              onKeyDown={ handleKeyDown }
               suffix={
                 <Flex gap="2px" style={{ alignItems: "center" }}>
-                  <Button
-                    type="text"
-                    size="small"
-                    className={mergeClassNames(
-                      "b3-editor-button-filter",
-                      filterOption.filterCase && "b3-editor-button-filter-selected"
-                    )}
-                    icon={<VscCaseSensitive style={{ width: "18px", height: "18px" }} />}
-                    onClick={() =>
-                      onSearchChange({
-                        ...filterOption,
-                        filterCase: !filterOption.filterCase,
-                      })
-                    }
-                  />
+                  {filterOption.filterType !== "nodeId" && (
+                    <Button
+                      type="text"
+                      size="small"
+                      className={mergeClassNames(
+                        "b3-editor-button-filter",
+                        filterOption.filterCase && "b3-editor-button-filter-selected"
+                      )}
+                      icon={<VscCaseSensitive style={{ width: "18px", height: "18px" }} />}
+                      onClick={() =>
+                        onSearchChange({
+                          ...filterOption,
+                          filterCase: !filterOption.filterCase,
+                        })
+                      }
+                    />
+                  )}
                   <Button
                     type="text"
                     size="small"
@@ -1160,22 +1215,26 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                 ? `${filterOption.index + 1}/${filterOption.results.length}`
                 : ""}
             </div>
-            <Button
-              icon={<ArrowDownOutlined />}
-              type="text"
-              size="small"
-              style={{ width: "30px" }}
-              disabled={filterOption.results.length == 0}
-              onClick={nextResult}
-            />
-            <Button
-              icon={<ArrowUpOutlined />}
-              type="text"
-              size="small"
-              style={{ width: "30px" }}
-              disabled={filterOption.results.length == 0}
-              onClick={prevResult}
-            />
+            {filterOption.filterType !== "nodeId" && (
+              <Button
+                icon={<ArrowDownOutlined />}
+                type="text"
+                size="small"
+                style={{ width: "30px" }}
+                disabled={filterOption.results.length == 0}
+                onClick={nextResult}
+              />
+            )}
+            {filterOption.filterType !== "nodeId" && (
+              <Button
+                icon={<ArrowUpOutlined />}
+                type="text"
+                size="small"
+                style={{ width: "30px" }}
+                disabled={filterOption.results.length == 0}
+                onClick={prevResult}
+              />
+            )}
             <Button
               icon={<CloseOutlined />}
               type="text"
@@ -1189,6 +1248,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                   filterCase: false,
                   filterFocus: false,
                   filterStr: "",
+                  filterType: "",
+                  placeholder: ""
                 });
                 keysRef.current?.focus();
               }}
