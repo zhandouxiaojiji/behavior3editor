@@ -1185,8 +1185,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                       type="text"
                       size="small"
                       className={mergeClassNames(
-                        "b3-editor-button-filter",
-                        filterOption.filterCase && "b3-editor-button-filter-selected"
+                        "b3-editor-filter",
+                        filterOption.filterCase && "b3-editor-filter-selected"
                       )}
                       icon={<VscCaseSensitive style={{ width: "18px", height: "18px" }} />}
                       onClick={() =>
@@ -1201,8 +1201,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                     type="text"
                     size="small"
                     className={mergeClassNames(
-                      "b3-editor-button-filter",
-                      filterOption.filterFocus && "b3-editor-button-filter-selected"
+                      "b3-editor-filter",
+                      filterOption.filterFocus && "b3-editor-filter-selected"
                     )}
                     icon={<RiFocus3Line />}
                     onClick={() =>

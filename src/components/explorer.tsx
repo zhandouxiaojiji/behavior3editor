@@ -804,7 +804,19 @@ export const Explorer: FC = () => {
                     </div>
                   );
                 } else {
-                  return <span key={node.path}>{node.title}</span>;
+                  return (
+                    <div style={{ flex: 1, width: 0, minWidth: 0 }}>
+                      <div
+                        style={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {node.title}
+                      </div>
+                    </div>
+                  );
                 }
               }}
               allowDrop={(options) => {
@@ -826,6 +838,19 @@ export const Explorer: FC = () => {
           fieldNames={{ key: "title" }}
           treeData={nodeTree ? [nodeTree] : []}
           draggable={{ icon: false, nodeDraggable: (node) => !!node.isLeaf }}
+          titleRender={(node) => (
+            <div style={{ flex: 1, width: 0, minWidth: 0 }}>
+              <div
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {node.title}
+              </div>
+            </div>
+          )}
           onSelect={(_, info) => {
             const node = info.node;
             if (node && node.isLeaf) {
