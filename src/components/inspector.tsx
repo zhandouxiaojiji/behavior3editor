@@ -3,6 +3,7 @@ import { NodeArgType, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type"
 import { Hotkey, isMacos } from "@/misc/keys";
 import Path from "@/misc/path";
 import { AutoComplete, Divider, Flex, Form, Input, InputNumber, Select, Switch } from "antd";
+import TextArea from "antd/es/input/TextArea";
 import { DefaultOptionType } from "antd/es/select";
 import { FC, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -52,7 +53,7 @@ const TreeInspector: FC = () => {
             <Input disabled={true} />
           </Form.Item>
           <Form.Item name="desc" label={t("tree.desc")}>
-            <Input onBlur={form.submit} />
+            <TextArea autoSize onBlur={form.submit} />
           </Form.Item>
         </Form>
       </div>
@@ -250,7 +251,7 @@ const NodeInspector: FC = () => {
             />
           </Form.Item>
           <Form.Item name="desc" label={t("node.desc")}>
-            <Input disabled={disabled} onBlur={form.submit} />
+            <TextArea autoSize disabled={disabled} onBlur={form.submit} />
           </Form.Item>
           <Form.Item label={t("node.debug")} name="debug" valuePropName="checked">
             <Switch disabled={disabled && !editingNode.data.path} onChange={form.submit} />
@@ -438,7 +439,7 @@ const NodeDefInspector: FC = () => {
               <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.desc")}</div>
             }
           >
-            <Input disabled={true} />
+            <TextArea autoSize disabled={true} />
           </Form.Item>
           <Markdown>{data.doc}</Markdown>
           {data.input && data.input.length > 0 && (

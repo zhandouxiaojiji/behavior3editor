@@ -709,8 +709,6 @@ export const Explorer: FC = () => {
     return arr;
   }, [t, copyFile]);
 
-  const nodeConfs = useMemo(() => {}, [workspace.nodeDefs]);
-
   const onClick = (info: MenuInfo) => {
     const node = findFile(selectedKeys[0], workspace.fileTree!) ?? workspace.fileTree;
     if (node) {
