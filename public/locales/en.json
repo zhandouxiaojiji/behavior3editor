@@ -79,6 +79,7 @@
   "node.args": "Const arguments",
   "node.codePlaceholder": "a.b * 3 > 2",
   "node.debug": "Debug",
+  "node.disabled": "Disabled",
   "node.deleteRootNodeDenied": "Unable to delete the root node",
   "node.editSubtreeDenied": "Unable to edit the subtree node",
   "node.desc": "Node desc",

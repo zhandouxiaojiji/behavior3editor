@@ -84,6 +84,7 @@ const NodeInspector: FC = () => {
     form.setFieldValue("type", def.type);
     form.setFieldValue("desc", data.desc);
     form.setFieldValue("debug", data.debug);
+    form.setFieldValue("disabled", data.disabled);
     form.setFieldValue("path", data.path);
     def.args?.forEach((v) => {
       form.setFieldValue(`args.${v.name}`, data.args?.[v.name]);
@@ -153,6 +154,7 @@ const NodeInspector: FC = () => {
     data.id = editingNode.data.id;
     data.name = values.name;
     data.debug = values.debug || undefined;
+    data.disabled = values.disabled || undefined;
     data.desc = values.desc || undefined;
     data.path = values.path || undefined;
 
@@ -189,6 +191,7 @@ const NodeInspector: FC = () => {
           name: workspace.nodeDefs.get(newname)?.name ?? newname,
           desc: editingNode.data.desc,
           debug: editingNode.data.debug,
+          disabled: editingNode.data.disabled,
         },
         editable: editingNode.editable,
       });
@@ -254,6 +257,9 @@ const NodeInspector: FC = () => {
             <TextArea autoSize disabled={disabled} onBlur={form.submit} />
           </Form.Item>
           <Form.Item label={t("node.debug")} name="debug" valuePropName="checked">
+            <Switch disabled={disabled && !editingNode.data.path} onChange={form.submit} />
+          </Form.Item>
+          <Form.Item label={t("node.disabled")} name="disabled" valuePropName="checked">
             <Switch disabled={disabled && !editingNode.data.path} onChange={form.submit} />
           </Form.Item>
           <Form.Item label={t("node.subtree")} name="path">

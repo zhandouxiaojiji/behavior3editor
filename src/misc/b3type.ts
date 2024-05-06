@@ -36,6 +36,7 @@ export interface NodeModel {
   output?: string[];
   children?: NodeModel[];
   debug?: boolean;
+  disabled?: boolean;
   path?: string;
 }
 
@@ -54,6 +55,7 @@ export interface TreeGraphData extends G6TreeGraphData {
   children?: TreeGraphData[];
   def: NodeDef;
   debug?: boolean;
+  disabled?: boolean;
   parent?: string;
   path?: string;
   lastModified?: number;

@@ -213,7 +213,20 @@ G6.registerNode(
             width: 14,
             img: `./icons/Debug.svg`,
           },
-          name: "node-icon",
+          name: "node-debug-icon",
+        });
+      }
+
+      if (cfg.disabled) {
+        addShape("image", {
+          attrs: {
+            x: 182 - (cfg.debug ? 14 : 0),
+            y: 2,
+            height: 14,
+            width: 14,
+            img: `./icons/Disabled.svg`,
+          },
+          name: "node-disabled-icon",
         });
       }
 
