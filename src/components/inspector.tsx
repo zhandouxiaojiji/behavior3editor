@@ -82,7 +82,7 @@ const NodeInspector: FC = () => {
     form.setFieldValue("id", data.id);
     form.setFieldValue("name", data.name);
     form.setFieldValue("type", def.type);
-    form.setFieldValue("desc", data.desc);
+    form.setFieldValue("desc", data.desc || def.desc);
     form.setFieldValue("debug", data.debug);
     form.setFieldValue("disabled", data.disabled);
     form.setFieldValue("path", data.path);
@@ -155,7 +155,7 @@ const NodeInspector: FC = () => {
     data.name = values.name;
     data.debug = values.debug || undefined;
     data.disabled = values.disabled || undefined;
-    data.desc = values.desc || undefined;
+    data.desc = values.desc && values.desc !== def.desc ? values.desc : undefined;
     data.path = values.path || undefined;
 
     def.args?.forEach((arg) => {
