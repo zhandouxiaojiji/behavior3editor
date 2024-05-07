@@ -35,7 +35,8 @@ export const isNodeEqual = (node1: NodeModel, node2: NodeModel) => {
     node1.name === node2.name &&
     node1.desc === node2.desc &&
     node1.path === node2.path &&
-    node1.debug === node2.debug
+    node1.debug === node2.debug &&
+    node1.disabled === node2.disabled
   ) {
     const def = useWorkspace.getState().getNodeDef(node1.name);
 
@@ -142,6 +143,7 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
 export const copyFromNode = (data: TreeGraphData, node: NodeModel) => {
   data.name = node.name;
   data.debug = node.debug;
+  data.disabled = node.disabled;
   data.desc = node.desc;
   data.path = node.path;
   data.args = node.args;
@@ -158,6 +160,7 @@ export const createNode = (data: TreeGraphData, includeChildren: boolean = true)
     desc: data.desc,
     path: data.path,
     debug: data.debug,
+    disabled: data.disabled,
   };
   if (data.input) {
     node.input = [];
@@ -280,6 +283,7 @@ export const createTreeData = (node: NodeModel, parent?: string) => {
     input: node.input,
     output: node.output,
     debug: node.debug,
+    disabled: node.disabled,
     def: workspace.getNodeDef(node.name),
     parent: parent,
   };
@@ -310,6 +314,7 @@ export const createTreeData = (node: NodeModel, parent?: string) => {
       treeData.lastModified = fs.statSync(subtreePath).mtimeMs;
       treeData.path = node.path;
       treeData.debug = node.debug;
+      treeData.disabled = node.disabled;
       treeData.parent = parent;
       treeData.id = node.id.toFixed();
       treeData.size = calcTreeDataSize(treeData);
@@ -346,6 +351,7 @@ export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) =>
     input: data.input || undefined,
     output: data.output || undefined,
     debug: data.debug || undefined,
+    disabled: data.disabled || undefined,
     path: data.path || undefined,
   };
   if (data.children?.length && (includeSubtree || !isSubtreeRoot(data))) {

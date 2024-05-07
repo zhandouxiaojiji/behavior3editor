@@ -551,7 +551,7 @@ export const Explorer: FC = () => {
         break;
       }
       case "revealFile":
-        shell.showItemInFolder(node.path.replaceAll("/", Path.sep));
+        ipcRenderer.invoke("showItemInFolder", node.path);
         break;
       case "rename": {
         node.editing = true;
@@ -709,8 +709,6 @@ export const Explorer: FC = () => {
     return arr;
   }, [t, copyFile]);
 
-  const nodeConfs = useMemo(() => {}, [workspace.nodeDefs]);
-
   const onClick = (info: MenuInfo) => {
     const node = findFile(selectedKeys[0], workspace.fileTree!) ?? workspace.fileTree;
     if (node) {
@@ -804,7 +802,19 @@ export const Explorer: FC = () => {
                     </div>
                   );
                 } else {
-                  return <span key={node.path}>{node.title}</span>;
+                  return (
+                    <div style={{ flex: 1, width: 0, minWidth: 0 }}>
+                      <div
+                        style={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {node.title}
+                      </div>
+                    </div>
+                  );
                 }
               }}
               allowDrop={(options) => {
@@ -826,6 +836,19 @@ export const Explorer: FC = () => {
           fieldNames={{ key: "title" }}
           treeData={nodeTree ? [nodeTree] : []}
           draggable={{ icon: false, nodeDraggable: (node) => !!node.isLeaf }}
+          titleRender={(node) => (
+            <div style={{ flex: 1, width: 0, minWidth: 0 }}>
+              <div
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {node.title}
+              </div>
+            </div>
+          )}
           onSelect={(_, info) => {
             const node = info.node;
             if (node && node.isLeaf) {

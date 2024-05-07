@@ -3,12 +3,15 @@ import { NodeArgType, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type"
 import { Hotkey, isMacos } from "@/misc/keys";
 import Path from "@/misc/path";
 import { AutoComplete, Divider, Flex, Form, Input, InputNumber, Select, Switch } from "antd";
+import TextArea from "antd/es/input/TextArea";
 import { DefaultOptionType } from "antd/es/select";
 import { FC, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 
-interface OptionType extends DefaultOptionType {}
+interface OptionType extends DefaultOptionType {
+  value: string;
+}
 
 const TreeInspector: FC = () => {
   const workspace = {
@@ -52,7 +55,7 @@ const TreeInspector: FC = () => {
             <Input disabled={true} />
           </Form.Item>
           <Form.Item name="desc" label={t("tree.desc")}>
-            <Input onBlur={form.submit} />
+            <TextArea autoSize onBlur={form.submit} />
           </Form.Item>
         </Form>
       </div>
@@ -69,6 +72,7 @@ const NodeInspector: FC = () => {
     onEditingNode: useWorkspace((state) => state.onEditingNode),
     allFiles: useWorkspace((state) => state.allFiles),
     fileTree: useWorkspace((state) => state.fileTree),
+    relative: useWorkspace((state) => state.relative),
   };
   const { t } = useTranslation();
   const [form] = Form.useForm();
@@ -81,8 +85,9 @@ const NodeInspector: FC = () => {
     form.setFieldValue("id", data.id);
     form.setFieldValue("name", data.name);
     form.setFieldValue("type", def.type);
-    form.setFieldValue("desc", data.desc);
+    form.setFieldValue("desc", data.desc || def.desc);
     form.setFieldValue("debug", data.debug);
+    form.setFieldValue("disabled", data.disabled);
     form.setFieldValue("path", data.path);
     def.args?.forEach((v) => {
       form.setFieldValue(`args.${v.name}`, data.args?.[v.name]);
@@ -131,14 +136,15 @@ const NodeInspector: FC = () => {
   // auto complete for subtree
   const subtreeOptions = useMemo(() => {
     const options: OptionType[] = [];
-    workspace.allFiles.forEach((path) => {
-      const value = Path.relative(workspace.fileTree!.path, path).replaceAll(Path.sep, "/");
+    workspace.allFiles.forEach((file) => {
+      const value = workspace.relative(file.path);
       const desc = ""; //fileNode.desc ? `(${fileNode.desc})` : "";
       options.push({
         label: `${value}${desc}`,
         value: value,
       });
     });
+    options.sort((a, b) => a.value.localeCompare(b.value));
     return options;
   }, [workspace.allFiles, workspace.fileTree]);
 
@@ -152,7 +158,8 @@ const NodeInspector: FC = () => {
     data.id = editingNode.data.id;
     data.name = values.name;
     data.debug = values.debug || undefined;
-    data.desc = values.desc || undefined;
+    data.disabled = values.disabled || undefined;
+    data.desc = values.desc && values.desc !== def.desc ? values.desc : undefined;
     data.path = values.path || undefined;
 
     def.args?.forEach((arg) => {
@@ -188,6 +195,7 @@ const NodeInspector: FC = () => {
           name: workspace.nodeDefs.get(newname)?.name ?? newname,
           desc: editingNode.data.desc,
           debug: editingNode.data.debug,
+          disabled: editingNode.data.disabled,
         },
         editable: editingNode.editable,
       });
@@ -250,9 +258,12 @@ const NodeInspector: FC = () => {
             />
           </Form.Item>
           <Form.Item name="desc" label={t("node.desc")}>
-            <Input disabled={disabled} onBlur={form.submit} />
+            <TextArea autoSize disabled={disabled} onBlur={form.submit} />
           </Form.Item>
           <Form.Item label={t("node.debug")} name="debug" valuePropName="checked">
+            <Switch disabled={disabled && !editingNode.data.path} onChange={form.submit} />
+          </Form.Item>
+          <Form.Item label={t("node.disabled")} name="disabled" valuePropName="checked">
             <Switch disabled={disabled && !editingNode.data.path} onChange={form.submit} />
           </Form.Item>
           <Form.Item label={t("node.subtree")} name="path">
@@ -321,9 +332,7 @@ const NodeInspector: FC = () => {
                     )}
                     {type === "float" && <InputNumber disabled={disabled} onBlur={form.submit} />}
                     {type === "boolean" && <Switch disabled={disabled} onChange={form.submit} />}
-                    {type === "code" && (
-                      <Input onBlur={form.submit} placeholder={t("node.codePlaceholder")} />
-                    )}
+                    {type === "code" && <Input disabled={disabled} onBlur={form.submit} />}
                     {type === "enum" && (
                       <Select disabled={disabled} onBlur={form.submit} onChange={form.submit}>
                         {v.options?.map((value) => {
@@ -438,7 +447,7 @@ const NodeDefInspector: FC = () => {
               <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.desc")}</div>
             }
           >
-            <Input disabled={true} />
+            <TextArea autoSize disabled={true} />
           </Form.Item>
           <Markdown>{data.doc}</Markdown>
           {data.input && data.input.length > 0 && (
@@ -468,7 +477,6 @@ const NodeDefInspector: FC = () => {
               </Divider>
               {data.args.map((v, i) => {
                 const required = v.type.indexOf("?") == -1;
-                const type = v.type.replace("?", "") as NodeArgType;
                 return (
                   <Form.Item
                     name={`args.${i}.type`}

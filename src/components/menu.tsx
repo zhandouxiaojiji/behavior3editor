@@ -41,12 +41,10 @@ export const Menu: FC<LayoutProps> = () => {
   const { t } = useTranslation();
   const [trigger, setTrigger] = useState<DropDownProps["trigger"]>(["click"]);
   const workspace = {
-    allFiles: useWorkspace((state) => state.allFiles),
     batchProject: useWorkspace((state) => state.batchProject),
     buildProject: useWorkspace((state) => state.buildProject),
     createProject: useWorkspace((state) => state.createProject),
     editing: useWorkspace((state) => state.editing),
-    editors: useWorkspace((state) => state.editors),
     init: useWorkspace((state) => state.init),
     open: useWorkspace((state) => state.open),
     openProject: useWorkspace((state) => state.openProject),

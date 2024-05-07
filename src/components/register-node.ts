@@ -7,12 +7,12 @@ import Path from "@/misc/path";
 import G6 from "@antv/g6";
 
 const NODE_COLORS: any = {
-  ["Composite"]: "rgb(91,237,32)",
-  ["Decorator"]: "rgb(218,167,16)",
-  ["Condition"]: "rgb(228,20,139)",
-  ["Action"]: "rgb(91,143,249)",
-  ["Other"]: "rgb(112,112,112)",
-  ["Error"]: "rgb(255,0,0)",
+  ["Composite"]: "#5aed20",
+  ["Decorator"]: "#faad14",
+  ["Condition"]: "#e4148b",
+  ["Action"]: "#5b90f9",
+  ["Other"]: "#707070",
+  ["Error"]: "#ff0000",
 };
 
 const SELECTED_LINE_WIDTH = 4;
@@ -213,7 +213,20 @@ G6.registerNode(
             width: 14,
             img: `./icons/Debug.svg`,
           },
-          name: "node-icon",
+          name: "node-debug-icon",
+        });
+      }
+
+      if (cfg.disabled) {
+        addShape("image", {
+          attrs: {
+            x: 182 - (cfg.debug ? 14 : 0),
+            y: 2,
+            height: 14,
+            width: 14,
+            img: `./icons/Disabled.svg`,
+          },
+          name: "node-disabled-icon",
         });
       }
 

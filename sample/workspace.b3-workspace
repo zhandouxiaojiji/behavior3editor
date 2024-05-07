@@ -1,5 +1,28 @@
 {
-  "isRelative": true,
-  "nodeConfPath": "node-config.json",
-  "workdir": "workdir"
+  "files": [
+    {
+      "path": "workdir/hero.json",
+      "desc": "英雄测试AI"
+    },
+    {
+      "path": "workdir/monster.json",
+      "desc": "怪物测试AI"
+    },
+    {
+      "path": "workdir/sub/subtree1.json",
+      "desc": "子树1"
+    },
+    {
+      "path": "workdir/sub/subtree2.json",
+      "desc": "子树2"
+    },
+    {
+      "path": "workdir/subtree1.json",
+      "desc": "子树1"
+    },
+    {
+      "path": "workdir/subtree2.json",
+      "desc": "子树2"
+    }
+  ]
 }

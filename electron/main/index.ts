@@ -171,3 +171,8 @@ ipcMain.handle("trashItem", (_, arg: string) => {
   arg = arg.replace(/\//g, path.sep);
   shell.trashItem(arg).catch((e) => console.error(e));
 });
+
+ipcMain.handle("showItemInFolder", (_, arg: string) => {
+  arg = arg.replace(/\//g, path.sep);
+  shell.showItemInFolder(arg);
+});

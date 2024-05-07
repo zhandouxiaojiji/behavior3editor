@@ -77,8 +77,8 @@
   "regnode.subtree": "子树：",
 
   "node.args": "常量参数",
-  "node.codePlaceholder": "a.b * 3 > 2",
   "node.debug": "调试",
+  "node.disabled": "禁用",
   "node.deleteRootNodeDenied": "不能删除根节点",
   "node.editSubtreeDenied": "不能编辑子树节点",
   "node.desc": "节点说明",

@@ -86,8 +86,13 @@ body {
   cursor: pointer !important;
 }
 
-.ant-tree .ant-tree-node-content-wrapper {
+.ant-tree-node-content-wrapper {
   padding-left: 0 !important;
+  display: inline-flex;
+}
+
+.ant-tree-title {
+  display: contents;
 }
 
 .ant-tree-switcher.ant-tree-switcher-noop,
@@ -179,11 +184,11 @@ body {
 }
 
 // editor
-.b3-editor-button-filter {
+.b3-editor-filter {
   width: 20px !important;
   height: 20px !important;
 }
 
-.b3-editor-button-filter-selected {
+.b3-editor-filter-selected {
   background-color: var(--b3-color-selected) !important;
 }
