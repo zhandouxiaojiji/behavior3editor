@@ -9,7 +9,9 @@ import { FC, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 
-interface OptionType extends DefaultOptionType {}
+interface OptionType extends DefaultOptionType {
+  value: string;
+}
 
 const TreeInspector: FC = () => {
   const workspace = {
@@ -70,6 +72,7 @@ const NodeInspector: FC = () => {
     onEditingNode: useWorkspace((state) => state.onEditingNode),
     allFiles: useWorkspace((state) => state.allFiles),
     fileTree: useWorkspace((state) => state.fileTree),
+    relative: useWorkspace((state) => state.relative),
   };
   const { t } = useTranslation();
   const [form] = Form.useForm();
@@ -133,14 +136,15 @@ const NodeInspector: FC = () => {
   // auto complete for subtree
   const subtreeOptions = useMemo(() => {
     const options: OptionType[] = [];
-    workspace.allFiles.forEach((path) => {
-      const value = Path.relative(workspace.fileTree!.path, path).replaceAll(Path.sep, "/");
+    workspace.allFiles.forEach((file) => {
+      const value = workspace.relative(file.path);
       const desc = ""; //fileNode.desc ? `(${fileNode.desc})` : "";
       options.push({
         label: `${value}${desc}`,
         value: value,
       });
     });
+    options.sort((a, b) => a.value.localeCompare(b.value));
     return options;
   }, [workspace.allFiles, workspace.fileTree]);
 
@@ -328,9 +332,7 @@ const NodeInspector: FC = () => {
                     )}
                     {type === "float" && <InputNumber disabled={disabled} onBlur={form.submit} />}
                     {type === "boolean" && <Switch disabled={disabled} onChange={form.submit} />}
-                    {type === "code" && (
-                      <Input onBlur={form.submit} placeholder={t("node.codePlaceholder")} />
-                    )}
+                    {type === "code" && <Input disabled={disabled} onBlur={form.submit} />}
                     {type === "enum" && (
                       <Select disabled={disabled} onBlur={form.submit} onChange={form.submit}>
                         {v.options?.map((value) => {
@@ -475,7 +477,6 @@ const NodeDefInspector: FC = () => {
               </Divider>
               {data.args.map((v, i) => {
                 const required = v.type.indexOf("?") == -1;
-                const type = v.type.replace("?", "") as NodeArgType;
                 return (
                   <Form.Item
                     name={`args.${i}.type`}

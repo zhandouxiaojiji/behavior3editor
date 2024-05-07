@@ -20,23 +20,28 @@ export const TitleBar: FC<LayoutProps> = () => {
     onShowingSearch: useWorkspace((state) => state.onShowingSearch),
     open: useWorkspace((state) => state.open),
     name: useWorkspace((state) => state.path),
+    relative: useWorkspace((state) => state.relative),
   };
   const searchOptions = useMemo(() => {
     const options: OptionType[] = [];
-    workspace.allFiles.forEach((path) => {
-      const value = Path.relative(workspace.fileTree!.path, path).replaceAll(Path.sep, "/");
+    workspace.allFiles.forEach((file) => {
+      const value = workspace.relative(file.path);
+      const desc = file.desc ?? "";
       options.push({
         label: (
           <div>
             {Path.basename(value)}
             <span> </span>
-            <span style={{ color: "gray", fontSize: "12px" }}>{Path.dirname(value)}</span>
+            <span style={{ color: "gray", fontSize: "12px" }}>
+              {Path.dirname(value)} {desc}
+            </span>
           </div>
         ),
-        value: value,
-        path: path,
+        value: `${value.toLocaleLowerCase()} ${desc.toLocaleLowerCase()}`,
+        path: file.path,
       });
     });
+    options.sort((a, b) => a.path.localeCompare(b.path));
     return options;
   }, [workspace.allFiles, workspace.fileTree]);
   return (
@@ -101,7 +106,9 @@ export const TitleBar: FC<LayoutProps> = () => {
                 workspace.open(option.path);
               }
             }}
-            filterOption={(input, option) => (option?.value ?? "").includes(input)}
+            filterOption={(input, option) =>
+              (option?.value ?? "").includes(input.toLocaleLowerCase())
+            }
             filterSort={(optionA, optionB) =>
               (optionA?.value ?? "")
                 .toLowerCase()

@@ -551,7 +551,7 @@ export const Explorer: FC = () => {
         break;
       }
       case "revealFile":
-        shell.showItemInFolder(node.path.replaceAll("/", Path.sep));
+        ipcRenderer.invoke("showItemInFolder", node.path);
         break;
       case "rename": {
         node.editing = true;

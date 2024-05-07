@@ -12,7 +12,7 @@ export interface NodeArg {
   name: string;
   type: string;
   desc: string;
-  default?: string;
+  default?: unknown;
   options?: NodeArgOption[];
 }
 export interface NodeDef {

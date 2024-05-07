@@ -131,6 +131,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     onEditingTree: useWorkspace((state) => state.onEditingTree),
     open: useWorkspace((state) => state.open),
     workdir: useWorkspace((state) => state.workdir),
+    relative: useWorkspace((state) => state.relative),
+    updateFileMeta: useWorkspace((state) => state.updateFileMeta),
   };
 
   const searchInputRef = useRef<InputRef>(null);
@@ -605,8 +607,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         desc: editor.desc,
       } as TreeModel;
       fs.writeFileSync(path, JSON.stringify(treeModel, null, 2));
+      workspace.updateFileMeta(editor);
       editor.unsave = false;
-
       editor.data = b3util.createTreeData(root);
       editor.autoId = b3util.refreshTreeDataId(editor.data);
       editor.graph.changeData(editor.data);
@@ -664,7 +666,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         desc: data.desc,
       } as TreeModel;
       fs.writeFileSync(subpath, JSON.stringify(subtreeModel, null, 2));
-      data.path = Path.relative(workspace.workdir, subpath).replaceAll(Path.sep, "/");
+      data.path = workspace.relative(subpath);
       reload();
       pushHistory();
       onChange();
@@ -858,7 +860,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
             {
               id: editor.autoId++,
               name: "unknow",
-              path: Path.relative(workspace.workdir, exploreFile).replaceAll(Path.sep, "/"),
+              path: workspace.relative(exploreFile),
             },
             dstData.id
           );
