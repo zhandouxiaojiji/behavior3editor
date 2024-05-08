@@ -273,16 +273,16 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       }
       try {
         let hasError = false;
-        for (const [path] of workspace.allFiles) {
-          const buildpath = buildDir + "/" + workspace.relative(path);
+        workspace.allFiles.forEach((file) => {
+          const buildpath = buildDir + "/" + workspace.relative(file.path);
           console.log("build:", buildpath);
-          const treeModel = b3util.createBuildData(path);
+          const treeModel = b3util.createBuildData(file.path);
           if (!b3util.checkNodeData(treeModel?.root)) {
             hasError = true;
           }
           fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
           fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
-        }
+        });
         if (hasError) {
           message.error(i18n.t("buildFailed"));
         } else {
@@ -290,6 +290,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         }
       } catch (error) {
         console.error(error);
+        message.error(i18n.t("buildFailed"));
       }
     }
   },
