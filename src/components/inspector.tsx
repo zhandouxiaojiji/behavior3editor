@@ -326,7 +326,9 @@ const NodeInspector: FC = () => {
                     valuePropName={type === "boolean" ? "checked" : undefined}
                     rules={[{ required, message: t("node.fileRequired", { field: v.desc }) }]}
                   >
-                    {type === "string" && <Input disabled={disabled} onBlur={form.submit} />}
+                    {type === "string" && (
+                      <TextArea autoSize disabled={disabled} onBlur={form.submit} />
+                    )}
                     {type === "int" && (
                       <InputNumber disabled={disabled} onBlur={form.submit} precision={0} />
                     )}

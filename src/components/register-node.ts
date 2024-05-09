@@ -15,8 +15,6 @@ const NODE_COLORS: any = {
   ["Error"]: "#ff0000",
 };
 
-const SELECTED_LINE_WIDTH = 4;
-
 G6.registerNode(
   "TreeNode",
   {
@@ -37,17 +35,14 @@ G6.registerNode(
       },
       stateStyles: {
         selected: {
-          "main-box": {
-            stroke: "yellow",
-            lineWidth: SELECTED_LINE_WIDTH,
-          },
-          "name-bg-selected": {
-            fill: "yellow",
+          "main-box-selected": {
+            fillOpacity: 0.2,
           },
         },
         hover: {
-          stroke: "white",
-          lineWidth: 3,
+          "main-box-selected": {
+            fillOpacity: 0.1,
+          },
         },
         dragSrc: {
           fill: "gray",
@@ -103,8 +98,23 @@ G6.registerNode(
       const addShape = (type: string, shapeCfg: ShapeCfg, clickEnabled: boolean = false) => {
         shapeCfg.draggable = clickEnabled;
         shapeCfg.capture = clickEnabled;
+        // shapeCfg.attrs.fontFamily = "Menlo, Monaco, 'Courier New', monospace";
         return group.addShape(type, shapeCfg);
       };
+
+      addShape("rect", {
+        attrs: {
+          x: -15,
+          y: -15,
+          width: w + 30,
+          height: h + 30,
+          fill: "#fff",
+          fillOpacity: 0,
+          radius: r + 4,
+        },
+        name: "main-box-selected",
+        draggable: true,
+      });
 
       const shape = addShape(
         "rect",
@@ -133,9 +143,9 @@ G6.registerNode(
             y: -10,
             width: w + 20,
             height: h + 20,
-            stroke: "white",
+            stroke: "#a5b1be",
             lineWidth: 2.5,
-            lineDash: [5, 5],
+            lineDash: [6, 6],
             radius: [r, r, r, r],
           },
           name: "subtree",
@@ -149,19 +159,7 @@ G6.registerNode(
           x: 0,
           y: 0,
           width: w,
-          height: 20,
-          fill: color,
-          radius: [r, r, 0, 0],
-        },
-        name: "name-bg-selected",
-        draggable: true,
-      });
-      addShape("rect", {
-        attrs: {
-          x: SELECTED_LINE_WIDTH / 2,
-          y: SELECTED_LINE_WIDTH / 2,
-          width: w - 4,
-          height: 20 - SELECTED_LINE_WIDTH / 2,
+          height: 25,
           fill: color,
           radius: [r, r, 0, 0],
         },
@@ -195,22 +193,37 @@ G6.registerNode(
       addShape("image", {
         attrs: {
           x: 5,
-          y: 2,
-          height: 14,
-          width: 14,
+          y: 4,
+          height: 16,
+          width: 16,
           img,
         },
         name: "node-icon",
+      });
+
+      // name text
+      addShape("text", {
+        attrs: {
+          textBaseline: "top",
+          x: 25,
+          y: 5,
+          fontWeight: 800,
+          lineHeight: 20,
+          text: cfg.name,
+          fill: textColor,
+          fontSize: 14,
+        },
+        name: "name-text",
       });
 
       // debug
       if (cfg.debug) {
         addShape("image", {
           attrs: {
-            x: 182,
-            y: 2,
-            height: 14,
-            width: 14,
+            x: 200,
+            y: 4,
+            height: 16,
+            width: 16,
             img: `./icons/Debug.svg`,
           },
           name: "node-debug-icon",
@@ -220,37 +233,23 @@ G6.registerNode(
       if (cfg.disabled) {
         addShape("image", {
           attrs: {
-            x: 182 - (cfg.debug ? 14 : 0),
-            y: 2,
-            height: 14,
-            width: 14,
+            x: 200 - (cfg.debug ? 18 : 0),
+            y: 4,
+            height: 16,
+            width: 16,
             img: `./icons/Disabled.svg`,
           },
           name: "node-disabled-icon",
         });
       }
 
-      // name text
-      addShape("text", {
-        attrs: {
-          textBaseline: "top",
-          x: 22,
-          y: 3,
-          fontWeight: 800,
-          lineHeight: 20,
-          text: cfg.name,
-          fill: textColor,
-        },
-        name: "name-text",
-      });
-
       const x = 6;
-      let y = 24;
+      let y = 32;
       // desc text
       let desc = (cfg.desc || nodeDef.desc) as string;
       if (desc) {
         desc = i18n.t("regnode.mark") + desc;
-        desc = cutWordTo(desc, 31);
+        desc = cutWordTo(desc, 33);
         addShape("text", {
           attrs: {
             textBaseline: "top",
@@ -267,7 +266,7 @@ G6.registerNode(
 
       const args: any = cfg.args;
       if (nodeDef.args && args && Object.keys(args).length > 0) {
-        const { str, line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 34);
+        const { str, line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 37);
         addShape("text", {
           attrs: {
             textBaseline: "top",
@@ -358,7 +357,7 @@ G6.registerNode(
 
       if (cfg.path) {
         let path = (i18n.t("regnode.subtree") + cfg.path) as string;
-        path = cutWordTo(path, 33);
+        path = cutWordTo(path, 35);
         addShape("text", {
           attrs: {
             textBaseline: "top",

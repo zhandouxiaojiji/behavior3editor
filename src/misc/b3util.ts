@@ -207,7 +207,7 @@ export const refreshTreeDataId = (data: TreeGraphData, id?: number) => {
 };
 
 export const calcTreeDataSize = (data: TreeGraphData) => {
-  let height = 40 + 2;
+  let height = 50 + 2;
   const updateHeight = (obj: any) => {
     if (Array.isArray(obj) || (obj && Object.keys(obj).length > 0)) {
       const { str, line } = toBreakWord(`参数:${JSON.stringify(obj)}`, 35);
@@ -220,7 +220,7 @@ export const calcTreeDataSize = (data: TreeGraphData) => {
   updateHeight(data.args);
   updateHeight(data.input);
   updateHeight(data.output);
-  return [200, height];
+  return [220, height];
 };
 
 export const checkTreeData = (data: TreeGraphData) => {
@@ -378,13 +378,17 @@ const isAsciiChar = (c: number) => {
   return (c >= 0x0001 && c <= 0x007e) || (0xff60 <= c && c <= 0xff9f);
 };
 
+const isUppercase = (c: number) => {
+  return c >= 0x0041 && c <= 0x005a;
+};
+
 export const toBreakWord = (str: string, maxlen: number) => {
   const chars: string[] = [];
   let line = 1;
   let len = 0;
   for (let i = 0; i < str.length; i++) {
     const c = str.charCodeAt(i);
-    len += isAsciiChar(c) ? 1 : 2;
+    len += isAsciiChar(c) ? (isUppercase(c) ? 1.5 : 1) : 2;
     chars.push(String.fromCharCode(c));
     if (len >= maxlen && i < str.length - 1) {
       len = 0;
@@ -402,7 +406,7 @@ export const cutWordTo = (str: string, maxlen: number) => {
   let i = 0;
   for (; i < str.length; i++) {
     const c = str.charCodeAt(i);
-    maxlen -= isAsciiChar(c) ? 1 : 2;
+    maxlen -= isAsciiChar(c) ? (isUppercase(c) ? 1.5 : 1) : 2;
     if (maxlen <= 0) {
       break;
     }

@@ -730,7 +730,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         direction: "LR",
         getHGap: () => 60,
         getWidth: (d: TreeGraphData) => {
-          return 150;
+          return 160;
         },
         getHeight: (d: TreeGraphData) => {
           if (d.size) {
@@ -1145,10 +1145,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       if (data.parent) {
         recursiveFun(data.parent);
       }
-    }
+    };
     recursiveFun(id);
     updateGrahp();
-  }
+  };
 
   return (
     <div
