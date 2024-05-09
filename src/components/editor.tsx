@@ -161,6 +161,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     });
     if (option.results.length > 0) {
       const idx = option.index < option.results.length ? option.index : 0;
+      recursiveOpenCollapsed(option.results[idx]);
       editor.graph.focusItem(option.results[idx]);
       selectNode(option.results[idx]);
     } else {
@@ -1079,6 +1080,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     const { results, index } = filterOption;
     if (results.length > 0) {
       const idx = (index + 1) % results.length;
+      recursiveOpenCollapsed(results[idx]);
       editor.graph.focusItem(results[idx]);
       selectNode(results[idx]);
       setFilterOption({ ...filterOption, index: idx });
@@ -1089,6 +1091,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     const { results, index } = filterOption;
     if (results.length > 0) {
       const idx = (index + results.length - 1) % results.length;
+      recursiveOpenCollapsed(results[idx]);
       editor.graph.focusItem(results[idx]);
       selectNode(results[idx]);
       setFilterOption({ ...filterOption, index: idx });
@@ -1132,6 +1135,20 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       searchByType("id");
     }
   };
+
+  const recursiveOpenCollapsed = (id: string) => {
+    const recursiveFun = (searchId: string) => {
+      const data = findDataById(searchId);
+      if (searchId !== id && data.collapsed) {
+        data.collapsed = undefined;
+      }
+      if (data.parent) {
+        recursiveFun(data.parent);
+      }
+    }
+    recursiveFun(id);
+    updateGrahp();
+  }
 
   return (
     <div
