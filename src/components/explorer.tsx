@@ -835,6 +835,7 @@ export const Explorer: FC = () => {
           tabIndex={-1}
           fieldNames={{ key: "title" }}
           treeData={nodeTree ? [nodeTree] : []}
+          defaultExpandedKeys={[nodeTree.title]}
           draggable={{ icon: false, nodeDraggable: (node) => !!node.isLeaf }}
           titleRender={(node) => (
             <div style={{ flex: 1, width: 0, minWidth: 0 }}>
