@@ -193,7 +193,7 @@ G6.registerNode(
       addShape("image", {
         attrs: {
           x: 5,
-          y: 4,
+          y: 3.5,
           height: 16,
           width: 16,
           img,
@@ -208,10 +208,9 @@ G6.registerNode(
           x: 25,
           y: 5,
           fontWeight: 800,
-          lineHeight: 20,
           text: cfg.name,
           fill: textColor,
-          fontSize: 14,
+          fontSize: 13,
         },
         name: "name-text",
       });
@@ -266,7 +265,7 @@ G6.registerNode(
 
       const args: any = cfg.args;
       if (nodeDef.args && args && Object.keys(args).length > 0) {
-        const { str, line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 37);
+        const { str, line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 36);
         addShape("text", {
           attrs: {
             textBaseline: "top",
