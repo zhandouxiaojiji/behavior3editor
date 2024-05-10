@@ -2,7 +2,18 @@ import { EditNode, EditTree, useWorkspace } from "@/contexts/workspace-context";
 import { NodeArgType, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
 import { Hotkey, isMacos } from "@/misc/keys";
 import Path from "@/misc/path";
-import { AutoComplete, Divider, Flex, Form, Input, InputNumber, Select, Switch } from "antd";
+import { EditOutlined } from "@ant-design/icons";
+import {
+  AutoComplete,
+  Button,
+  Divider,
+  Flex,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Switch,
+} from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { DefaultOptionType } from "antd/es/select";
 import { FC, useEffect, useMemo } from "react";
@@ -382,6 +393,18 @@ const NodeInspector: FC = () => {
             </>
           )}
         </Form>
+        {disabled && (
+          <Flex style={{ paddingTop: "30px" }}>
+            <Button
+              type="primary"
+              style={{ width: "100%" }}
+              icon={<EditOutlined />}
+              onClick={() => workspace.editing?.dispatch("editSubtree")}
+            >
+              {t("editSubtree")}
+            </Button>
+          </Flex>
+        )}
       </div>
     </>
   );
