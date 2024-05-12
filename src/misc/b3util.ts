@@ -4,6 +4,7 @@ import * as fs from "fs";
 import { message } from "./hooks";
 import i18n from "./i18n";
 import Path from "./path";
+import { zhNodeDef } from "./template";
 
 export const isSubtreeRoot = (data: TreeGraphData) => {
   return data.path && data.id.toString() !== "1";
@@ -415,139 +416,7 @@ export const cutWordTo = (str: string, maxlen: number) => {
 };
 
 export const createProject = (path: string) => {
-  fs.writeFileSync(
-    Path.dirname(path) + "/node-config.b3-setting",
-    JSON.stringify(
-      [
-        {
-          name: "AlwaysFail",
-          type: "Decorator",
-          desc: i18n.t("node.alwaysFail.desc"),
-          doc: i18n.t("node.alwaysFail.doc"),
-        },
-        {
-          name: "AlwaysSuccess",
-          type: "Decorator",
-          desc: i18n.t("node.alwaysSuccess.desc"),
-          doc: i18n.t("node.alwaysSuccess.doc"),
-        },
-        {
-          name: "Check",
-          type: "Condition",
-          desc: i18n.t("node.check.desc"),
-          args: [
-            {
-              name: "value",
-              type: "code",
-              desc: i18n.t("node.check.arg1.desc"),
-            },
-          ],
-          doc: i18n.t("node.check.doc"),
-        },
-        {
-          name: "Clear",
-          type: "Action",
-          desc: i18n.t("node.clear.desc"),
-          output: [i18n.t("node.clear.output1")],
-        },
-        {
-          name: "ForEach",
-          type: "Composite",
-          desc: i18n.t("node.forEach.desc"),
-          input: [i18n.t("node.forEach.input1")],
-          output: [i18n.t("node.forEach.output1")],
-          doc: i18n.t("node.forEach.doc"),
-        },
-        {
-          name: "GetTime",
-          type: "Action",
-          desc: i18n.t("node.getTime.desc"),
-          output: [i18n.t("node.getTime.output1")],
-        },
-        {
-          name: "IsNull",
-          type: "Condition",
-          desc: i18n.t("node.isNull.desc"),
-          input: [i18n.t("node.isNull.input1")],
-        },
-        {
-          name: "Log",
-          type: "Action",
-          desc: i18n.t("node.log.desc"),
-          args: [
-            {
-              name: "message",
-              type: "string",
-              desc: i18n.t("node.log.arg1.desc"),
-            },
-          ],
-        },
-        {
-          name: "Loop",
-          type: "Composite",
-          desc: i18n.t("node.loop.desc"),
-          args: [
-            {
-              name: "count",
-              type: "int?",
-              desc: i18n.t("node.loop.arg1.desc"),
-            },
-          ],
-          input: [i18n.t("node.loop.input1") + "?"],
-        },
-        {
-          name: "Not",
-          type: "Decorator",
-          desc: i18n.t("node.not.desc"),
-          doc: i18n.t("node.not.doc"),
-        },
-        {
-          name: "NotNull",
-          type: "Condition",
-          desc: i18n.t("node.notNull.desc"),
-          input: [i18n.t("node.notNull.input")],
-        },
-        {
-          name: "Once",
-          type: "Composite",
-          desc: i18n.t("node.once.desc"),
-          doc: i18n.t("node.once.doc"),
-        },
-        {
-          name: "Parallel",
-          type: "Composite",
-          desc: i18n.t("node.parallel.desc"),
-          doc: i18n.t("node.parallel.doc"),
-        },
-        {
-          name: "Selector",
-          type: "Composite",
-          desc: i18n.t("node.selector.desc"),
-          doc: i18n.t("node.selector.doc"),
-        },
-        {
-          name: "Sequence",
-          type: "Composite",
-          desc: i18n.t("node.sequence.desc"),
-          doc: i18n.t("node.sequence.doc"),
-        },
-        {
-          name: "Wait",
-          type: "Action",
-          desc: i18n.t("node.wait.desc"),
-          args: [
-            {
-              name: "time",
-              type: "float",
-              desc: i18n.t("node.wait.arg1.desc"),
-            },
-          ],
-        },
-      ],
-      null,
-      2
-    )
-  );
+  fs.writeFileSync(Path.dirname(path) + "/node-config.b3-setting", zhNodeDef());
   fs.writeFileSync(
     Path.dirname(path) + "/example.json",
     JSON.stringify(

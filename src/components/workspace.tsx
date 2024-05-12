@@ -65,6 +65,7 @@ export const Workspace: FC = () => {
             workspace.close(workspace.editing.path);
           }
         }
+        keysRef.current?.focus();
       } else if (isHotkeyPressed(Hotkey.SearchTree)) {
         event.preventDefault();
         workspace.onShowingSearch(true);

@@ -7,10 +7,10 @@ import Path from "@/misc/path";
 import G6 from "@antv/g6";
 
 const NODE_COLORS: any = {
-  ["Composite"]: "#5aed20",
-  ["Decorator"]: "#faad14",
+  ["Composite"]: "#34d800",
+  ["Decorator"]: "#ff6700",
   ["Condition"]: "#e4148b",
-  ["Action"]: "#5b90f9",
+  ["Action"]: "#1668dc",
   ["Other"]: "#707070",
   ["Error"]: "#ff0000",
 };
@@ -193,9 +193,9 @@ G6.registerNode(
       addShape("image", {
         attrs: {
           x: 5,
-          y: 3.5,
-          height: 16,
-          width: 16,
+          y: 3,
+          height: 18,
+          width: 18,
           img,
         },
         name: "node-icon",
@@ -205,7 +205,7 @@ G6.registerNode(
       addShape("text", {
         attrs: {
           textBaseline: "top",
-          x: 25,
+          x: 26,
           y: 5,
           fontWeight: 800,
           text: cfg.name,
