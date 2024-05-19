@@ -364,15 +364,19 @@ export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) =>
   return nodeData;
 };
 
-export const createNewTree = (filename: string) => {
+export const createNewTree = (path: string) => {
   const tree: TreeModel = {
-    name: Path.basenameWithoutExt(filename),
+    name: Path.basenameWithoutExt(path),
     root: {
       id: 1,
       name: "Sequence",
     },
   };
   return tree;
+};
+
+export const isTreeFile = (path: string) => {
+  return path.toLocaleLowerCase().endsWith(".json");
 };
 
 const isAsciiChar = (c: number) => {

@@ -161,14 +161,12 @@ export type WorkspaceStore = {
 
 const loadFileTree = (workdir: string, filename: string) => {
   const fullpath = fs.realpathSync(`${workdir}/${filename}`);
-  if (!fs.existsSync(fullpath)) {
+
+  if (!fs.existsSync(fullpath) || filename.endsWith(".DS_Store")) {
     return;
   }
 
   const stat = fs.statSync(fullpath);
-  if (!(stat.isDirectory() || fullpath.endsWith(".json"))) {
-    return;
-  }
 
   const data: FileTreeType = {
     path: fullpath.replaceAll(Path.sep, "/"),
@@ -492,7 +490,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     let updated = false;
     allFiles.forEach((file) => (file.exists = false));
     const collect = (fileNode?: FileTreeType) => {
-      if (fileNode?.isLeaf) {
+      if (fileNode?.isLeaf && b3util.isTreeFile(fileNode.path)) {
         const path = workspace.relative(fileNode.path);
         let fileMeta = allFiles.get(path);
         if (!fileMeta) {

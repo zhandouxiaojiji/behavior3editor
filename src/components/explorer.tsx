@@ -2,6 +2,7 @@ import { FileTreeType, useWorkspace } from "@/contexts/workspace-context";
 import { NodeDef, getNodeType } from "@/misc/b3type";
 import * as b3util from "@/misc/b3util";
 import { modal } from "@/misc/hooks";
+import i18n from "@/misc/i18n";
 import { Hotkey, isHotkeyPressed, isMacos, useHotkeys } from "@/misc/keys";
 import Path from "@/misc/path";
 import { DownOutlined } from "@ant-design/icons";
@@ -113,6 +114,160 @@ const renameFile = (oldPath: string, newPath: string) => {
     }
   }
   return false;
+};
+
+// file context menu
+const createFileContextMenu = (node: FileTreeType) => {
+  const isTreeFile = b3util.isTreeFile(node.path);
+  const MenuItem: FC<FlexProps> = (itemProps) => {
+    return (
+      <Flex
+        gap="50px"
+        style={{ minWidth: "200px", justifyContent: "space-between", alignItems: "center" }}
+        {...itemProps}
+      ></Flex>
+    );
+  };
+
+  const arr: MenuProps["items"] = [
+    {
+      disabled: !isTreeFile,
+      label: (
+        <MenuItem>
+          <div>{i18n.t("open")}</div>
+        </MenuItem>
+      ),
+      key: "open",
+    },
+    {
+      disabled: !isTreeFile,
+      label: (
+        <MenuItem>
+          <div>{i18n.t("copy")}</div>
+          <div>{isMacos ? "⌘ C" : "Ctrl+C"}</div>
+        </MenuItem>
+      ),
+      key: "copy",
+    },
+    {
+      disabled: !isTreeFile,
+      label: (
+        <MenuItem>
+          <div>{i18n.t("duplicate")}</div>
+          <div>{isMacos ? "⌘ D" : "Ctrl+D"}</div>
+        </MenuItem>
+      ),
+      key: "duplicate",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{isMacos ? i18n.t("revealFileOnMac") : i18n.t("revealFileOnWindows")}</div>
+        </MenuItem>
+      ),
+      key: "revealFile",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{i18n.t("rename")}</div>
+          {isMacos && <IoMdReturnLeft />}
+          {!isMacos && <div>F2</div>}
+        </MenuItem>
+      ),
+      key: "rename",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{i18n.t("delete")}</div>
+          {isMacos && (
+            <Space size={6}>
+              <FiCommand />
+              <FiDelete />
+            </Space>
+          )}
+        </MenuItem>
+      ),
+      key: "delete",
+    },
+  ];
+  return arr;
+};
+
+// folder context menu
+const createFolderContextMenu = (copiedPath: string) => {
+  const MenuItem: FC<FlexProps> = (itemProps) => {
+    return (
+      <Flex
+        gap="50px"
+        style={{ minWidth: "200px", justifyContent: "space-between", alignItems: "center" }}
+        {...itemProps}
+      ></Flex>
+    );
+  };
+
+  const arr: MenuProps["items"] = [
+    {
+      label: (
+        <MenuItem>
+          <div>{i18n.t("newFile")}</div>
+        </MenuItem>
+      ),
+      key: "newFile",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{i18n.t("newFolder")}</div>
+        </MenuItem>
+      ),
+      key: "newFolder",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{isMacos ? i18n.t("revealFileOnMac") : i18n.t("revealFileOnWindows")}</div>
+        </MenuItem>
+      ),
+      key: "revealFile",
+    },
+    {
+      disabled: !copiedPath,
+      label: (
+        <MenuItem>
+          <div>{i18n.t("paste")}</div>
+          <div>{isMacos ? "⌘ V" : "Ctrl+V"}</div>
+        </MenuItem>
+      ),
+      key: "paste",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{i18n.t("rename")}</div>
+          {isMacos && <IoMdReturnLeft />}
+          {!isMacos && <div>F2</div>}
+        </MenuItem>
+      ),
+      key: "rename",
+    },
+    {
+      label: (
+        <MenuItem>
+          <div>{i18n.t("delete")}</div>
+          {isMacos && (
+            <Space size={6}>
+              <FiCommand />
+              <FiDelete />
+            </Space>
+          )}
+        </MenuItem>
+      ),
+      key: "delete",
+    },
+  ];
+  return arr;
 };
 
 export const Explorer: FC = () => {
@@ -237,8 +392,7 @@ export const Explorer: FC = () => {
       const node = findFile(selectedKeys[0], workspace.fileTree!);
       if (isHotkeyPressed(Hotkey.F2) || (isMacos && isHotkeyPressed(Hotkey.Enter))) {
         if (node && node !== workspace.fileTree) {
-          node.editing = true;
-          setNewName("");
+          dispatch("rename", node);
         }
       } else if (isHotkeyPressed(Hotkey.Delete) || isHotkeyPressed(Hotkey.MacDelete)) {
         if (node && node !== workspace.fileTree) {
@@ -283,12 +437,12 @@ export const Explorer: FC = () => {
       node.title = Path.basename(node.path);
       fs.mkdirSync(node.path);
     } else if (node.path.endsWith("/.json")) {
-      node.path = Path.dirname(node.path) + "/" + newName.replace(/[^\w. _-]+/g, "") + ".json";
+      node.path = Path.dirname(node.path) + "/" + newName.replace(/[^\w. _-]+/g, "");
       node.title = Path.basename(node.path);
       fs.writeFileSync(node.path, JSON.stringify(b3util.createNewTree(node.title), null, 2));
       workspace.open(node.path);
     } else {
-      const newpath = Path.dirname(node.path) + "/" + newName + Path.extname(node.path);
+      const newpath = Path.dirname(node.path) + "/" + newName;
       if (renameFile(node.path, newpath)) {
         setSelectedKeys([newpath]);
       }
@@ -300,7 +454,9 @@ export const Explorer: FC = () => {
   const dispatch = (event: MenuEvent, node: FileTreeType, dest?: FileTreeType) => {
     switch (event) {
       case "open": {
-        workspace.open(node.path);
+        if (b3util.isTreeFile(node.path)) {
+          workspace.open(node.path);
+        }
         break;
       }
       case "newFolder": {
@@ -320,7 +476,7 @@ export const Explorer: FC = () => {
       case "newFile": {
         const folderNode: FileTreeType = {
           path: node.path + "/.json",
-          title: "",
+          title: ".json",
           isLeaf: true,
           editing: true,
         };
@@ -385,17 +541,21 @@ export const Explorer: FC = () => {
         break;
       }
       case "copy": {
-        setCopyFile(node.path);
+        if (b3util.isTreeFile(node.path)) {
+          setCopyFile(node.path);
+        }
         break;
       }
       case "duplicate": {
-        for (let i = 1; ; i++) {
-          const dupName = Path.basenameWithoutExt(node.path) + " " + i + ".json";
-          const dupPath = Path.dirname(node.path) + "/" + dupName;
-          if (!fs.existsSync(dupPath)) {
-            fs.copyFileSync(node.path, dupPath);
-            setSelectedKeys([dupPath]);
-            break;
+        if (b3util.isTreeFile(node.path)) {
+          for (let i = 1; ; i++) {
+            const dupName = Path.basenameWithoutExt(node.path) + " " + i + ".json";
+            const dupPath = Path.dirname(node.path) + "/" + dupName;
+            if (!fs.existsSync(dupPath)) {
+              fs.copyFileSync(node.path, dupPath);
+              setSelectedKeys([dupPath]);
+              break;
+            }
           }
         }
         break;
@@ -491,12 +651,16 @@ export const Explorer: FC = () => {
       }
       case "move": {
         try {
-          const newPath = dest!.path + "/" + Path.basename(node.path);
+          const destDir = dest?.children ? dest.path : Path.dirname(dest!.path);
+          if (destDir === Path.dirname(node.path)) {
+            return;
+          }
+          const newPath = destDir + "/" + Path.basename(node.path);
           const doMove = () => {
             fs.renameSync(node.path, newPath);
             for (const editor of workspace.editors) {
               if (editor.path.startsWith(node.path)) {
-                editor.dispatch("rename", dest!.path + "/" + Path.basename(editor.path));
+                editor.dispatch("rename", destDir + "/" + Path.basename(editor.path));
               }
               console.log("editor move", editor.path === newPath, editor.path, newPath);
               if (editor.path.startsWith(newPath)) {
@@ -554,160 +718,14 @@ export const Explorer: FC = () => {
         ipcRenderer.invoke("showItemInFolder", node.path);
         break;
       case "rename": {
-        node.editing = true;
-        setNewName("");
+        if (b3util.isTreeFile(node.path)) {
+          node.editing = true;
+          setNewName("");
+        }
         break;
       }
     }
   };
-
-  // context menu
-  const fileContextMenu = useMemo(() => {
-    const MenuItem: FC<FlexProps> = (itemProps) => {
-      return (
-        <Flex
-          gap="50px"
-          style={{ minWidth: "200px", justifyContent: "space-between", alignItems: "center" }}
-          {...itemProps}
-        ></Flex>
-      );
-    };
-
-    const arr: MenuProps["items"] = [
-      {
-        label: (
-          <MenuItem>
-            <div>{t("open")}</div>
-          </MenuItem>
-        ),
-        key: "open",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("copy")}</div>
-            <div>{isMacos ? "⌘ C" : "Ctrl+C"}</div>
-          </MenuItem>
-        ),
-        key: "copy",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("duplicate")}</div>
-            <div>{isMacos ? "⌘ D" : "Ctrl+D"}</div>
-          </MenuItem>
-        ),
-        key: "duplicate",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{isMacos ? t("revealFileOnMac") : t("revealFileOnWindows")}</div>
-          </MenuItem>
-        ),
-        key: "revealFile",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("rename")}</div>
-            {isMacos && <IoMdReturnLeft />}
-            {!isMacos && <div>F2</div>}
-          </MenuItem>
-        ),
-        key: "rename",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("delete")}</div>
-            {isMacos && (
-              <Space size={6}>
-                <FiCommand />
-                <FiDelete />
-              </Space>
-            )}
-          </MenuItem>
-        ),
-        key: "delete",
-      },
-    ];
-    return arr;
-  }, [t]);
-
-  const directoryContextMenu = useMemo(() => {
-    const MenuItem: FC<FlexProps> = (itemProps) => {
-      return (
-        <Flex
-          gap="50px"
-          style={{ minWidth: "200px", justifyContent: "space-between", alignItems: "center" }}
-          {...itemProps}
-        ></Flex>
-      );
-    };
-
-    const arr: MenuProps["items"] = [
-      {
-        label: (
-          <MenuItem>
-            <div>{t("newFile")}</div>
-          </MenuItem>
-        ),
-        key: "newFile",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("newFolder")}</div>
-          </MenuItem>
-        ),
-        key: "newFolder",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{isMacos ? t("revealFileOnMac") : t("revealFileOnWindows")}</div>
-          </MenuItem>
-        ),
-        key: "revealFile",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div style={{ color: copyFile ? "inherit" : "gray" }}>{t("paste")}</div>
-            <div style={{ color: copyFile ? "inherit" : "gray" }}>{isMacos ? "⌘ V" : "Ctrl+V"}</div>
-          </MenuItem>
-        ),
-        key: "paste",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("rename")}</div>
-            {isMacos && <IoMdReturnLeft />}
-            {!isMacos && <div>F2</div>}
-          </MenuItem>
-        ),
-        key: "rename",
-      },
-      {
-        label: (
-          <MenuItem>
-            <div>{t("delete")}</div>
-            {isMacos && (
-              <Space size={6}>
-                <FiCommand />
-                <FiDelete />
-              </Space>
-            )}
-          </MenuItem>
-        ),
-        key: "delete",
-      },
-    ];
-    return arr;
-  }, [t, copyFile]);
 
   const onClick = (info: MenuInfo) => {
     const node = findFile(selectedKeys[0], workspace.fileTree!) ?? workspace.fileTree;
@@ -728,7 +746,7 @@ export const Explorer: FC = () => {
       tabIndex={-1}
       style={{ height: "100%" }}
       onContextMenuCapture={() => {
-        setContextMenu(directoryContextMenu);
+        setContextMenu(createFolderContextMenu(copyFile));
       }}
     >
       <div style={{ padding: "12px 24px" }}>
@@ -750,34 +768,36 @@ export const Explorer: FC = () => {
               }}
               onRightClick={(info) => {
                 if (info.node.isLeaf) {
-                  setContextMenu(fileContextMenu);
+                  setContextMenu(createFileContextMenu(info.node));
                 }
                 setSelectedKeys([info.node.path]);
               }}
               onSelect={(_, info) => {
                 const node = info.selectedNodes.at(0);
                 if (node) {
-                  if (!node.children) {
-                    workspace.open(node.path);
-                  }
+                  dispatch("open", node);
                   setSelectedKeys([node.path]);
-                }
-                if (node && !node.children) {
-                  workspace.open(node.path);
                 }
               }}
               onDrop={(info) => {
                 dispatch("move", info.dragNode, info.node);
               }}
               titleRender={(node) => {
+                const value = Path.basename(node.title);
                 if (node.editing) {
                   return (
                     <div style={{ display: "inline-flex" }}>
                       <Input
-                        defaultValue={Path.basenameWithoutExt(node.title)}
+                        defaultValue={value}
                         autoFocus
                         style={{ padding: "0px 0px", borderRadius: "2px" }}
-                        onFocus={(e) => e.target.select()}
+                        onFocus={(e) => {
+                          if (value.startsWith(".")) {
+                            e.target.setSelectionRange(0, 0);
+                          } else {
+                            e.target.setSelectionRange(0, value.lastIndexOf("."));
+                          }
+                        }}
                         onChange={(e) => setNewName(e.target.value)}
                         onPressEnter={() => {
                           if (newName) {
@@ -817,14 +837,21 @@ export const Explorer: FC = () => {
                   );
                 }
               }}
-              allowDrop={(options) => {
-                return !options.dropNode.isLeaf;
-              }}
               onDragStart={(e) => {
                 e.event.dataTransfer.setData("explore-file", e.node.path);
               }}
               defaultExpandedKeys={[workspace.fileTree.path]}
-              draggable={newName !== null ? false : { icon: false }}
+              draggable={
+                newName !== null
+                  ? false
+                  : {
+                      icon: false,
+                      nodeDraggable: (node) => {
+                        const fileNode = node as unknown as FileTreeType;
+                        return !!fileNode.children || b3util.isTreeFile(fileNode.path);
+                      },
+                    }
+              }
               expandedKeys={expandedKeys}
               switcherIcon={<DownOutlined />}
               selectedKeys={selectedKeys}
