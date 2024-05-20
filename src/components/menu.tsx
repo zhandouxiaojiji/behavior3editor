@@ -213,6 +213,24 @@ export const Menu: FC<LayoutProps> = () => {
               getFocusedWebContents()?.paste();
             },
           },
+          {
+            id: 'menu.edit.cut',
+            label: t('cut'),
+            enabled: enabled,
+            accelerator: Hotkey.Cut,
+            click: () => {
+              getFocusedWebContents()?.cut()
+            }
+          },
+          {
+            id: 'menu.edit.selectAll',
+            label: t('selectAll'),
+            enabled: enabled,
+            accelerator: Hotkey.SelectAll,
+            click: () => {
+              getFocusedWebContents()?.selectAll()
+            }
+          },
           { type: "separator" },
           {
             id: "menu.edit.insertNode",

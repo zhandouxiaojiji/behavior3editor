@@ -46,6 +46,7 @@ export const Hotkey = {
   Build: hotkey("ctrl+b"),
   CloseEditor: hotkey("ctrl+w"),
   Copy: hotkey("ctrl+c"),
+  Cut: hotkey('ctrl+x'),
   Delete: Key.Delete,
   Duplicate: hotkey("ctrl+d"),
   Enter: Key.Enter,
@@ -60,6 +61,7 @@ export const Hotkey = {
   Save: hotkey("ctrl+s"),
   SearchTree: hotkey("ctrl+p"),
   SearchNode: hotkey("ctrl+f"),
+  SelectAll: hotkey('ctrl+a'),
   Undo: hotkey("ctrl+z"),
 };
 
