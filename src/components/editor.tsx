@@ -390,12 +390,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const selectNode = (id: string | null) => {
-    if (id && id === editor.selectedId) {
-      setItemState(editor.selectedId, "selected", true);
-      setItemState(editor.selectedId, "hover", false);
-      return;
-    }
-
     if (editor.selectedId) {
       setItemState(editor.selectedId, "selected", false);
       setItemState(editor.selectedId, "hover", false);
@@ -405,7 +399,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
     if (editor.selectedId) {
       const data = findDataById(editor.selectedId);
-      workspace.onEditingTree(null);
       workspace.onEditingNode({
         data: b3util.createNode(data, false),
         editable: !isSubtreeNode(data),

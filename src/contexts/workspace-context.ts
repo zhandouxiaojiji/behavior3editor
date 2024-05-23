@@ -56,6 +56,8 @@ export class EditorStore {
   graphMatrix?: Matrix;
   graph!: TreeGraph;
 
+  editNode: EditNode | null = null;
+
   dispatch!: (event: EditEvent, data?: unknown) => void;
 
   constructor(path: string) {
@@ -389,17 +391,21 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   edit: (path) => {
     const workspace = get();
     const editor = workspace.editors.find((v) => v.path === path);
-    set({ editing: editor, editingNode: null });
+    set({ editing: editor, editingNode: null, editingTree: null });
     if (editor) {
-      set({
-        editingTree: {
-          data: {
-            name: editor.name,
-            desc: editor.desc,
-            root: null!,
+      if (editor.editNode) {
+        workspace.onEditingNode(editor.editNode);
+      } else {
+        set({
+          editingTree: {
+            data: {
+              name: editor.name,
+              desc: editor.desc,
+              root: null!,
+            },
           },
-        },
-      });
+        });
+      }
     } else {
       set({ editingNode: null, editingTree: null });
     }
@@ -534,16 +540,28 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
 
   // node edit
   onEditingNode: (node) => {
-    set({ editingNode: node, editingNodeDef: null });
+    const workspace = get();
+    if (workspace.editing) {
+      workspace.editing.editNode = node;
+    }
+    set({ editingNode: node, editingNodeDef: null, editingTree: null });
   },
 
   onEditingNodeDef: (nodeDef) => {
-    set({ editingNodeDef: nodeDef });
+    const workspace = get();
+    if (workspace.editing) {
+      workspace.editing.editNode = null;
+    }
+    set({ editingNodeDef: nodeDef, editingNode: null, editingTree: null });
   },
 
   // tree edit
   onEditingTree: (tree) => {
-    set({ editingTree: tree, editingNodeDef: null });
+    const workspace = get();
+    if (workspace.editing) {
+      workspace.editing.editNode = null;
+    }
+    set({ editingTree: tree, editingNodeDef: null, editingNode: null });
   },
 
   // node def
