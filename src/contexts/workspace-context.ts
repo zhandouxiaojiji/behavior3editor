@@ -11,6 +11,7 @@ import React from "react";
 import { create } from "zustand";
 import { useSetting } from "./setting-context";
 import { ipcRenderer } from "electron";
+import { Editor } from "../components/editor";
 
 let buildDir: string | undefined;
 
@@ -42,6 +43,7 @@ export class EditorStore {
   path: string;
   data: TreeGraphData;
   desc: string;
+  export: boolean;
   name: string;
 
   autoId: number = 1;
@@ -66,6 +68,7 @@ export class EditorStore {
     const file = readJson(path) as TreeModel;
     this.data = b3util.createTreeData(file.root);
     this.desc = file.desc ?? "";
+    this.export = file.export !== false;
     this.name = file.name || path.slice(0, -5);
     this.autoId = b3util.refreshTreeDataId(this.data);
     this.historyStack.push(b3util.createNode(this.data));
@@ -153,7 +156,7 @@ export type WorkspaceStore = {
 
   // edit tree
   editingTree?: EditTree | null;
-  onEditingTree: (tree: EditTree | null) => void;
+  onEditingTree: (editor: EditorStore) => void;
 
   // node setting
   nodeDefs: Map<string, NodeDef>;
@@ -275,8 +278,12 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         let hasError = false;
         workspace.allFiles.forEach((file) => {
           const buildpath = buildDir + "/" + workspace.relative(file.path);
-          console.log("build:", buildpath);
           const treeModel = b3util.createBuildData(file.path);
+          if (treeModel && treeModel.export === false) {
+            console.log("skip:", buildpath);
+            return;
+          }
+          console.log("build:", buildpath);
           if (!b3util.checkNodeData(treeModel?.root)) {
             hasError = true;
           }
@@ -396,15 +403,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       if (editor.editNode) {
         workspace.onEditingNode(editor.editNode);
       } else {
-        set({
-          editingTree: {
-            data: {
-              name: editor.name,
-              desc: editor.desc,
-              root: null!,
-            },
-          },
-        });
+        workspace.onEditingTree(editor);
       }
     } else {
       set({ editingNode: null, editingTree: null });
@@ -556,12 +555,23 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   },
 
   // tree edit
-  onEditingTree: (tree) => {
+  onEditingTree: (editor) => {
     const workspace = get();
     if (workspace.editing) {
       workspace.editing.editNode = null;
     }
-    set({ editingTree: tree, editingNodeDef: null, editingNode: null });
+    set({
+      editingTree: {
+        data: {
+          name: editor.name,
+          desc: editor.desc,
+          export: editor.export,
+          root: null!,
+        },
+      },
+      editingNodeDef: null,
+      editingNode: null,
+    });
   },
 
   // node def

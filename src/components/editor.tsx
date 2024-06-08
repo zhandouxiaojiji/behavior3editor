@@ -383,8 +383,9 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const updateTree = (editTree: EditTree) => {
-    if (editor.desc !== editTree.data.desc) {
+    if (editor.desc !== editTree.data.desc || editor.export !== editTree.data.export) {
       editor.desc = editTree.data.desc || "";
+      editor.export = editTree.data.export !== false;
       onChange();
     }
   };
@@ -405,13 +406,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       });
       setItemState(editor.selectedId, "selected", true);
     } else {
-      workspace.onEditingTree({
-        data: {
-          name: editor.name,
-          desc: editor.desc,
-          root: null!,
-        },
-      });
+      workspace.onEditingTree(editor);
     }
   };
 
@@ -598,6 +593,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       const treeModel = {
         name: Path.basenameWithoutExt(path),
         root,
+        export: editor.export,
         desc: editor.desc,
       } as TreeModel;
       fs.writeFileSync(path, JSON.stringify(treeModel, null, 2));

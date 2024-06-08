@@ -71,6 +71,7 @@
   "tree.overview": "Overview",
   "tree.name": "Tree name",
   "tree.desc": "Tree desc",
+  "tree.export": "Export",
 
   "regnode.input": "Input: ",
   "regnode.output": "Output: ",

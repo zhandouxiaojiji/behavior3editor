@@ -38,16 +38,15 @@ const TreeInspector: FC = () => {
     form.resetFields();
     form.setFieldValue("name", data.name);
     form.setFieldValue("desc", data.desc);
+    form.setFieldValue("export", data.export !== false);
   }, [workspace.editingTree]);
 
   const finish = (values: any) => {
-    const data = {} as TreeModel;
-    data.name = values.name;
-    data.desc = values.desc || undefined;
     workspace.editing?.dispatch("updateTree", {
       data: {
         name: values.name,
         desc: values.desc || undefined,
+        export: values.export,
       },
     } as EditTree);
   };
@@ -67,6 +66,9 @@ const TreeInspector: FC = () => {
           </Form.Item>
           <Form.Item name="desc" label={t("tree.desc")}>
             <TextArea autoSize onBlur={form.submit} />
+          </Form.Item>
+          <Form.Item name="export" label={t("tree.export")} valuePropName="checked">
+            <Switch onChange={() => form.submit()} />
           </Form.Item>
         </Form>
       </div>

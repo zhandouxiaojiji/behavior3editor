@@ -71,6 +71,7 @@
   "tree.overview": "概况",
   "tree.name": "行为树",
   "tree.desc": "说明",
+  "tree.export": "导出",
 
   "regnode.input": "输入：",
   "regnode.output": "输出：",

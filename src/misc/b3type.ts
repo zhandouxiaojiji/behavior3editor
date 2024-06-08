@@ -43,6 +43,7 @@ export interface NodeModel {
 export interface TreeModel {
   name: string;
   desc?: string;
+  export?: boolean;
   root: NodeModel;
 }
 
