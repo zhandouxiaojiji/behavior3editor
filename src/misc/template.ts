@@ -247,7 +247,7 @@ namespace zh {
           type: "Decorator",
           desc: "只执行一次",
           doc: `
-            + 可以接多个子节点，子节点默认全部执行
+            + 只能有一个子节点，多个仅执行第一个
             + 被打断后该节点后的子节点依旧不会执行
             + 该节点执行后永远返回「成功」`,
         };
@@ -281,6 +281,77 @@ namespace zh {
             + 只能有一个子节点，多个仅执行第一个
             + 只有当子节点返回「成功」时，才返回「成功」，其它情况返回「运行中」状态
             + 如果设定了尝试次数，超过指定次数则返回「失败」`,
+        };
+      }
+    }
+
+    export class Timeout extends Process {
+      override get descriptor(): NodeDef {
+        return {
+          name: "Timeout",
+          type: "Decorator",
+          desc: "超时",
+          args: [{ name: "time", type: "float", desc: "超时时间" }],
+          doc: `
+              + 只能有一个子节点，多个仅执行第一个
+              + 当子节点执行超时或返回「失败」时，返回「失败」
+              + 其余情况返回子节点的执行状态
+              `,
+        };
+      }
+    }
+
+    const enum TreeEvent {
+      INTERRUPTED = "interrupted",
+      BEFORE_RUN = "beforeRun",
+      AFTER_RUN = "afterRun",
+      AFTER_RUN_SUCCESS = "afterRunSuccess",
+      AFTER_RUN_FAILURE = "afterRunFailure",
+    }
+
+    export class Listen extends Process {
+      override get descriptor(): NodeDef {
+        return {
+          name: "Listen",
+          type: "Decorator",
+          desc: "侦听行为树事件",
+          args: [
+            {
+              name: "builtin",
+              type: "enum",
+              desc: "事件",
+              options: [
+                {
+                  name: "行为树被中断",
+                  value: TreeEvent.INTERRUPTED,
+                },
+                {
+                  name: "行为树开始执行前",
+                  value: TreeEvent.BEFORE_RUN,
+                },
+                {
+                  name: "行为树执行完成后",
+                  value: TreeEvent.AFTER_RUN,
+                },
+                {
+                  name: "行为树执行成功后",
+                  value: TreeEvent.AFTER_RUN_SUCCESS,
+                },
+                {
+                  name: "行为树执行失败后",
+                  value: TreeEvent.AFTER_RUN_FAILURE,
+                },
+              ],
+            },
+            {
+              name: "event",
+              type: "string?",
+              desc: "自定义事件",
+            },
+          ],
+          doc: `
+            + 当事件触发时，执行第一个子节点，多个仅执行第一个
+            + 如果子节点返回 「运行中」，会中断执行并清理执行栈`,
         };
       }
     }
@@ -319,5 +390,7 @@ export const zhNodeDef = () => {
     zh.decorator.Once,
     zh.decorator.RepeatUntilFailure,
     zh.decorator.RepeatUntilSuccess,
+    zh.decorator.Timeout,
+    zh.decorator.Listen,
   ]);
 };

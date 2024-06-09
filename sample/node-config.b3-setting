@@ -2,14 +2,233 @@
   {
     "name": "AlwaysFail",
     "type": "Decorator",
-    "doc": "+ 只能有一个子节点,多个仅执行第一个\n+ 不管子节点是否成功都返回失败\n",
-    "desc": "始终返回失败"
+    "desc": "始终返回失败",
+    "doc": "+ 只能有一个子节点，多个仅执行第一个\n+ 不管子节点是否成功都返回「失败」"
   },
   {
     "name": "AlwaysSuccess",
     "type": "Decorator",
-    "doc": "+ 只能有一个子节点,多个仅执行第一个\n+ 不管子节点是否成功都返回成功\n",
-    "desc": "始终返回成功"
+    "desc": "始终返回成功",
+    "doc": "+ 只能有一个子节点，多个仅执行第一个\n+ 不管子节点是否成功都返回「成功」"
+  },
+  {
+    "name": "Check",
+    "type": "Condition",
+    "desc": "检查True或False",
+    "args": [
+      {
+        "name": "value",
+        "type": "code",
+        "desc": "值"
+      }
+    ],
+    "doc": "+ 做简单数值公式判定，返回「成功」或「失败」"
+  },
+  {
+    "name": "Clear",
+    "type": "Action",
+    "desc": "清除变量",
+    "output": [
+      "清除的变量名"
+    ]
+  },
+  {
+    "name": "ForEach",
+    "type": "Composite",
+    "desc": "遍历数组",
+    "input": [
+      "数组"
+    ],
+    "output": [
+      "变量"
+    ],
+    "doc": "+ 每次执行子节点前会设置当前遍历到的变量\n+ 会执行所有子节点\n+ 永远返回「成功」/「运行中」"
+  },
+  {
+    "name": "Inverter",
+    "type": "Decorator",
+    "desc": "反转子节点运行结果",
+    "doc": "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点返回「成功」时返回「失败」\n+ 当子节点返回「失败」时返回「成功」\n+ 其余返回「运行中」"
+  },
+  {
+    "name": "IsNull",
+    "type": "Condition",
+    "desc": "判断变量是否不存在",
+    "input": [
+      "判断的变量"
+    ]
+  },
+  {
+    "name": "Listen",
+    "type": "Decorator",
+    "desc": "侦听行为树事件",
+    "args": [
+      {
+        "name": "builtin",
+        "type": "enum",
+        "desc": "事件",
+        "options": [
+          {
+            "name": "行为树被中断",
+            "value": "interrupted"
+          },
+          {
+            "name": "行为树开始执行前",
+            "value": "beforeRun"
+          },
+          {
+            "name": "行为树执行完成后",
+            "value": "afterRun"
+          },
+          {
+            "name": "行为树执行成功后",
+            "value": "afterRunSuccess"
+          },
+          {
+            "name": "行为树执行失败后",
+            "value": "afterRunFailure"
+          }
+        ]
+      },
+      {
+        "name": "event",
+        "type": "string?",
+        "desc": "自定义事件"
+      }
+    ],
+    "doc": "+ 当事件触发时，执行第一个子节点，多个仅执行第一个\n+ 如果子节点返回 「运行中」，会中断执行并清理执行栈"
+  },
+  {
+    "name": "Log",
+    "type": "Action",
+    "desc": "打印日志",
+    "args": [
+      {
+        "name": "message",
+        "type": "string",
+        "desc": "日志"
+      }
+    ]
+  },
+  {
+    "name": "Loop",
+    "type": "Composite",
+    "desc": "循环执行",
+    "input": [
+      "循环次数?"
+    ],
+    "args": [
+      {
+        "name": "count",
+        "type": "int",
+        "desc": "循环次数"
+      }
+    ]
+  },
+  {
+    "name": "NotNull",
+    "type": "Condition",
+    "desc": "判断变量是否存在",
+    "input": [
+      "判断的变量"
+    ]
+  },
+  {
+    "name": "Now",
+    "type": "Action",
+    "desc": "获取当前时间",
+    "output": [
+      "当前时间"
+    ]
+  },
+  {
+    "name": "Once",
+    "type": "Decorator",
+    "desc": "只执行一次",
+    "doc": "+ 只能有一个子节点，多个仅执行第一个\n+ 被打断后该节点后的子节点依旧不会执行\n+ 该节点执行后永远返回「成功」"
+  },
+  {
+    "name": "Parallel",
+    "type": "Composite",
+    "desc": "并行执行",
+    "doc": "执行所有子节点并返回「成功」/「运行中」"
+  },
+  {
+    "name": "RepeatUntilFailure",
+    "type": "Decorator",
+    "desc": "一直尝试直到子节点返回失败",
+    "input": [
+      "最大循环次数?"
+    ],
+    "args": [
+      {
+        "name": "maxLoop",
+        "type": "int?",
+        "desc": "最大循环次数"
+      }
+    ],
+    "doc": "+ 只能有一个子节点，多个仅执行第一个\n+ 只有当子节点返回「失败」时，才返回「成功」，其它情况返回「运行中」状态\n+ 如果设定了尝试次数，超过指定次数则返回「失败」"
+  },
+  {
+    "name": "RepeatUntilSuccess",
+    "type": "Decorator",
+    "desc": "一直尝试直到子节点返回成功",
+    "input": [
+      "最大循环次数?"
+    ],
+    "args": [
+      {
+        "name": "maxLoop",
+        "type": "int?",
+        "desc": "最大循环次数"
+      }
+    ],
+    "doc": "+ 只能有一个子节点，多个仅执行第一个\n+ 只有当子节点返回「成功」时，才返回「成功」，其它情况返回「运行中」状态\n+ 如果设定了尝试次数，超过指定次数则返回「失败」"
+  },
+  {
+    "name": "Selector",
+    "type": "Composite",
+    "desc": "选择执行",
+    "doc": "+ 一直往下执行，有子节点返回「成功」则返回「成功」\n+ 若全部节点返回「失败」则返回「失败」\n+ 子节点是或 (OR) 的关系"
+  },
+  {
+    "name": "Sequence",
+    "type": "Composite",
+    "desc": "顺序执行",
+    "doc": "+ 一直往下执行，只有当所有子节点都返回「成功」, 才返回「成功」\n+ 子节点是与（AND）的关系"
+  },
+  {
+    "name": "Timeout",
+    "type": "Decorator",
+    "desc": "超时",
+    "args": [
+      {
+        "name": "time",
+        "type": "float",
+        "desc": "超时时间"
+      }
+    ],
+    "doc": "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点执行超时或返回「失败」时，返回「失败」\n+ 其余情况返回子节点的执行状态\n"
+  },
+  {
+    "name": "Wait",
+    "type": "Action",
+    "desc": "等待",
+    "input": [
+      "等待时间?"
+    ],
+    "args": [
+      {
+        "name": "time",
+        "type": "float",
+        "desc": "等待时间"
+      },
+      {
+        "name": "random",
+        "type": "float?",
+        "desc": "随机范围"
+      }
+    ]
   },
   {
     "name": "Attack",
@@ -111,18 +330,6 @@
     "desc": "待机"
   },
   {
-    "name": "Log",
-    "type": "Action",
-    "args": [
-      {
-        "name": "str",
-        "desc": "日志",
-        "type": "string"
-      }
-    ],
-    "desc": "打印日志"
-  },
-  {
     "name": "MoveToPos",
     "type": "Action (Client)",
     "args": [
@@ -146,42 +353,6 @@
       "{目标}"
     ],
     "desc": "移动到目标"
-  },
-  {
-    "name": "Not",
-    "type": "Decorator",
-    "doc": "+ 将子节点的返回值取反\n",
-    "desc": "取反"
-  },
-  {
-    "name": "Parallel",
-    "type": "Composite",
-    "doc": "执行所有子节点并返回成功\n",
-    "desc": "并行执行"
-  },
-  {
-    "name": "Selector",
-    "type": "Composite",
-    "doc": "+ 一直往下执行，有子节点返回成功则返回成功，若全部节点返回失败则返回失败\n+ 子节点是或的关系\n",
-    "desc": "选择执行"
-  },
-  {
-    "name": "Sequence",
-    "type": "Composite",
-    "doc": "+ 一直往下执行，有子节点返回成功则返回成功，若全部节点返回失败则返回失败\n+ 子节点是或的关系\n",
-    "desc": "顺序执行"
-  },
-  {
-    "name": "Wait",
-    "type": "Action",
-    "args": [
-      {
-        "name": "time",
-        "desc": "时间/tick",
-        "type": "int"
-      }
-    ],
-    "desc": "等待"
   },
   {
     "name": "TestB3",
