@@ -76,7 +76,13 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   const conf = useWorkspace.getState().getNodeDef(data.name);
   if (conf.input) {
     for (let i = 0; i < conf.input.length; i++) {
-      if (conf.input[i].indexOf("?") === -1 && !data.input?.[i]) {
+      if (!data.input) {
+        data.input = [];
+      }
+      if (!data.input[i]) {
+        data.input[i] = "";
+      }
+      if (conf.input[i].indexOf("?") === -1 && !data.input[i]) {
         console.error(`check ${data.id}|${data.name}: intput field '${conf.input[i]}' is required`);
         hasError = true;
       }
@@ -84,7 +90,13 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   }
   if (conf.output) {
     for (let i = 0; i < conf.output.length; i++) {
-      if (conf.output[i].indexOf("?") === -1 && !data.output?.[i]) {
+      if (!data.output) {
+        data.output = [];
+      }
+      if (!data.output[i]) {
+        data.output[i] = "";
+      }
+      if (conf.output[i].indexOf("?") === -1 && !data.output[i]) {
         console.error(
           `check ${data.id}|${data.name}: output field '${conf.output[i]}' is required`
         );
@@ -136,6 +148,8 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
         hasError = true;
       }
     }
+  } else {
+    data.children = [];
   }
 
   return !hasError;
