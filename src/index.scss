@@ -192,3 +192,12 @@ body {
 .b3-editor-filter-selected {
   background-color: var(--b3-color-selected) !important;
 }
+
+code {
+  background-color: #6e768166;
+  border-radius: 6px;
+  padding: 3px 6px;
+  margin: 0 3px;
+  white-space: break-spaces;
+  box-sizing: border-box;
+}

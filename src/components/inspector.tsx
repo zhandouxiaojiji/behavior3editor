@@ -291,7 +291,7 @@ const NodeInspector: FC = () => {
               }}
             />
           </Form.Item>
-          <Markdown>{def.doc}</Markdown>
+          <Markdown className="b3-markdown">{def.doc}</Markdown>
           {def.input && def.input.length > 0 && (
             <>
               <Divider orientation="left">
@@ -476,7 +476,7 @@ const NodeDefInspector: FC = () => {
           >
             <TextArea autoSize disabled={true} />
           </Form.Item>
-          <Markdown>{data.doc}</Markdown>
+          <Markdown className="b3-markdown">{data.doc}</Markdown>
           {data.input && data.input.length > 0 && (
             <>
               <Divider orientation="left">
