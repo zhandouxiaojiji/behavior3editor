@@ -103,7 +103,7 @@ const NodeInspector: FC = () => {
     form.setFieldValue("disabled", data.disabled);
     form.setFieldValue("path", data.path);
     def.args?.forEach((v) => {
-      form.setFieldValue(`args.${v.name}`, data.args?.[v.name]);
+      form.setFieldValue(`args.${v.name}`, data.args?.[v.name] ?? v.default);
     });
     def.input?.forEach((_, i) => {
       form.setFieldValue(`input.${i}`, data.input?.[i]);
