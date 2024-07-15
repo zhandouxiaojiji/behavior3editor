@@ -160,41 +160,28 @@ export const zhNodeDef = () => {
         args: [
           {
             name: "event",
-            type: "string",
-            desc: "事件",
-          },
-        ],
-        doc: "+ 当事件触发时，执行第一个子节点，多个仅执行第一个\n+ 如果子节点返回 `运行中`，会中断执行并清理执行栈",
-      },
-      {
-        name: "ListenTree",
-        type: "Decorator",
-        desc: "侦听行为树事件",
-        args: [
-          {
-            name: "builtin",
             type: "enum",
             desc: "事件",
             options: [
               {
                 name: "行为树被中断",
-                value: "interrupted",
+                value: "treeInterrupted",
               },
               {
                 name: "行为树开始执行前",
-                value: "beforeRun",
+                value: "beforeRunTree",
               },
               {
                 name: "行为树执行完成后",
-                value: "afterRun",
+                value: "afterRunTree",
               },
               {
                 name: "行为树执行成功后",
-                value: "afterRunSuccess",
+                value: "afterRunTreeSuccess",
               },
               {
                 name: "行为树执行失败后",
-                value: "afterRunFailure",
+                value: "afterRunTreeFailure",
               },
             ],
           },
