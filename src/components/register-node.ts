@@ -201,6 +201,19 @@ G6.registerNode(
         name: "node-icon",
       });
 
+      // status
+      const status = ((cfg.status || 0) as number).toString(2).padStart(3, "0");
+      addShape("image", {
+        attrs: {
+          x: 204,
+          y: 3,
+          height: 18,
+          width: 18,
+          img: `./icons/status${status}.svg`,
+        },
+        name: "status-icon",
+      });
+
       // name text
       addShape("text", {
         attrs: {
@@ -219,7 +232,7 @@ G6.registerNode(
       if (cfg.debug) {
         addShape("image", {
           attrs: {
-            x: 200,
+            x: 192,
             y: 4,
             height: 16,
             width: 16,
@@ -232,7 +245,7 @@ G6.registerNode(
       if (cfg.disabled) {
         addShape("image", {
           attrs: {
-            x: 200 - (cfg.debug ? 18 : 0),
+            x: 200 - (cfg.debug ? 25 : 8),
             y: 4,
             height: 16,
             width: 16,

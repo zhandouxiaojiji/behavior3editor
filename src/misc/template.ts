@@ -4,12 +4,14 @@ export const zhNodeDef = () => {
       {
         name: "AlwaysFail",
         type: "Decorator",
+        status: ["failure", "?running"],
         desc: "始终返回失败",
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 不管子节点是否成功都返回`失败`\n",
       },
       {
         name: "AlwaysSuccess",
         type: "Decorator",
+        status: ["success", "?running"],
         desc: "始终返回成功",
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 不管子节点是否成功都返回`成功`\n",
       },
@@ -17,6 +19,7 @@ export const zhNodeDef = () => {
         name: "Assert",
         type: "Decorator",
         desc: "断言",
+        status: ["success"],
         args: [
           {
             name: "message",
@@ -29,6 +32,7 @@ export const zhNodeDef = () => {
       {
         name: "Calculate",
         type: "Action",
+        status: ["success"],
         desc: "简单的数值公式计算",
         args: [
           {
@@ -43,6 +47,7 @@ export const zhNodeDef = () => {
       {
         name: "Check",
         type: "Condition",
+        status: ["success", "failure"],
         desc: "检查True或False",
         args: [
           {
@@ -56,12 +61,14 @@ export const zhNodeDef = () => {
       {
         name: "Clear",
         type: "Action",
+        status: ["success"],
         desc: "清除变量",
         output: ["清除的变量名"],
       },
       {
         name: "Concat",
         type: "Action",
+        status: ["success", "failure"],
         desc: "将两个输入合并为一个数组，并返回新数组",
         input: ["数组1", "数组2"],
         output: ["新数组"],
@@ -70,6 +77,7 @@ export const zhNodeDef = () => {
       {
         name: "Filter",
         type: "Action",
+        status: ["success", "failure"],
         desc: "返回满足条件的元素",
         input: ["输入数组"],
         output: ["变量", "新数组"],
@@ -78,6 +86,7 @@ export const zhNodeDef = () => {
       {
         name: "ForEach",
         type: "Action",
+        status: ["success", "running", "failure"],
         desc: "遍历数组",
         input: ["数组"],
         output: ["变量"],
@@ -86,6 +95,7 @@ export const zhNodeDef = () => {
       {
         name: "Includes",
         type: "Condition",
+        status: ["success", "failure"],
         desc: "判断元素是否在数组中",
         input: ["数组", "元素"],
         doc: "+ 若输入的元素不合法，返回`失败`\n+ 只有数组包含元素时返回`成功`，否则返回`失败`\n",
@@ -93,6 +103,7 @@ export const zhNodeDef = () => {
       {
         name: "Index",
         type: "Action",
+        status: ["success", "failure"],
         desc: "索引输入的数组或对象",
         args: [
           {
@@ -108,18 +119,21 @@ export const zhNodeDef = () => {
       {
         name: "Inverter",
         type: "Decorator",
+        status: ["!success", "!failure", "?running"],
         desc: "反转子节点运行结果",
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点返回`成功`时返回`失败`\n+ 当子节点返回`失败`时返回`成功`\n",
       },
       {
         name: "IsNull",
         type: "Condition",
+        status: ["success", "failure"],
         desc: "判断变量是否不存在",
         input: ["判断的变量"],
       },
       {
         name: "IsStatus",
         type: "Condition",
+        status: ["success", "failure"],
         desc: "检查子节点状态",
         args: [
           {
@@ -147,6 +161,7 @@ export const zhNodeDef = () => {
       {
         name: "Let",
         type: "Action",
+        status: ["success"],
         desc: "定义新的变量名",
         input: ["变量名"],
         output: ["新变量名"],
@@ -154,6 +169,7 @@ export const zhNodeDef = () => {
       {
         name: "Listen",
         type: "Decorator",
+        status: ["success"],
         desc: "侦听事件",
         input: ["目标对象?"],
         output: ["事件参数?", "事件目标?"],
@@ -191,6 +207,7 @@ export const zhNodeDef = () => {
       {
         name: "Log",
         type: "Action",
+        status: ["success"],
         desc: "打印日志",
         args: [
           {
@@ -227,6 +244,7 @@ export const zhNodeDef = () => {
       {
         name: "Loop",
         type: "Action",
+        status: ["success", "running", "failure"],
         desc: "循环执行",
         input: ["循环次数?"],
         args: [
@@ -241,30 +259,35 @@ export const zhNodeDef = () => {
       {
         name: "NotNull",
         type: "Condition",
+        status: ["success", "failure"],
         desc: "判断变量是否存在",
         input: ["判断的变量"],
       },
       {
         name: "Now",
         type: "Action",
+        status: ["success"],
         desc: "获取当前时间",
         output: ["当前时间"],
       },
       {
         name: "Once",
         type: "Decorator",
+        status: ["success", "failure", "?running"],
         desc: "只执行一次",
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 第一次执行完全部子节点时返回`成功`，之后永远返回`失败`",
       },
       {
         name: "Parallel",
         type: "Composite",
+        status: ["success", "?running"],
         desc: "并行执行",
         doc: "+ 并行执行所有子节点\n+ 当有子节点返回`运行中`时，返回`运行中`状态\n+ 执行完所有子节点后，返回`成功`",
       },
       {
         name: "Push",
         type: "Action",
+        status: ["success", "failure"],
         desc: "向数组中添加元素",
         input: ["数组", "元素"],
         doc: "+ 当变量`数组`不是数组类型时返回`失败`\n+ 其余返回`成功`\n",
@@ -272,6 +295,7 @@ export const zhNodeDef = () => {
       {
         name: "Random",
         type: "Action",
+        status: ["success"],
         desc: "返回一个随机数",
         input: ["最小值?", "最大值?"],
         args: [
@@ -296,6 +320,7 @@ export const zhNodeDef = () => {
       {
         name: "RandomIndex",
         type: "Action",
+        status: ["success", "failure"],
         desc: "随机返回输入的其中一个!",
         input: ["输入目标"],
         output: ["随机目标"],
@@ -304,6 +329,7 @@ export const zhNodeDef = () => {
       {
         name: "RepeatUntilFailure",
         type: "Decorator",
+        status: ["!success", "failure", "?running"],
         desc: "一直尝试直到子节点返回失败",
         input: ["最大循环次数?"],
         args: [
@@ -318,6 +344,7 @@ export const zhNodeDef = () => {
       {
         name: "RepeatUntilSuccess",
         type: "Decorator",
+        status: ["?success", "failure", "?running"],
         desc: "一直尝试直到子节点返回成功",
         input: ["最大循环次数?"],
         args: [
@@ -333,11 +360,13 @@ export const zhNodeDef = () => {
         name: "Selector",
         type: "Composite",
         desc: "选择执行",
+        status: ["?success", "?failure", "?running"],
         doc: "+ 一直往下执行，直到有子节点返回`成功`则返回`成功`\n+ 若全部节点返回`失败`则返回`失败`",
       },
       {
         name: "Sequence",
         type: "Composite",
+        status: ["?success", "?failure", "?running"],
         desc: "顺序执行",
         doc: "+ 一直往下执行，只有当所有子节点都返回`成功`, 才返回`成功`\n+ 若子节点返回`失败`，则直接返回`失败`状态\n+ 其余情况返回`运行中`状态\n",
       },
@@ -345,6 +374,7 @@ export const zhNodeDef = () => {
         name: "Timeout",
         type: "Decorator",
         desc: "超时",
+        status: ["?success", "?running", "failure"],
         args: [
           {
             name: "time",
@@ -357,6 +387,7 @@ export const zhNodeDef = () => {
       {
         name: "Wait",
         type: "Action",
+        status: ["success", "running"],
         desc: "等待",
         input: ["等待时间?"],
         args: [

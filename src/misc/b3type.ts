@@ -15,6 +15,9 @@ export interface NodeArg {
   default?: unknown;
   options?: NodeArgOption[];
 }
+
+type Status = "success" | "running" | "failure";
+
 export interface NodeDef {
   name: string;
   type: NodeType;
@@ -25,6 +28,7 @@ export interface NodeDef {
   doc?: string;
   color?: string;
   icon?: string;
+  status?: Exclude<`${Status}` | `!${Status}` | `?${Status}` | `&${Status}`, "!running">[];
 }
 
 export interface NodeModel {
@@ -65,6 +69,7 @@ export interface TreeGraphData extends G6TreeGraphData {
   highlightInput?: boolean;
   highlightOutput?: boolean;
   highlightGray?: boolean;
+  status?: number;
 }
 
 export const unknownNodeDef: NodeDef = {

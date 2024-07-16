@@ -207,16 +207,72 @@ export const createNode = (data: TreeGraphData, includeChildren: boolean = true)
   return node;
 };
 
+const toStatusFlag = (data: TreeGraphData) => {
+  let status = 0;
+  data.def.status?.forEach((s) => {
+    switch (s) {
+      case "success":
+        status |= 1 << 2;
+        break;
+      case "failure":
+        status |= 1 << 1;
+        break;
+      case "running":
+        status |= 1 << 0;
+        break;
+    }
+  });
+  return status;
+};
+
+const appendStatusFlag = (data: TreeGraphData, childStatus: number) => {
+  const childSuccess = (childStatus >> 2) & 1;
+  const childFailure = (childStatus >> 1) & 1;
+  const childRunning = (childStatus >> 0) & 1;
+  let status = data.status!;
+  if (data.def.status?.length) {
+    data.def.status?.forEach((s) => {
+      switch (s) {
+        case "!success":
+          status |= childFailure << 2;
+          break;
+        case "!failure":
+          status |= childSuccess << 1;
+          break;
+        case "?success":
+          status |= childSuccess << 2;
+          break;
+        case "?failure":
+          status |= childFailure << 1;
+          break;
+        case "?running":
+          status |= childRunning << 0;
+          break;
+      }
+    });
+    data.status = status;
+  } else {
+    data.status = status | childStatus;
+  }
+};
+
 export const refreshTreeDataId = (data: TreeGraphData, id?: number) => {
   if (!id) {
     id = 1;
   }
+  const status = toStatusFlag(data);
   data.id = (id++).toString();
+  data.status = status;
   if (data.children) {
+    let childStatus = 0;
     data.children.forEach((child) => {
       child.parent = data.id;
       id = refreshTreeDataId(child, id);
+      if (child.status && !child.disabled) {
+        childStatus |= child.status;
+      }
     });
+    appendStatusFlag(data, childStatus);
   }
   return id;
 };
