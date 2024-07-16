@@ -2,7 +2,6 @@ import { useWorkspace } from "@/contexts/workspace-context";
 import { NodeArgType, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
 import * as fs from "fs";
 import { message } from "./hooks";
-import i18n from "./i18n";
 import Path from "./path";
 import { zhNodeDef } from "./template";
 
@@ -207,46 +206,83 @@ export const createNode = (data: TreeGraphData, includeChildren: boolean = true)
   return node;
 };
 
+const enum StatusFlag {
+  SUCCESS = 2,
+  FAILURE = 1,
+  RUNNING = 0,
+  SUCCESS_ZERO = 5,
+  FAILURE_ZERO = 4,
+}
+
 const toStatusFlag = (data: TreeGraphData) => {
   let status = 0;
   data.def.status?.forEach((s) => {
     switch (s) {
       case "success":
-        status |= 1 << 2;
+        status |= 1 << StatusFlag.SUCCESS;
         break;
       case "failure":
-        status |= 1 << 1;
+        status |= 1 << StatusFlag.FAILURE;
         break;
       case "running":
-        status |= 1 << 0;
+        status |= 1 << StatusFlag.RUNNING;
         break;
     }
   });
   return status;
 };
 
-const appendStatusFlag = (data: TreeGraphData, childStatus: number) => {
-  const childSuccess = (childStatus >> 2) & 1;
-  const childFailure = (childStatus >> 1) & 1;
-  const childRunning = (childStatus >> 0) & 1;
+const appendStatusFlag = (status: number, childStatus: number) => {
+  const childSuccess = (childStatus >> StatusFlag.SUCCESS) & 1;
+  const childFailure = (childStatus >> StatusFlag.FAILURE) & 1;
+  if (childSuccess == 0) {
+    status |= 1 << StatusFlag.SUCCESS_ZERO;
+  }
+  if (childFailure == 0) {
+    status |= 1 << StatusFlag.FAILURE_ZERO;
+  }
+  status |= childStatus;
+  return status;
+};
+
+const buildStatusFlag = (data: TreeGraphData, childStatus: number) => {
   let status = data.status!;
   if (data.def.status?.length) {
+    const childSuccess = (childStatus >> StatusFlag.SUCCESS) & 1;
+    const childFailure = (childStatus >> StatusFlag.FAILURE) & 1;
+    const childRunning = (childStatus >> StatusFlag.RUNNING) & 1;
+    const childHasZeroSuccess = (childStatus >> StatusFlag.SUCCESS_ZERO) & 1;
+    const childHasZeroFailure = (childStatus >> StatusFlag.FAILURE_ZERO) & 1;
     data.def.status?.forEach((s) => {
       switch (s) {
         case "!success":
-          status |= childFailure << 2;
+          status |= childFailure << StatusFlag.SUCCESS;
           break;
         case "!failure":
-          status |= childSuccess << 1;
+          status |= childSuccess << StatusFlag.FAILURE;
           break;
-        case "?success":
-          status |= childSuccess << 2;
+        case "|success":
+          status |= childSuccess << StatusFlag.SUCCESS;
           break;
-        case "?failure":
-          status |= childFailure << 1;
+        case "|failure":
+          status |= childFailure << StatusFlag.FAILURE;
           break;
-        case "?running":
-          status |= childRunning << 0;
+        case "|running":
+          status |= childRunning << StatusFlag.RUNNING;
+          break;
+        case "&success":
+          if (childHasZeroSuccess) {
+            status &= ~(1 << StatusFlag.SUCCESS);
+          } else {
+            status |= childSuccess << StatusFlag.SUCCESS;
+          }
+          break;
+        case "&failure":
+          if (childHasZeroFailure) {
+            status &= ~(1 << StatusFlag.FAILURE);
+          } else {
+            status |= childFailure << StatusFlag.FAILURE;
+          }
           break;
       }
     });
@@ -269,11 +305,13 @@ export const refreshTreeDataId = (data: TreeGraphData, id?: number) => {
       child.parent = data.id;
       id = refreshTreeDataId(child, id);
       if (child.status && !child.disabled) {
-        childStatus |= child.status;
+        childStatus = appendStatusFlag(childStatus, child.status);
       }
     });
-    appendStatusFlag(data, childStatus);
+    console.log("##@", data.name, childStatus.toString(2).padStart(6, "0"));
+    buildStatusFlag(data, childStatus);
   }
+  console.log("##$", data.name, data.status.toString(2).padStart(6, "0"));
   return id;
 };
 

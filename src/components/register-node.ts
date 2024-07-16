@@ -202,7 +202,7 @@ G6.registerNode(
       });
 
       // status
-      const status = ((cfg.status || 0) as number).toString(2).padStart(3, "0");
+      const status = (((cfg.status ?? 0) as number) & 0b111).toString(2).padStart(3, "0");
       addShape("image", {
         attrs: {
           x: 204,

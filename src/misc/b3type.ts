@@ -28,7 +28,10 @@ export interface NodeDef {
   doc?: string;
   color?: string;
   icon?: string;
-  status?: Exclude<`${Status}` | `!${Status}` | `?${Status}` | `&${Status}`, "!running">[];
+  status?: Exclude<
+    `${Status}` | `!${Status}` | `|${Status}` | `&${Status}`,
+    "!running" | "&running"
+  >[];
 }
 
 export interface NodeModel {

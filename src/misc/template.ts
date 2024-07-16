@@ -4,14 +4,14 @@ export const zhNodeDef = () => {
       {
         name: "AlwaysFail",
         type: "Decorator",
-        status: ["failure", "?running"],
+        status: ["failure", "|running"],
         desc: "始终返回失败",
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 不管子节点是否成功都返回`失败`\n",
       },
       {
         name: "AlwaysSuccess",
         type: "Decorator",
-        status: ["success", "?running"],
+        status: ["success", "|running"],
         desc: "始终返回成功",
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 不管子节点是否成功都返回`成功`\n",
       },
@@ -77,7 +77,7 @@ export const zhNodeDef = () => {
       {
         name: "Filter",
         type: "Action",
-        status: ["success", "failure"],
+        status: ["success", "failure", "|running"],
         desc: "返回满足条件的元素",
         input: ["输入数组"],
         output: ["变量", "新数组"],
@@ -86,7 +86,7 @@ export const zhNodeDef = () => {
       {
         name: "ForEach",
         type: "Action",
-        status: ["success", "running", "failure"],
+        status: ["success", "|running", "|failure"],
         desc: "遍历数组",
         input: ["数组"],
         output: ["变量"],
@@ -119,7 +119,7 @@ export const zhNodeDef = () => {
       {
         name: "Inverter",
         type: "Decorator",
-        status: ["!success", "!failure", "?running"],
+        status: ["!success", "!failure", "|running"],
         desc: "反转子节点运行结果",
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点返回`成功`时返回`失败`\n+ 当子节点返回`失败`时返回`成功`\n",
       },
@@ -244,7 +244,7 @@ export const zhNodeDef = () => {
       {
         name: "Loop",
         type: "Action",
-        status: ["success", "running", "failure"],
+        status: ["success", "|running", "|failure"],
         desc: "循环执行",
         input: ["循环次数?"],
         args: [
@@ -273,14 +273,14 @@ export const zhNodeDef = () => {
       {
         name: "Once",
         type: "Decorator",
-        status: ["success", "failure", "?running"],
+        status: ["success", "failure", "|running"],
         desc: "只执行一次",
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 第一次执行完全部子节点时返回`成功`，之后永远返回`失败`",
       },
       {
         name: "Parallel",
         type: "Composite",
-        status: ["success", "?running"],
+        status: ["success", "|running"],
         desc: "并行执行",
         doc: "+ 并行执行所有子节点\n+ 当有子节点返回`运行中`时，返回`运行中`状态\n+ 执行完所有子节点后，返回`成功`",
       },
@@ -329,7 +329,7 @@ export const zhNodeDef = () => {
       {
         name: "RepeatUntilFailure",
         type: "Decorator",
-        status: ["!success", "failure", "?running"],
+        status: ["!success", "!failure", "|running"],
         desc: "一直尝试直到子节点返回失败",
         input: ["最大循环次数?"],
         args: [
@@ -344,7 +344,7 @@ export const zhNodeDef = () => {
       {
         name: "RepeatUntilSuccess",
         type: "Decorator",
-        status: ["?success", "failure", "?running"],
+        status: ["|success", "|failure", "|running"],
         desc: "一直尝试直到子节点返回成功",
         input: ["最大循环次数?"],
         args: [
@@ -360,13 +360,13 @@ export const zhNodeDef = () => {
         name: "Selector",
         type: "Composite",
         desc: "选择执行",
-        status: ["?success", "?failure", "?running"],
+        status: ["|success", "|failure", "|running"],
         doc: "+ 一直往下执行，直到有子节点返回`成功`则返回`成功`\n+ 若全部节点返回`失败`则返回`失败`",
       },
       {
         name: "Sequence",
         type: "Composite",
-        status: ["?success", "?failure", "?running"],
+        status: ["&success", "|failure", "|running"],
         desc: "顺序执行",
         doc: "+ 一直往下执行，只有当所有子节点都返回`成功`, 才返回`成功`\n+ 若子节点返回`失败`，则直接返回`失败`状态\n+ 其余情况返回`运行中`状态\n",
       },
@@ -374,7 +374,7 @@ export const zhNodeDef = () => {
         name: "Timeout",
         type: "Decorator",
         desc: "超时",
-        status: ["?success", "?running", "failure"],
+        status: ["|success", "|running", "failure"],
         args: [
           {
             name: "time",
