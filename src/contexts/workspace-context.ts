@@ -16,7 +16,7 @@ import { Editor } from "../components/editor";
 let buildDir: string | undefined;
 
 interface BatchScript {
-  processTree?(tree: TreeModel): TreeModel;
+  processTree?(tree: TreeModel, path: string): TreeModel;
 
   processNode?(node: NodeModel, tree: TreeModel): NodeModel;
 }
@@ -319,14 +319,23 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           const treeStr = fs.readFileSync(file.path, "utf8");
           let tree: TreeModel | undefined = JSON.parse(treeStr);
           if (batch.processTree && tree) {
-            tree = batch.processTree(tree);
+            tree = batch.processTree(tree, file.path);
           }
           if (tree && batch.processNode) {
             const processNode = (node: NodeModel) => {
-              batch.processNode?.(node, tree!);
-              node.children?.forEach((child) => processNode(child));
+              if (node.children) {
+                const children: NodeModel[] = [];
+                node.children?.forEach((child) => {
+                  const newChild = processNode(child);
+                  if (newChild) {
+                    children.push(newChild);
+                  }
+                });
+                node.children = children;
+              }
+              return batch.processNode?.(node, tree!);
             };
-            processNode(tree.root);
+            tree.root = processNode(tree.root) ?? ({} as NodeModel);
           }
           if (tree) {
             fs.writeFileSync(file.path, JSON.stringify(tree, null, 2));

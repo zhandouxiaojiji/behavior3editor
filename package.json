@@ -40,7 +40,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sass": "^1.60.0",
-    "typescript": "^5.4.5",
+    "typescript": "^5.5.3",
     "vite": "^4.1.4",
     "vite-electron-plugin": "^0.8.3",
     "vite-plugin-electron": "^0.28.4",
