@@ -308,10 +308,8 @@ export const refreshTreeDataId = (data: TreeGraphData, id?: number) => {
         childStatus = appendStatusFlag(childStatus, child.status);
       }
     });
-    console.log("##@", data.name, childStatus.toString(2).padStart(6, "0"));
     buildStatusFlag(data, childStatus);
   }
-  console.log("##$", data.name, data.status.toString(2).padStart(6, "0"));
   return id;
 };
 
