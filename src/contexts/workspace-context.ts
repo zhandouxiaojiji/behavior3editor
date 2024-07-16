@@ -328,7 +328,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
             processNode(tree.root);
           }
           if (tree) {
-            fs.writeFileSync(file.path, JSON.stringify(tree));
+            fs.writeFileSync(file.path, JSON.stringify(tree, null, 2));
           }
         });
       } catch (error) {
