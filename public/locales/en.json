@@ -3,6 +3,8 @@
   "actuaSize": "Actual Size",
   "build": "Build",
   "batch": "Batch Script",
+  "batchCompleted": "Batch completed",
+  "batchFailed": "Batch failed, more information can be found in the console.",
   "buildCompleted": "Build completed",
   "buildFailed": "Build failed, more information can be found in the console.",
   "cancel": "Cancel",

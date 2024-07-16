@@ -310,6 +310,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       filters: [{ name: "Javascript", extensions: ["js"] }],
     })?.[0];
     if (scriptPath) {
+      let hasError = false;
       try {
         console.log("run script", scriptPath);
         const str = fs.readFileSync(scriptPath, "utf8");
@@ -332,7 +333,13 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           }
         });
       } catch (error) {
+        hasError = true;
         console.error(error);
+      }
+      if (hasError) {
+        message.error(i18n.t("batchFailed"));
+      } else {
+        message.success(i18n.t("batchCompleted"));
       }
     }
   },

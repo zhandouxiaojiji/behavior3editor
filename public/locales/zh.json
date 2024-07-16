@@ -3,6 +3,8 @@
   "actualSize": "实际大小",
   "build": "构建",
   "batch": "批处理脚本",
+  "batchCompleted": "批处理完成",
+  "batchFailed": "批处理出现错误，详情请查看控制台！",
   "buildCompleted": "构建完成",
   "buildFailed": "构建出现错误，详情请查看控制台！",
   "cancel": "取消",
