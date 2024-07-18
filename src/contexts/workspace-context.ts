@@ -90,6 +90,7 @@ export type FileTreeType = {
 export type EditNode = {
   data: NodeModel;
   editable: boolean;
+  limit_error?: boolean;
 };
 
 export type EditNodeDef = {

@@ -403,6 +403,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       workspace.onEditingNode({
         data: b3util.createNode(data, false),
         editable: !isSubtreeNode(data),
+        limit_error: !b3util.checkChildrenLimit(data),
       });
       setItemState(editor.selectedId, "selected", true);
     } else {
@@ -453,6 +454,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       selectNode(null);
       curNodeData.children ||= [];
       curNodeData.children.push(data);
+      refreshItem(curNodeData);
       updateGrahp();
       pushHistory();
       onChange();
@@ -485,6 +487,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         const data = b3util.createTreeData(JSON.parse(str), editor.selectedId);
         editor.autoId = b3util.refreshTreeDataId(data, editor.autoId);
         parentData.children![idx] = data;
+        refreshItem(parentData);
         updateGrahp();
       } else {
         editor.data = b3util.createTreeData(JSON.parse(str), editor.selectedId);
@@ -520,6 +523,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     };
     curNodeData.children ||= [];
     curNodeData.children.push(b3util.createTreeData(newNodeData, editor.selectedId));
+    refreshItem(curNodeData);
     updateGrahp();
     pushHistory();
     onChange();
@@ -544,10 +548,15 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
     const parentData = findParent(data)!;
     parentData.children = parentData.children!.filter((e) => e.id != editor.selectedId);
+    refreshItem(parentData);
     selectNode(null);
     updateGrahp();
     pushHistory();
     onChange();
+  };
+
+  const refreshItem = (data: TreeGraphData) => {
+    editor.graph.findById(data.id)?.draw();
   };
 
   const useStackData = (data: NodeModel) => {
@@ -844,6 +853,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
           );
           dstData.children ||= [];
           dstData.children.push(newTreeData);
+          refreshItem(dstData);
           srcNodeId = newTreeData.id;
         } else if (exploreFile && exploreFile !== editor.path) {
           const newTreeData: TreeGraphData = b3util.createTreeData(
@@ -856,6 +866,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
           );
           dstData.children ||= [];
           dstData.children.push(newTreeData);
+          refreshItem(dstData);
           srcNodeId = newTreeData.id;
           editor.autoId = b3util.refreshTreeDataId(newTreeData, Number(srcNodeId));
         }
@@ -915,6 +926,9 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       } else {
         return;
       }
+
+      refreshItem(srcParent);
+      refreshItem(dstData);
 
       updateGrahp();
       pushHistory();

@@ -82,6 +82,8 @@
   "regnode.subtree": "子树：",
 
   "node.args": "常量参数",
+  "node.children": "子节点数量",
+  "node.children.unlimited": "无限制",
   "node.debug": "调试",
   "node.disabled": "禁用",
   "node.deleteRootNodeDenied": "不能删除根节点",

@@ -32,6 +32,7 @@ export interface NodeDef {
     `${Status}` | `!${Status}` | `|${Status}` | `&${Status}`,
     "!running" | "&running"
   >[];
+  children?: -1 | 0 | 1;
 }
 
 export interface NodeModel {

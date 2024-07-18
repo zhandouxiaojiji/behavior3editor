@@ -1,7 +1,6 @@
 import { EditNode, EditTree, useWorkspace } from "@/contexts/workspace-context";
-import { NodeArgType, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
+import { NodeArgType, NodeModel, TreeGraphData } from "@/misc/b3type";
 import { Hotkey, isMacos } from "@/misc/keys";
-import Path from "@/misc/path";
 import { EditOutlined } from "@ant-design/icons";
 import {
   AutoComplete,
@@ -102,6 +101,11 @@ const NodeInspector: FC = () => {
     form.setFieldValue("debug", data.debug);
     form.setFieldValue("disabled", data.disabled);
     form.setFieldValue("path", data.path);
+    if (def.children === undefined || def.children === -1) {
+      form.setFieldValue("children", t("node.children.unlimited"));
+    } else {
+      form.setFieldValue("children", def.children);
+    }
     def.args?.forEach((v) => {
       form.setFieldValue(`args.${v.name}`, data.args?.[v.name] ?? v.default);
     });
@@ -241,21 +245,17 @@ const NodeInspector: FC = () => {
           labelCol={{ span: "auto" }}
           onFinish={finish}
         >
-          <Form.Item
-            name="id"
-            label={
-              <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.id")}</div>
-            }
-          >
+          <Form.Item name="id" label={t("node.id")}>
             <Input disabled={true} />
           </Form.Item>
-          <Form.Item
-            name="type"
-            label={
-              <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.type")}</div>
-            }
-          >
+          <Form.Item name="type" label={t("node.type")}>
             <Input disabled={true} />
+          </Form.Item>
+          <Form.Item name="children" label={t("node.children")}>
+            <Input
+              style={{ borderColor: editingNode.limit_error ? "red" : undefined }}
+              disabled={true}
+            />
           </Form.Item>
           <Form.Item label={t("node.name")} name="name">
             <AutoComplete
@@ -418,22 +418,27 @@ const NodeDefInspector: FC = () => {
   };
   const { t } = useTranslation();
   const [form] = Form.useForm();
-  const data = workspace.editingNodeDef.data;
+  const def = workspace.editingNodeDef.data;
 
   // set form values
   useEffect(() => {
     form.resetFields();
-    form.setFieldValue("name", data.name);
-    form.setFieldValue("type", data.type);
-    form.setFieldValue("desc", data.desc);
-    form.setFieldValue("doc", data.doc);
-    data.input?.forEach((v, i) => {
+    form.setFieldValue("name", def.name);
+    form.setFieldValue("type", def.type);
+    form.setFieldValue("desc", def.desc);
+    form.setFieldValue("doc", def.doc);
+    if (def.children === undefined || def.children === -1) {
+      form.setFieldValue("children", t("node.children.unlimited"));
+    } else {
+      form.setFieldValue("children", def.children);
+    }
+    def.input?.forEach((v, i) => {
       form.setFieldValue(`input.${i}.name`, v.replaceAll("?", ""));
     });
-    data.output?.forEach((v, i) => {
+    def.output?.forEach((v, i) => {
       form.setFieldValue(`output.${i}.name`, v.replaceAll("?", ""));
     });
-    data.args?.forEach((v, i) => {
+    def.args?.forEach((v, i) => {
       form.setFieldValue(`args.${i}.type`, v.type.replaceAll("?", ""));
     });
   }, [workspace.editingNodeDef]);
@@ -452,37 +457,25 @@ const NodeDefInspector: FC = () => {
           labelCol={{ span: "auto" }}
           // onFinish={finish}
         >
-          <Form.Item
-            name="name"
-            label={
-              <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.name")}</div>
-            }
-          >
+          <Form.Item name="name" label={t("node.name")}>
             <Input disabled={true} />
           </Form.Item>
-          <Form.Item
-            name="type"
-            label={
-              <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.type")}</div>
-            }
-          >
+          <Form.Item name="type" label={t("node.type")}>
             <Input disabled={true} />
           </Form.Item>
-          <Form.Item
-            name="desc"
-            label={
-              <div style={{ minWidth: "80px", justifyContent: "flex-end" }}>{t("node.desc")}</div>
-            }
-          >
+          <Form.Item name="children" label={t("node.children")}>
+            <Input disabled={true} />
+          </Form.Item>
+          <Form.Item name="desc" label={t("node.desc")}>
             <TextArea autoSize disabled={true} />
           </Form.Item>
-          <Markdown className="b3-markdown">{data.doc}</Markdown>
-          {data.input && data.input.length > 0 && (
+          <Markdown className="b3-markdown">{def.doc}</Markdown>
+          {def.input && def.input.length > 0 && (
             <>
               <Divider orientation="left">
                 <h4>{t("node.inputVariable")}</h4>
               </Divider>
-              {data.input.map((v, i) => {
+              {def.input.map((v, i) => {
                 const required = v.indexOf("?") == -1;
                 return (
                   <Form.Item
@@ -497,12 +490,12 @@ const NodeDefInspector: FC = () => {
               })}
             </>
           )}
-          {data.args && data.args.length > 0 && (
+          {def.args && def.args.length > 0 && (
             <>
               <Divider orientation="left">
                 <h4>{t("node.args")}</h4>
               </Divider>
-              {data.args.map((v, i) => {
+              {def.args.map((v, i) => {
                 const required = v.type.indexOf("?") == -1;
                 return (
                   <Form.Item
@@ -525,12 +518,12 @@ const NodeDefInspector: FC = () => {
               })}
             </>
           )}
-          {data.output && data.output.length > 0 && (
+          {def.output && def.output.length > 0 && (
             <>
               <Divider orientation="left">
                 <h4>{t("node.outputVariable")}</h4>
               </Divider>
-              {data.output.map((v, i) => {
+              {def.output.map((v, i) => {
                 const required = v.indexOf("?") == -1;
                 return (
                   <Form.Item

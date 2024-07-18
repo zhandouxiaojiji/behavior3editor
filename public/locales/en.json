@@ -82,6 +82,8 @@
   "regnode.subtree": "Subtree: ",
 
   "node.args": "Const arguments",
+  "node.children": "Subnode limit",
+  "node.children.unlimited": "Unlimited",
   "node.debug": "Debug",
   "node.disabled": "Disabled",
   "node.deleteRootNodeDenied": "Unable to delete the root node",

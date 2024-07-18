@@ -73,6 +73,15 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   }
   let hasError = false;
   const conf = useWorkspace.getState().getNodeDef(data.name);
+  if (conf.children !== undefined) {
+    if (conf.children == 0 && data.children?.length) {
+      hasError = true;
+      console.error(`check ${data.id}|${data.name}: no children is required`);
+    } else if (conf.children == 1 && data.children?.length !== 1) {
+      hasError = true;
+      console.error(`check ${data.id}|${data.name}: only one child is required`);
+    }
+  }
   if (conf.input) {
     for (let i = 0; i < conf.input.length; i++) {
       if (!data.input) {
@@ -330,6 +339,18 @@ export const calcTreeDataSize = (data: TreeGraphData) => {
   return [220, height];
 };
 
+export const checkChildrenLimit = (data: TreeGraphData) => {
+  const conf = data.def;
+  if (conf.children !== undefined) {
+    if (conf.children == 0 && data.children?.length) {
+      return false;
+    } else if (conf.children == 1 && data.children?.length !== 1) {
+      return false;
+    }
+  }
+  return true;
+};
+
 export const checkTreeData = (data: TreeGraphData) => {
   const conf = data.def;
   if (conf.input) {
@@ -345,6 +366,9 @@ export const checkTreeData = (data: TreeGraphData) => {
         return false;
       }
     }
+  }
+  if (!checkChildrenLimit(data)) {
+    return false;
   }
   if (conf.args) {
     for (let i = 0; i < conf.args.length; i++) {
