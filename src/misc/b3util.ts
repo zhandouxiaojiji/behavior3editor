@@ -73,13 +73,13 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   }
   let hasError = false;
   const conf = useWorkspace.getState().getNodeDef(data.name);
-  if (conf.children !== undefined) {
-    if (conf.children == 0 && data.children?.length) {
+  if (conf.children !== undefined && conf.children != -1) {
+    const count = data.children?.length || 0;
+    if (conf.children !== count) {
       hasError = true;
-      console.error(`check ${data.id}|${data.name}: no children is required`);
-    } else if (conf.children == 1 && data.children?.length !== 1) {
-      hasError = true;
-      console.error(`check ${data.id}|${data.name}: only one child is required`);
+      console.error(
+        `check ${data.id}|${data.name}: expect ${conf.children} children, but got ${count}`
+      );
     }
   }
   if (conf.input) {
@@ -341,12 +341,8 @@ export const calcTreeDataSize = (data: TreeGraphData) => {
 
 export const checkChildrenLimit = (data: TreeGraphData) => {
   const conf = data.def;
-  if (conf.children !== undefined) {
-    if (conf.children == 0 && data.children?.length) {
-      return false;
-    } else if (conf.children == 1 && data.children?.length !== 1) {
-      return false;
-    }
+  if (conf.children !== undefined && conf.children != -1) {
+    return (data.children?.length || 0) === conf.children;
   }
   return true;
 };
