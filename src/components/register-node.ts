@@ -24,15 +24,6 @@ G6.registerNode(
         [0, 0.5],
         [1, 0.5],
       ],
-      labelCfg: {
-        style: {
-          fill: "blue",
-          fontSize: 10,
-        },
-      },
-      style: {
-        fill: "white",
-      },
       stateStyles: {
         selected: {
           "main-box-selected": {

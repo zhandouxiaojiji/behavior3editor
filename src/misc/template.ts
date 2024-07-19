@@ -121,8 +121,8 @@ export const zhNodeDef = () => {
         name: "IfElse",
         type: "Composite",
         children: 3,
-        status: ["success", "failure", "|running"],
-        desc: "条件执行，if-else",
+        status: ["|success", "|failure", "|running"],
+        desc: "条件执行",
         doc: "+ 必须有三个子节点\n+ 第一个子节点为条件节点\n+ 第二个子节点为条件为`success`时执行的节点\n+ 第三个子节点为条件为`failure`时执行的节点,\n",
       },
       {
