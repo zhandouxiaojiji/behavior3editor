@@ -1,6 +1,6 @@
 import { TreeGraphData as G6TreeGraphData } from "@antv/g6";
 
-export type NodeArgType = "string" | "int" | "float" | "boolean" | "enum" | "code";
+export type NodeArgType = "boolean" | "string" | "int" | "float" | "object" | "enum" | "code";
 export type NodeType = "Action" | "Composite" | "Decorator" | "Condition" | "Other" | "Error";
 
 export interface NodeArgOption {
@@ -10,8 +10,9 @@ export interface NodeArgOption {
 
 export interface NodeArg {
   name: string;
-  type: string;
+  type: NodeArgType | `${NodeArgType}?`;
   desc: string;
+  oneof?: string;
   default?: unknown;
   options?: NodeArgOption[];
 }

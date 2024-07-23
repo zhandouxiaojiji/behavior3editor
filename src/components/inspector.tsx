@@ -1,5 +1,5 @@
 import { EditNode, EditTree, useWorkspace } from "@/contexts/workspace-context";
-import { NodeArgType, NodeModel, TreeGraphData } from "@/misc/b3type";
+import { NodeArg, NodeArgType, NodeModel, TreeGraphData } from "@/misc/b3type";
 import { Hotkey, isMacos } from "@/misc/keys";
 import { EditOutlined } from "@ant-design/icons";
 import {
@@ -107,7 +107,14 @@ const NodeInspector: FC = () => {
       form.setFieldValue("children", def.children);
     }
     def.args?.forEach((v) => {
-      form.setFieldValue(`args.${v.name}`, data.args?.[v.name] ?? v.default);
+      if (v.type === "object" || v.type === "object?") {
+        form.setFieldValue(
+          `args.${v.name}`,
+          JSON.stringify(data.args?.[v.name] ?? v.default, null, 2)
+        );
+      } else {
+        form.setFieldValue(`args.${v.name}`, data.args?.[v.name] ?? v.default);
+      }
     });
     def.input?.forEach((_, i) => {
       form.setFieldValue(`input.${i}`, data.input?.[i]);
@@ -115,6 +122,7 @@ const NodeInspector: FC = () => {
     def.output?.forEach((_, i) => {
       form.setFieldValue(`output.${i}`, data.output?.[i]);
     });
+    form.validateFields();
   }, [workspace.editingNode]);
 
   // auto complete for node
@@ -183,7 +191,11 @@ const NodeInspector: FC = () => {
       const v = values[`args.${arg.name}`];
       if (v !== null && v !== undefined && v !== "") {
         data.args ||= {};
-        data.args[arg.name] = v;
+        if (arg.type === "object" || arg.type === "object?") {
+          data.args[arg.name] = JSON.parse(v);
+        } else {
+          data.args[arg.name] = v;
+        }
       }
     });
 
@@ -305,7 +317,44 @@ const NodeInspector: FC = () => {
                     label={desc}
                     name={`input.${i}`}
                     key={`input.${i}`}
-                    rules={[{ required, message: t("node.fileRequired", { field: desc }) }]}
+                    rules={[
+                      { required, message: t("node.fileRequired", { field: desc }) },
+                      ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
+                        validator(_, value) {
+                          const arg = def.args?.find((a) => a.oneof && v.startsWith(a.oneof));
+                          if (arg) {
+                            const argName = `args.${arg.name}`;
+                            const argValue = getFieldValue(argName) ?? "";
+                            value = value ?? "";
+                            if (
+                              (value === "" && argValue === "") ||
+                              (value !== "" && argValue !== "")
+                            ) {
+                              if (!isFieldValidating(argName)) {
+                                setFieldValue(`input.${i}`, value);
+                                validateFields([argName]);
+                              }
+                              return Promise.reject(
+                                new Error(
+                                  t("node.oneof.error", {
+                                    input: v,
+                                    arg: arg.name,
+                                    desc: arg.desc ?? "",
+                                  })
+                                )
+                              );
+                            } else {
+                              if (!isFieldValidating(argName)) {
+                                validateFields([argName]);
+                              }
+                              return Promise.resolve();
+                            }
+                          }
+
+                          return Promise.resolve();
+                        },
+                      }),
+                    ]}
                   >
                     <AutoComplete
                       disabled={disabled}
@@ -337,9 +386,60 @@ const NodeInspector: FC = () => {
                     key={`args.${v.name}`}
                     initialValue={type === "boolean" ? v.default ?? false : v.default}
                     valuePropName={type === "boolean" ? "checked" : undefined}
-                    rules={[{ required, message: t("node.fileRequired", { field: v.desc }) }]}
+                    rules={[
+                      { required, message: t("node.fileRequired", { field: v.desc }) },
+                      ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
+                        validator(_, value) {
+                          if (value && (v.type == "object" || v.type == "object?")) {
+                            try {
+                              JSON.parse(value);
+                            } catch (e) {
+                              return Promise.reject(new Error(t("node.invalidValue")));
+                            }
+                          }
+                          if (v.oneof === undefined) {
+                            return Promise.resolve();
+                          }
+                          const idx = def.input?.findIndex((input) => input.startsWith(v.oneof!));
+                          if (idx === undefined || idx < 0) {
+                            return Promise.reject(
+                              new Error(t("node.oneof.inputNotfound", { input: v.oneof }))
+                            );
+                          }
+                          const inputName = `input.${idx}`;
+                          const inputValue = getFieldValue(inputName) ?? "";
+                          value = value ?? "";
+                          if (
+                            (value === "" && inputValue === "") ||
+                            (value !== "" && inputValue !== "")
+                          ) {
+                            if (!isFieldValidating(inputName)) {
+                              setFieldValue(`args.${v.name}`, value);
+                              validateFields([inputName]);
+                            }
+                            return Promise.reject(
+                              new Error(
+                                t("node.oneof.error", {
+                                  input: def.input![idx],
+                                  arg: v.name,
+                                  desc: v.desc ?? "",
+                                })
+                              )
+                            );
+                          } else {
+                            if (!isFieldValidating(inputName)) {
+                              validateFields([inputName]);
+                            }
+                            return Promise.resolve();
+                          }
+                        },
+                      }),
+                    ]}
                   >
                     {type === "string" && (
+                      <TextArea autoSize disabled={disabled} onBlur={form.submit} />
+                    )}
+                    {type === "object" && (
                       <TextArea autoSize disabled={disabled} onBlur={form.submit} />
                     )}
                     {type === "int" && (
