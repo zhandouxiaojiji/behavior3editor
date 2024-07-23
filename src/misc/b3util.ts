@@ -126,8 +126,8 @@ const checkNodeArg = (
       }
       hasError = true;
     }
-  } else if (type == "json") {
-    const isJson = value !== undefined && value !== null && value !== "";
+  } else if (type === "json") {
+    const isJson = value !== undefined && value !== "";
     const isOptional = arg.type === "json?";
     if (!(isJson || isOptional)) {
       if (verbose) {
@@ -153,7 +153,7 @@ const checkNodeArg = (
 };
 
 export const checkOneof = (argValue: unknown, inputValue: unknown) => {
-  argValue = argValue ?? "";
+  argValue = argValue === undefined ? "" : argValue;
   inputValue = inputValue ?? "";
   return (argValue !== "" && inputValue === "") || (argValue === "" && inputValue !== "");
 };
@@ -164,7 +164,7 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   }
   let hasError = false;
   const conf = useWorkspace.getState().getNodeDef(data.name);
-  if (conf.children !== undefined && conf.children != -1) {
+  if (conf.children !== undefined && conf.children !== -1) {
     const count = data.children?.length || 0;
     if (conf.children !== count) {
       hasError = true;
@@ -264,7 +264,7 @@ export const createNode = (data: TreeGraphData, includeChildren: boolean = true)
     node.args = {};
     for (const k in data.args) {
       const v = data.args[k];
-      if (v !== null && v !== undefined) {
+      if (v !== undefined) {
         node.args[k] = v;
       }
     }
@@ -307,10 +307,10 @@ const toStatusFlag = (data: TreeGraphData) => {
 const appendStatusFlag = (status: number, childStatus: number) => {
   const childSuccess = (childStatus >> StatusFlag.SUCCESS) & 1;
   const childFailure = (childStatus >> StatusFlag.FAILURE) & 1;
-  if (childSuccess == 0) {
+  if (childSuccess === 0) {
     status |= 1 << StatusFlag.SUCCESS_ZERO;
   }
-  if (childFailure == 0) {
+  if (childFailure === 0) {
     status |= 1 << StatusFlag.FAILURE_ZERO;
   }
   status |= childStatus;
@@ -404,7 +404,7 @@ export const calcTreeDataSize = (data: TreeGraphData) => {
 
 export const checkChildrenLimit = (data: TreeGraphData) => {
   const conf = data.def;
-  if (conf.children !== undefined && conf.children != -1) {
+  if (conf.children !== undefined && conf.children !== -1) {
     return (data.children?.length || 0) === conf.children;
   }
   return true;

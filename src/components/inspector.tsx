@@ -109,9 +109,11 @@ const NodeInspector: FC = () => {
     }
     def.args?.forEach((v) => {
       if (v.type === "json" || v.type === "json?") {
+        const value = data.args?.[v.name];
+        console.log("nameJson", v.name, value, data.args);
         form.setFieldValue(
           `args.${v.name}`,
-          JSON.stringify(data.args?.[v.name] ?? v.default, null, 2)
+          value === null ? "null" : JSON.stringify(value ?? v.default, null, 2)
         );
       } else {
         form.setFieldValue(`args.${v.name}`, data.args?.[v.name] ?? v.default);
@@ -194,7 +196,7 @@ const NodeInspector: FC = () => {
         if (v !== null && v !== undefined && v !== "") {
           data.args ||= {};
           if (arg.type === "json" || arg.type === "json?") {
-            data.args[arg.name] = JSON.parse(v);
+            data.args[arg.name] = v === "null" ? null : JSON.parse(v);
           } else {
             data.args[arg.name] = v;
           }
@@ -324,7 +326,7 @@ const NodeInspector: FC = () => {
                 <h4>{t("node.inputVariable")}</h4>
               </Divider>
               {def.input.map((v, i) => {
-                const required = v.indexOf("?") == -1;
+                const required = v.indexOf("?") === -1;
                 const desc = v.replace("?", "");
                 return (
                   <Form.Item
@@ -386,7 +388,7 @@ const NodeInspector: FC = () => {
                 <h4>{t("node.args")}</h4>
               </Divider>
               {def.args.map((v) => {
-                const required = v.type.indexOf("?") == -1;
+                const required = v.type.indexOf("?") === -1;
                 const type = v.type.replace("?", "") as NodeArgType;
                 return (
                   <Form.Item
@@ -399,9 +401,11 @@ const NodeInspector: FC = () => {
                       { required, message: t("node.fileRequired", { field: v.desc }) },
                       ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                         validator(_, value) {
-                          if (value && (v.type == "json" || v.type == "json?")) {
+                          if (value && (v.type === "json" || v.type === "json?")) {
                             try {
-                              JSON.parse(value);
+                              if (value !== "null") {
+                                JSON.parse(value);
+                              }
                             } catch (e) {
                               return Promise.reject(new Error(t("node.invalidValue")));
                             }
@@ -474,7 +478,7 @@ const NodeInspector: FC = () => {
                 <h4>{t("node.outputVariable")}</h4>
               </Divider>
               {def.output.map((v, i) => {
-                const required = v.indexOf("?") == -1;
+                const required = v.indexOf("?") === -1;
                 const desc = v.replace("?", "");
                 return (
                   <Form.Item
@@ -580,7 +584,7 @@ const NodeDefInspector: FC = () => {
                 <h4>{t("node.inputVariable")}</h4>
               </Divider>
               {def.input.map((v, i) => {
-                const required = v.indexOf("?") == -1;
+                const required = v.indexOf("?") === -1;
                 return (
                   <Form.Item
                     label={`[${i}]`}
@@ -600,7 +604,7 @@ const NodeDefInspector: FC = () => {
                 <h4>{t("node.args")}</h4>
               </Divider>
               {def.args.map((v, i) => {
-                const required = v.type.indexOf("?") == -1;
+                const required = v.type.indexOf("?") === -1;
                 return (
                   <Form.Item
                     name={`args.${i}.type`}
@@ -628,7 +632,7 @@ const NodeDefInspector: FC = () => {
                 <h4>{t("node.outputVariable")}</h4>
               </Divider>
               {def.output.map((v, i) => {
-                const required = v.indexOf("?") == -1;
+                const required = v.indexOf("?") === -1;
                 return (
                   <Form.Item
                     label={`[${i}]`}

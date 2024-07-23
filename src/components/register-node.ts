@@ -65,7 +65,7 @@ G6.registerNode(
       let color = nodeDef.color || NODE_COLORS[classify] || NODE_COLORS["Other"];
       if (
         !workspace.hasNodeDef(cfg.name as string) ||
-        (cfg.path && (!cfg.children || (cfg.children as []).length == 0)) ||
+        (cfg.path && (!cfg.children || (cfg.children as []).length === 0)) ||
         !checkTreeData(cfg as TreeGraphData)
       ) {
         classify = "Error";

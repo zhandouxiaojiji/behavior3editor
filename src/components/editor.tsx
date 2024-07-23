@@ -445,7 +445,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
     try {
       const str = clipboard.readText();
-      if (!str || str == "") {
+      if (!str || str === "") {
         return;
       }
       const curNodeData = findDataById(editor.selectedId);
@@ -477,7 +477,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
     try {
       const str = clipboard.readText();
-      if (!str || str == "") {
+      if (!str || str === "") {
         return;
       }
       const curNodeData = findDataById(editor.selectedId);
@@ -547,7 +547,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
 
     const parentData = findParent(data)!;
-    parentData.children = parentData.children!.filter((e) => e.id != editor.selectedId);
+    parentData.children = parentData.children!.filter((e) => e.id !== editor.selectedId);
     refreshItem(parentData);
     selectNode(null);
     updateGrahp();
@@ -652,7 +652,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       }
 
       subpath = subpath.replaceAll(Path.sep, "/");
-      if (subpath.indexOf(workspace.workdir) == -1) {
+      if (subpath.indexOf(workspace.workdir) === -1) {
         message.warning(t("node.subtreePathError"));
         return;
       }
@@ -741,7 +741,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     });
 
     editor.graph.on("viewportchange", (data: any) => {
-      if (data.action == "translate" || data.action == "zoom") {
+      if (data.action === "translate" || data.action === "zoom") {
         editor.graphMatrix = data.matrix;
       }
     });
@@ -877,7 +877,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         return;
       }
 
-      if (srcNodeId == dstNode.getID()) {
+      if (srcNodeId === dstNode.getID()) {
         console.log("drop same node");
         return;
       }
@@ -897,30 +897,30 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       }
 
       const removeSrc = () => {
-        srcParent.children = srcParent.children!.filter((value) => value.id != srcData.id);
+        srcParent.children = srcParent.children!.filter((value) => value.id !== srcData.id);
       };
 
-      if (dragDir == "dragRight") {
+      if (dragDir === "dragRight") {
         removeSrc();
         if (!dstData.children) {
           dstData.children = [];
         }
         srcData.parent = dstData.id;
         dstData.children.push(srcData);
-      } else if (dragDir == "dragUp") {
+      } else if (dragDir === "dragUp") {
         if (!dstParent) {
           return;
         }
         removeSrc();
-        const idx = dstParent.children!.findIndex((value) => value.id == dstData.id);
+        const idx = dstParent.children!.findIndex((value) => value.id === dstData.id);
         srcData.parent = dstParent.id;
         dstParent.children!.splice(idx, 0, srcData);
-      } else if (dragDir == "dragDown") {
+      } else if (dragDir === "dragDown") {
         if (!dstParent) {
           return;
         }
         removeSrc();
-        const idx = dstParent.children!.findIndex((value) => value.id == dstData.id);
+        const idx = dstParent.children!.findIndex((value) => value.id === dstData.id);
         srcData.parent = dstParent.id;
         dstParent.children!.splice(idx + 1, 0, srcData);
       } else {
@@ -1248,7 +1248,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                 type="text"
                 size="small"
                 style={{ width: "30px" }}
-                disabled={filterOption.results.length == 0}
+                disabled={filterOption.results.length === 0}
                 onClick={nextResult}
               />
             )}
@@ -1258,7 +1258,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                 type="text"
                 size="small"
                 style={{ width: "30px" }}
-                disabled={filterOption.results.length == 0}
+                disabled={filterOption.results.length === 0}
                 onClick={prevResult}
               />
             )}

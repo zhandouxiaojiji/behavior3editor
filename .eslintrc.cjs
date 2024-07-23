@@ -9,6 +9,7 @@ module.exports = {
   plugins: ["@typescript-eslint", "@stylistic/js", "react-refresh"],
   parser: "@typescript-eslint/parser",
   rules: {
+    eqeqeq: "error",
     "@typescript-eslint/no-namespace": "off",
     "@typescript-eslint/no-shadow": "error",
     "react-refresh/only-export-components": "warn",

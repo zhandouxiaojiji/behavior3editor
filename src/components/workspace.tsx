@@ -156,7 +156,7 @@ export const Workspace: FC = () => {
           <div>
             <FaExclamationTriangle style={{ fontSize: "60px", color: "#FADB14" }} />
           </div>
-          {unsaves.length == 1 && (
+          {unsaves.length === 1 && (
             <div>{t("workspace.saveOnClose", { name: Path.basename(unsaves[0].path) })}</div>
           )}
           {unsaves.length > 1 && (
@@ -331,7 +331,7 @@ export const Workspace: FC = () => {
               </Flex>
             </Flex>
           )}
-          {workspace.editors.length == 0 && (
+          {workspace.editors.length === 0 && (
             <Flex vertical align="center" justify="center" style={{ height: "100%" }}>
               <Flex
                 vertical
