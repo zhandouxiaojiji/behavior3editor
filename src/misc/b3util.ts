@@ -67,6 +67,10 @@ export const isNodeEqual = (node1: NodeModel, node2: NodeModel) => {
   return false;
 };
 
+const error = (data: NodeModel, msg: string) => {
+  console.error(`check ${data.id}|${data.name}: ${msg}`);
+};
+
 export const checkNodeData = (data: NodeModel | null | undefined) => {
   if (!data) {
     return false;
@@ -77,9 +81,7 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
     const count = data.children?.length || 0;
     if (conf.children !== count) {
       hasError = true;
-      console.error(
-        `check ${data.id}|${data.name}: expect ${conf.children} children, but got ${count}`
-      );
+      error(data, `expect ${conf.children} children, but got ${count}`);
     }
   }
   if (conf.input) {
@@ -91,10 +93,13 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
         data.input[i] = "";
       }
       if (conf.input[i].indexOf("?") === -1 && !data.input[i]) {
-        console.error(`check ${data.id}|${data.name}: intput field '${conf.input[i]}' is required`);
+        error(data, `intput field '${conf.input[i]}' is required`);
         hasError = true;
       }
     }
+  }
+  if (data.input) {
+    data.input.length = conf.input?.length || 0;
   }
   if (conf.output) {
     for (let i = 0; i < conf.output.length; i++) {
@@ -105,67 +110,72 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
         data.output[i] = "";
       }
       if (conf.output[i].indexOf("?") === -1 && !data.output[i]) {
-        console.error(
-          `check ${data.id}|${data.name}: output field '${conf.output[i]}' is required`
-        );
+        error(data, `output field '${conf.output[i]}' is required`);
         hasError = true;
       }
     }
   }
+  if (data.output) {
+    data.output.length = conf.output?.length || 0;
+  }
   if (conf.args) {
     for (let i = 0; i < conf.args.length; i++) {
-      const arg = conf.args[i];
+      const arg = conf.args[i] as NodeArg;
       const type = arg.type.replace("?", "") as NodeArgType;
       const value = data.args?.[arg.name];
       if (type === "float") {
-        if (!(typeof value === "number" || (value === undefined && arg.type === "float?"))) {
-          console.error(`check ${data.id}|${data.name}: '${arg.name}=${value}' is not a number`);
+        const isNumber = typeof value === "number";
+        const isOptional = value === undefined && arg.type === "float?";
+        if (!(isNumber || isOptional)) {
+          error(data, `'${arg.name}=${value}' is not a number`);
           hasError = true;
         }
       } else if (type === "int") {
-        if (
-          !(
-            (typeof value === "number" && value === Math.floor(value)) ||
-            (value === undefined && arg.type === "int?")
-          )
-        ) {
-          console.error(`check ${data.id}|${data.name}: '${arg.name}=${value}' is not a int`);
+        const isInt = typeof value === "number" && value === Math.floor(value);
+        const isOptional = value === undefined && arg.type === "int?";
+        if (!(isInt || isOptional)) {
+          error(data, `'${arg.name}=${value}' is not a int`);
           hasError = true;
         }
       } else if (type === "string") {
-        if (
-          !(
-            (typeof value === "string" && value) ||
-            ((value === undefined || value === "") && arg.type === "string?")
-          )
-        ) {
-          console.error(`check ${data.id}|${data.name}: '${arg.name}=${value}' is not a string`);
+        const isString = typeof value === "string" && value;
+        const isOptional = (value === undefined || value === "") && arg.type === "string?";
+        if (!(isString || isOptional)) {
+          error(data, `'${arg.name}=${value}' is not a string`);
           hasError = true;
         }
       } else if (type === "enum") {
-        const found = !!arg.options?.find((option) => option.value === value);
-        if (!(found || (value === undefined && arg.type === "enum?"))) {
-          console.error(
-            `check ${data.id}|${data.name}: '${arg.name}=${value}' is not a one of the option values`
-          );
+        const isEnum = !!arg.options?.find((option) => option.value === value);
+        const isOptional = value === undefined && arg.type === "enum?";
+        if (!(isEnum || isOptional)) {
+          error(data, `'${arg.name}=${value}' is not a one of the option values`);
           hasError = true;
         }
       } else if (type == "code") {
-        if (
-          !(
-            (typeof value === "string" && value) ||
-            ((value === undefined || value === "") && arg.type === "code?")
-          )
-        ) {
-          console.error(`check ${data.id}|${data.name}: '${arg.name}=${value}' is not a string`);
+        const isCode = typeof value === "string" && value;
+        const isOptional = (value === undefined || value === "") && arg.type === "code?";
+        if (!(isCode || isOptional)) {
+          error(data, `'${arg.name}=${value}' is not a string`);
           hasError = true;
         }
-      } else if (type == "object") {
-        if (!((value !== undefined && value !== null && value !== "") || arg.type === "object?")) {
-          console.error(
-            `check ${data.id}|${data.name}: '${arg.name}=${value}' is not an invalid object`
-          );
+      } else if (type == "json") {
+        const isJson = value !== undefined && value !== null && value !== "";
+        const isOptional = arg.type === "json?";
+        if (!(isJson || isOptional)) {
+          error(data, `'${arg.name}=${value}' is not an invalid object`);
           hasError = true;
+        }
+      }
+      if (arg.oneof !== undefined) {
+        const idx = conf.input?.findIndex((v) => v.startsWith(arg.oneof!)) ?? -1;
+        const inputValue = data.input?.[idx] ?? "";
+        const argValue = data.args?.[arg.name] ?? "";
+        if ((inputValue !== "" && argValue !== "") || (inputValue === "" && argValue === "")) {
+          error(
+            data,
+            `only one is allowed for between argument '${arg.name}' and input '${data.input?.[idx]}'`
+          );
+          return false;
         }
       }
     }
@@ -390,35 +400,50 @@ export const checkTreeData = (data: TreeGraphData) => {
   if (conf.args) {
     for (let i = 0; i < conf.args.length; i++) {
       const arg = conf.args[i] as NodeArg;
-      if (arg.type.indexOf("?") === -1) {
-        const type = arg.type as NodeArgType;
-        const value = data.args?.[arg.name];
-        if (type === "float") {
-          if (typeof value !== "number") {
-            return false;
-          }
-        } else if (type === "int") {
-          if (typeof value !== "number" || value !== Math.floor(value)) {
-            return false;
-          }
-        } else if (type === "string") {
-          if (!value || typeof value !== "string") {
-            return false;
-          }
-        } else if (type === "enum") {
-          if (!arg.options?.find((option) => option.value === value)) {
-            return false;
-          }
-        } else if (type === "code") {
-          if (!value || typeof value !== "string") {
-            return false;
-          }
+      const type = arg.type.replace("?", "") as NodeArgType;
+      const value = data.args?.[arg.name];
+      if (type === "float") {
+        const isNumber = typeof value === "number";
+        const isOptional = value === undefined && arg.type === "float?";
+        if (!(isNumber || isOptional)) {
+          return false;
         }
-      } else if (arg.oneof !== undefined) {
+      } else if (type === "int") {
+        const isInt = typeof value === "number" && value === Math.floor(value);
+        const isOptional = value === undefined && arg.type === "int?";
+        if (!(isInt || isOptional)) {
+          return false;
+        }
+      } else if (type === "string") {
+        const isString = typeof value === "string" && value;
+        const isOptional = (value === undefined || value === "") && arg.type === "string?";
+        if (!(isString || isOptional)) {
+          return false;
+        }
+      } else if (type === "enum") {
+        const isEnum = !!arg.options?.find((option) => option.value === value);
+        const isOptional = value === undefined && arg.type === "enum?";
+        if (!(isEnum || isOptional)) {
+          return false;
+        }
+      } else if (type === "code") {
+        const isCode = typeof value === "string" && value;
+        const isOptional = (value === undefined || value === "") && arg.type === "code?";
+        if (!(isCode || isOptional)) {
+          return false;
+        }
+      } else if (type == "json") {
+        const isJson = value !== undefined && value !== null && value !== "";
+        const isOptional = arg.type === "json?";
+        if (!(isJson || isOptional)) {
+          return false;
+        }
+      }
+      if (arg.oneof !== undefined) {
         const idx = conf.input?.findIndex((v) => v.startsWith(arg.oneof!)) ?? -1;
-        const input = data.input?.[idx] ?? "";
-        const value = data.args?.[arg.name] ?? "";
-        if ((input !== "" && value !== "") || (input === "" && value === "")) {
+        const inputValue = data.input?.[idx] ?? "";
+        const argValue = data.args?.[arg.name] ?? "";
+        if ((inputValue !== "" && argValue !== "") || (inputValue === "" && argValue === "")) {
           return false;
         }
       }
@@ -473,9 +498,9 @@ export const createTreeData = (node: NodeModel, parent?: string) => {
       treeData.parent = parent;
       treeData.id = node.id.toFixed();
       treeData.size = calcTreeDataSize(treeData);
-    } catch (error) {
+    } catch (e) {
       message.error(`解析子树失败：${node.path}`);
-      console.log("parse subtree:", error);
+      console.log("parse subtree:", e);
     }
     parsingStack.pop();
   }
@@ -491,8 +516,8 @@ export const createBuildData = (path: string) => {
     refreshTreeDataId(data);
     treeModel.root = createFileData(data, true);
     return treeModel as TreeModel;
-  } catch (error) {
-    console.log("build error:", path, error);
+  } catch (e) {
+    console.log("build error:", path, e);
   }
   return null;
 };
@@ -509,6 +534,17 @@ export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) =>
     disabled: data.disabled || undefined,
     path: data.path || undefined,
   };
+  const conf = useWorkspace.getState().getNodeDef(data.name);
+  if (!conf.input?.length) {
+    nodeData.input = undefined;
+  }
+  if (!conf.output?.length) {
+    nodeData.output = undefined;
+  }
+  if (!conf.args?.length) {
+    nodeData.args = undefined;
+  }
+
   if (data.children?.length && (includeSubtree || !isSubtreeRoot(data))) {
     nodeData.children = [];
     data.children.forEach((child) => {

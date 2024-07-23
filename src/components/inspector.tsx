@@ -107,7 +107,7 @@ const NodeInspector: FC = () => {
       form.setFieldValue("children", def.children);
     }
     def.args?.forEach((v) => {
-      if (v.type === "object" || v.type === "object?") {
+      if (v.type === "json" || v.type === "json?") {
         form.setFieldValue(
           `args.${v.name}`,
           JSON.stringify(data.args?.[v.name] ?? v.default, null, 2)
@@ -187,29 +187,42 @@ const NodeInspector: FC = () => {
     data.desc = values.desc && values.desc !== def.desc ? values.desc : undefined;
     data.path = values.path || undefined;
 
-    def.args?.forEach((arg) => {
-      const v = values[`args.${arg.name}`];
-      if (v !== null && v !== undefined && v !== "") {
-        data.args ||= {};
-        if (arg.type === "object" || arg.type === "object?") {
-          data.args[arg.name] = JSON.parse(v);
-        } else {
-          data.args[arg.name] = v;
+    if (def.args?.length) {
+      def.args?.forEach((arg) => {
+        const v = values[`args.${arg.name}`];
+        if (v !== null && v !== undefined && v !== "") {
+          data.args ||= {};
+          if (arg.type === "json" || arg.type === "json?") {
+            data.args[arg.name] = JSON.parse(v);
+          } else {
+            data.args[arg.name] = v;
+          }
         }
-      }
-    });
+      });
+    } else {
+      data.args = {};
+    }
 
-    def.input?.forEach((_, i) => {
-      const v = values[`input.${i}`];
-      data.input ||= [];
-      data.input.push(v ?? "");
-    });
+    if (def.input?.length) {
+      def.input?.forEach((_, i) => {
+        const v = values[`input.${i}`];
+        data.input ||= [];
+        data.input.push(v ?? "");
+      });
+    } else {
+      data.input = [];
+    }
 
-    def.output?.forEach((_, i) => {
-      const v = values[`output.${i}`];
-      data.output ||= [];
-      data.output.push(v ?? "");
-    });
+    if (def.output?.length) {
+      def.output?.forEach((_, i) => {
+        const v = values[`output.${i}`];
+        data.output ||= [];
+        data.output.push(v ?? "");
+      });
+    } else {
+      data.output = [];
+    }
+
     workspace.editing?.dispatch("updateNode", {
       data: data,
     } as EditNode);
@@ -390,7 +403,7 @@ const NodeInspector: FC = () => {
                       { required, message: t("node.fileRequired", { field: v.desc }) },
                       ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                         validator(_, value) {
-                          if (value && (v.type == "object" || v.type == "object?")) {
+                          if (value && (v.type == "json" || v.type == "json?")) {
                             try {
                               JSON.parse(value);
                             } catch (e) {
@@ -439,7 +452,7 @@ const NodeInspector: FC = () => {
                     {type === "string" && (
                       <TextArea autoSize disabled={disabled} onBlur={form.submit} />
                     )}
-                    {type === "object" && (
+                    {type === "json" && (
                       <TextArea autoSize disabled={disabled} onBlur={form.submit} />
                     )}
                     {type === "int" && (
