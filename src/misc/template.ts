@@ -18,19 +18,27 @@ export const zhNodeDef = () => {
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 不管子节点是否成功都返回`success`\n",
       },
       {
-        name: "Assert",
-        type: "Decorator",
-        children: 1,
+        name: "Assign",
+        type: "Action",
+        children: 0,
         status: ["success"],
-        desc: "断言",
+        desc: "对输入对象设置 key 和 value",
+        input: ["输入对象", "输入key?", "输入value?"],
         args: [
           {
-            name: "message",
-            type: "string",
-            desc: "消息",
+            name: "key",
+            type: "string?",
+            desc: "常量key",
+            oneof: "输入key",
+          },
+          {
+            name: "value",
+            type: "json?",
+            desc: "常量value",
+            oneof: "输入value",
           },
         ],
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点返回`failure`时，抛出异常\n+ 其余情况返回子节点的执行状态\n",
+        doc: "+ 对输入对象设置 `key` 和 `value`\n+ 输入参数1必须为对象，否则返回 `failure`\n+ 如果 `key` 为 `undefined`, 也返回 `failure`\n+ 如果 `value` 为 `undefined` 或 `null`, 则删除 `key` 的值\n",
       },
       {
         name: "Calculate",
@@ -64,14 +72,6 @@ export const zhNodeDef = () => {
         doc: "+ 做简单数值公式判定，返回`success`或`failure`\n",
       },
       {
-        name: "Clear",
-        type: "Action",
-        children: 0,
-        status: ["success"],
-        desc: "清除变量",
-        output: ["清除的变量名"],
-      },
-      {
         name: "Concat",
         type: "Action",
         children: 0,
@@ -91,15 +91,16 @@ export const zhNodeDef = () => {
         args: [
           {
             name: "delay",
-            type: "float",
+            type: "float?",
             desc: "延时时间",
+            oneof: "延时时间",
           },
         ],
         doc: "+ 当延时触发时，执行第一个子节点，多个仅执行第一个\n+ 如果子节点返回 `running`，会中断执行并清理执行栈",
       },
       {
         name: "Filter",
-        type: "Action",
+        type: "Decorator",
         children: 1,
         status: ["success", "failure", "|running"],
         desc: "返回满足条件的元素",
@@ -109,7 +110,7 @@ export const zhNodeDef = () => {
       },
       {
         name: "ForEach",
-        type: "Action",
+        type: "Decorator",
         children: 1,
         status: ["success", "|running", "|failure"],
         desc: "遍历数组",
@@ -143,8 +144,9 @@ export const zhNodeDef = () => {
         args: [
           {
             name: "idx",
-            type: "string",
+            type: "string?",
             desc: "索引",
+            oneof: "索引",
           },
         ],
         input: ["输入目标", "索引?"],
@@ -168,42 +170,22 @@ export const zhNodeDef = () => {
         input: ["判断的变量"],
       },
       {
-        name: "IsStatus",
-        type: "Condition",
-        children: 1,
-        status: ["success", "failure"],
-        desc: "检查子节点状态",
-        args: [
-          {
-            name: "status",
-            type: "enum",
-            desc: "检查子节点的执行状态",
-            options: [
-              {
-                name: "成功",
-                value: "success",
-              },
-              {
-                name: "失败",
-                value: "failure",
-              },
-              {
-                name: "运行中",
-                value: "running",
-              },
-            ],
-          },
-        ],
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 只有当子节点的执行状态与指定状态相同时才返回`success`，其余返回失败\n+ 若子节点返回`running`状态，将中断子节点并清理子节点的执行栈",
-      },
-      {
         name: "Let",
         type: "Action",
         children: 0,
         status: ["success"],
         desc: "定义新的变量名",
-        input: ["变量名"],
+        input: ["已存在变量名?"],
+        args: [
+          {
+            name: "expr",
+            type: "json?",
+            desc: "表达式",
+            oneof: "已存在变量名",
+          },
+        ],
         output: ["新变量名"],
+        doc: "+ 如果有输入变量，则给已有变量重新定义一个名字\n+ 如果有表达式，则使用表达式\n+ 如果表达式为 `null`，则清除变量\n",
       },
       {
         name: "Listen",
@@ -341,13 +323,15 @@ export const zhNodeDef = () => {
         args: [
           {
             name: "min",
-            type: "float",
+            type: "float?",
             desc: "最小值",
+            oneof: "最小值",
           },
           {
             name: "max",
-            type: "float",
+            type: "float?",
             desc: "最大值",
+            oneof: "最大值",
           },
           {
             name: "floor",
@@ -377,8 +361,9 @@ export const zhNodeDef = () => {
         args: [
           {
             name: "count",
-            type: "int",
+            type: "int?",
             desc: "循环次数",
+            oneof: "循环次数",
           },
         ],
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点返回`failure`时，退出遍历并返回`failure`状态\n+ 执行完所有子节点后，返回`success`\n",
@@ -395,6 +380,7 @@ export const zhNodeDef = () => {
             name: "maxLoop",
             type: "int?",
             desc: "最大循环次数",
+            oneof: "最大循环次数",
           },
         ],
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 只有当子节点返回`failure`时，才返回`success`，其它情况返回`running`状态\n+ 如果设定了尝试次数，超过指定次数则返回`failure`",
@@ -411,6 +397,7 @@ export const zhNodeDef = () => {
             name: "maxLoop",
             type: "int?",
             desc: "最大循环次数",
+            oneof: "最大循环次数",
           },
         ],
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 只有当子节点返回`success`时，才返回`success`，其它情况返回`running`状态\n+ 如果设定了尝试次数，超过指定次数则返回`failure`",
@@ -437,11 +424,13 @@ export const zhNodeDef = () => {
         children: 1,
         status: ["|success", "|running", "failure"],
         desc: "超时",
+        input: ["超时时间?"],
         args: [
           {
             name: "time",
-            type: "float",
+            type: "float?",
             desc: "超时时间",
+            oneof: "超时时间",
           },
         ],
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点执行超时或返回`failure`时，返回`failure`\n+ 其余情况返回子节点的执行状态\n",
@@ -456,8 +445,9 @@ export const zhNodeDef = () => {
         args: [
           {
             name: "time",
-            type: "float",
+            type: "float?",
             desc: "等待时间",
+            oneof: "等待时间",
           },
           {
             name: "random",
