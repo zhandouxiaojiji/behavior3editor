@@ -214,22 +214,22 @@ export const Menu: FC<LayoutProps> = () => {
             },
           },
           {
-            id: 'menu.edit.cut',
-            label: t('cut'),
+            id: "menu.edit.cut",
+            label: t("cut"),
             enabled: enabled,
             accelerator: Hotkey.Cut,
             click: () => {
-              getFocusedWebContents()?.cut()
-            }
+              getFocusedWebContents()?.cut();
+            },
           },
           {
-            id: 'menu.edit.selectAll',
-            label: t('selectAll'),
+            id: "menu.edit.selectAll",
+            label: t("selectAll"),
             enabled: enabled,
             accelerator: Hotkey.SelectAll,
             click: () => {
-              getFocusedWebContents()?.selectAll()
-            }
+              getFocusedWebContents()?.selectAll();
+            },
           },
           { type: "separator" },
           {
@@ -269,6 +269,13 @@ export const Menu: FC<LayoutProps> = () => {
             id: "menu.view.devTools",
             label: t("devTools"),
             accelerator: "Alt+CmdOrCtrl+I",
+            click: () => {
+              getFocusedWebContents()?.openDevTools();
+            },
+          },
+          {
+            id: "menu.view.console",
+            label: t("console"),
             click: () => {
               getFocusedWebContents()?.openDevTools();
             },

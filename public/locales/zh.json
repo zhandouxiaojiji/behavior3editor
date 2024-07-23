@@ -9,6 +9,7 @@
   "buildFailed": "构建出现错误，详情请查看控制台！",
   "cancel": "取消",
   "copy": "复制",
+  "console": "控制台",
   "cut": "替换",
   "createProject": "新建项目",
   "delete": "删除",

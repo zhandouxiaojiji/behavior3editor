@@ -1,5 +1,5 @@
 import { useWorkspace } from "@/contexts/workspace-context";
-import { NodeArg, NodeArgType, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
+import { NodeArg, NodeArgType, NodeDef, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
 import * as fs from "fs";
 import { message } from "./hooks";
 import Path from "./path";
@@ -67,8 +67,95 @@ export const isNodeEqual = (node1: NodeModel, node2: NodeModel) => {
   return false;
 };
 
-const error = (data: NodeModel, msg: string) => {
+const error = (data: NodeModel | TreeGraphData, msg: string) => {
   console.error(`check ${data.id}|${data.name}: ${msg}`);
+};
+
+const checkNodeArg = (
+  data: NodeModel | TreeGraphData,
+  conf: NodeDef,
+  i: number,
+  verbose?: boolean
+) => {
+  let hasError = false;
+  const arg = conf.args![i] as NodeArg;
+  const type = arg.type.replace("?", "") as NodeArgType;
+  const value = data.args?.[arg.name];
+  if (type === "float") {
+    const isNumber = typeof value === "number";
+    const isOptional = value === undefined && arg.type === "float?";
+    if (!(isNumber || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${value}' is not a number`);
+      }
+      hasError = true;
+    }
+  } else if (type === "int") {
+    const isInt = typeof value === "number" && value === Math.floor(value);
+    const isOptional = value === undefined && arg.type === "int?";
+    if (!(isInt || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${value}' is not a int`);
+      }
+      hasError = true;
+    }
+  } else if (type === "string") {
+    const isString = typeof value === "string" && value;
+    const isOptional = (value === undefined || value === "") && arg.type === "string?";
+    if (!(isString || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${value}' is not a string`);
+      }
+      hasError = true;
+    }
+  } else if (type === "enum") {
+    const isEnum = !!arg.options?.find((option) => option.value === value);
+    const isOptional = value === undefined && arg.type === "enum?";
+    if (!(isEnum || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${value}' is not a one of the option values`);
+      }
+      hasError = true;
+    }
+  } else if (type === "code") {
+    const isCode = typeof value === "string" && value;
+    const isOptional = (value === undefined || value === "") && arg.type === "code?";
+    if (!(isCode || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${value}' is not a string`);
+      }
+      hasError = true;
+    }
+  } else if (type == "json") {
+    const isJson = value !== undefined && value !== null && value !== "";
+    const isOptional = arg.type === "json?";
+    if (!(isJson || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${value}' is not an invalid object`);
+      }
+      hasError = true;
+    }
+  }
+  if (arg.oneof !== undefined) {
+    const idx = conf.input?.findIndex((v) => v.startsWith(arg.oneof!)) ?? -1;
+    if (!checkOneof(data.args?.[arg.name], data.input?.[idx])) {
+      if (verbose) {
+        error(
+          data,
+          `only one is allowed for between argument '${arg.name}' and input '${data.input?.[idx]}'`
+        );
+      }
+      hasError = true;
+    }
+  }
+
+  return !hasError;
+};
+
+export const checkOneof = (argValue: unknown, inputValue: unknown) => {
+  argValue = argValue ?? "";
+  inputValue = inputValue ?? "";
+  return (argValue !== "" && inputValue === "") || (argValue === "" && inputValue !== "");
 };
 
 export const checkNodeData = (data: NodeModel | null | undefined) => {
@@ -120,63 +207,8 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   }
   if (conf.args) {
     for (let i = 0; i < conf.args.length; i++) {
-      const arg = conf.args[i] as NodeArg;
-      const type = arg.type.replace("?", "") as NodeArgType;
-      const value = data.args?.[arg.name];
-      if (type === "float") {
-        const isNumber = typeof value === "number";
-        const isOptional = value === undefined && arg.type === "float?";
-        if (!(isNumber || isOptional)) {
-          error(data, `'${arg.name}=${value}' is not a number`);
-          hasError = true;
-        }
-      } else if (type === "int") {
-        const isInt = typeof value === "number" && value === Math.floor(value);
-        const isOptional = value === undefined && arg.type === "int?";
-        if (!(isInt || isOptional)) {
-          error(data, `'${arg.name}=${value}' is not a int`);
-          hasError = true;
-        }
-      } else if (type === "string") {
-        const isString = typeof value === "string" && value;
-        const isOptional = (value === undefined || value === "") && arg.type === "string?";
-        if (!(isString || isOptional)) {
-          error(data, `'${arg.name}=${value}' is not a string`);
-          hasError = true;
-        }
-      } else if (type === "enum") {
-        const isEnum = !!arg.options?.find((option) => option.value === value);
-        const isOptional = value === undefined && arg.type === "enum?";
-        if (!(isEnum || isOptional)) {
-          error(data, `'${arg.name}=${value}' is not a one of the option values`);
-          hasError = true;
-        }
-      } else if (type == "code") {
-        const isCode = typeof value === "string" && value;
-        const isOptional = (value === undefined || value === "") && arg.type === "code?";
-        if (!(isCode || isOptional)) {
-          error(data, `'${arg.name}=${value}' is not a string`);
-          hasError = true;
-        }
-      } else if (type == "json") {
-        const isJson = value !== undefined && value !== null && value !== "";
-        const isOptional = arg.type === "json?";
-        if (!(isJson || isOptional)) {
-          error(data, `'${arg.name}=${value}' is not an invalid object`);
-          hasError = true;
-        }
-      }
-      if (arg.oneof !== undefined) {
-        const idx = conf.input?.findIndex((v) => v.startsWith(arg.oneof!)) ?? -1;
-        const inputValue = data.input?.[idx] ?? "";
-        const argValue = data.args?.[arg.name] ?? "";
-        if ((inputValue !== "" && argValue !== "") || (inputValue === "" && argValue === "")) {
-          error(
-            data,
-            `only one is allowed for between argument '${arg.name}' and input '${data.input?.[idx]}'`
-          );
-          return false;
-        }
+      if (!checkNodeArg(data, conf, i, true)) {
+        hasError = true;
       }
     }
   }
@@ -399,53 +431,8 @@ export const checkTreeData = (data: TreeGraphData) => {
   }
   if (conf.args) {
     for (let i = 0; i < conf.args.length; i++) {
-      const arg = conf.args[i] as NodeArg;
-      const type = arg.type.replace("?", "") as NodeArgType;
-      const value = data.args?.[arg.name];
-      if (type === "float") {
-        const isNumber = typeof value === "number";
-        const isOptional = value === undefined && arg.type === "float?";
-        if (!(isNumber || isOptional)) {
-          return false;
-        }
-      } else if (type === "int") {
-        const isInt = typeof value === "number" && value === Math.floor(value);
-        const isOptional = value === undefined && arg.type === "int?";
-        if (!(isInt || isOptional)) {
-          return false;
-        }
-      } else if (type === "string") {
-        const isString = typeof value === "string" && value;
-        const isOptional = (value === undefined || value === "") && arg.type === "string?";
-        if (!(isString || isOptional)) {
-          return false;
-        }
-      } else if (type === "enum") {
-        const isEnum = !!arg.options?.find((option) => option.value === value);
-        const isOptional = value === undefined && arg.type === "enum?";
-        if (!(isEnum || isOptional)) {
-          return false;
-        }
-      } else if (type === "code") {
-        const isCode = typeof value === "string" && value;
-        const isOptional = (value === undefined || value === "") && arg.type === "code?";
-        if (!(isCode || isOptional)) {
-          return false;
-        }
-      } else if (type == "json") {
-        const isJson = value !== undefined && value !== null && value !== "";
-        const isOptional = arg.type === "json?";
-        if (!(isJson || isOptional)) {
-          return false;
-        }
-      }
-      if (arg.oneof !== undefined) {
-        const idx = conf.input?.findIndex((v) => v.startsWith(arg.oneof!)) ?? -1;
-        const inputValue = data.input?.[idx] ?? "";
-        const argValue = data.args?.[arg.name] ?? "";
-        if ((inputValue !== "" && argValue !== "") || (inputValue === "" && argValue === "")) {
-          return false;
-        }
+      if (!checkNodeArg(data, conf, i, false)) {
+        return false;
       }
     }
   }

@@ -1,5 +1,6 @@
 import { EditNode, EditTree, useWorkspace } from "@/contexts/workspace-context";
 import { NodeArg, NodeArgType, NodeModel, TreeGraphData } from "@/misc/b3type";
+import { checkOneof } from "@/misc/b3util";
 import { Hotkey, isMacos } from "@/misc/keys";
 import { EditOutlined } from "@ant-design/icons";
 import {
@@ -337,12 +338,7 @@ const NodeInspector: FC = () => {
                           const arg = def.args?.find((a) => a.oneof && v.startsWith(a.oneof));
                           if (arg) {
                             const argName = `args.${arg.name}`;
-                            const argValue = getFieldValue(argName) ?? "";
-                            value = value ?? "";
-                            if (
-                              (value === "" && argValue === "") ||
-                              (value !== "" && argValue !== "")
-                            ) {
+                            if (!checkOneof(getFieldValue(argName), value)) {
                               if (!isFieldValidating(argName)) {
                                 setFieldValue(`input.${i}`, value);
                                 validateFields([argName]);
@@ -420,12 +416,7 @@ const NodeInspector: FC = () => {
                             );
                           }
                           const inputName = `input.${idx}`;
-                          const inputValue = getFieldValue(inputName) ?? "";
-                          value = value ?? "";
-                          if (
-                            (value === "" && inputValue === "") ||
-                            (value !== "" && inputValue !== "")
-                          ) {
+                          if (!checkOneof(getFieldValue(inputName), value)) {
                             if (!isFieldValidating(inputName)) {
                               setFieldValue(`args.${v.name}`, value);
                               validateFields([inputName]);

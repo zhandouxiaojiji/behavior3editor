@@ -9,6 +9,7 @@
   "buildFailed": "Build failed, more information can be found in the console.",
   "cancel": "Cancel",
   "copy": "Copy",
+  "console": "Console",
   "cut": "Cut",
   "createProject": "Create Project",
   "delete": "Delete",
