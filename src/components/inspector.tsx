@@ -110,7 +110,6 @@ const NodeInspector: FC = () => {
     def.args?.forEach((v) => {
       if (v.type === "json" || v.type === "json?") {
         const value = data.args?.[v.name];
-        console.log("nameJson", v.name, value, data.args);
         form.setFieldValue(
           `args.${v.name}`,
           value === null ? "null" : JSON.stringify(value ?? v.default, null, 2)
