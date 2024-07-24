@@ -35,10 +35,14 @@ export interface NodeDef {
             | "enum?"
             | "string"
             | "string?"
+            | "json"
+            | "json?"
             | "code"
             | "code?";
         desc: string;
         default?: unknown;
+        /** Input `value`, only one is allowed between `value` and this arg.*/
+        oneof?: string;
         options?: { name: string; value: unknown }[];
     }[];
     status?:

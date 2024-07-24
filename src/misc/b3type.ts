@@ -1,6 +1,5 @@
 import { TreeGraphData as G6TreeGraphData } from "@antv/g6";
 
-export type NodeArgType = "boolean" | "string" | "int" | "float" | "json" | "enum" | "code";
 export type NodeType = "Action" | "Composite" | "Decorator" | "Condition" | "Other" | "Error";
 
 export interface NodeArgOption {
@@ -10,7 +9,21 @@ export interface NodeArgOption {
 
 export interface NodeArg {
   name: string;
-  type: NodeArgType | `${NodeArgType}?`;
+  type:
+    | "boolean"
+    | "boolean?"
+    | "int"
+    | "int?"
+    | "float"
+    | "float?"
+    | "string"
+    | "string?"
+    | "json"
+    | "json?"
+    | "enum"
+    | "enum?"
+    | "code"
+    | "code?";
   desc: string;
   oneof?: string;
   default?: unknown;
@@ -29,10 +42,27 @@ export interface NodeDef {
   doc?: string;
   color?: string;
   icon?: string;
-  status?: Exclude<
-    `${Status}` | `!${Status}` | `|${Status}` | `&${Status}`,
-    "!running" | "&running"
-  >[];
+  /**
+   * + `!success`  !(child_success|child_success|...)
+   * + `!failure`  !(child_failure|child_failure|...)
+   * + `|success`  child_success|child_success|...
+   * + `|failure`  child_failure|child_failure|...
+   * + `|running`  child_running|child_running|...
+   * + `&success`  child_success&child_success&...
+   * + `&failure`  child_failure&child_failure&...
+   */
+  status?: (
+    | "success"
+    | "failure"
+    | "running"
+    | "!success"
+    | "!failure"
+    | "|success"
+    | "|failure"
+    | "|running"
+    | "&success"
+    | "&failure"
+  )[];
   children?: -1 | 0 | 1;
 }
 

@@ -1,5 +1,5 @@
 import { useWorkspace } from "@/contexts/workspace-context";
-import { NodeArg, NodeArgType, NodeDef, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
+import { NodeArg, NodeDef, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
 import * as fs from "fs";
 import { message } from "./hooks";
 import Path from "./path";
@@ -79,7 +79,7 @@ const checkNodeArg = (
 ) => {
   let hasError = false;
   const arg = conf.args![i] as NodeArg;
-  const type = arg.type.replace("?", "") as NodeArgType;
+  const type = arg.type.replace("?", "") as NodeArg["type"];
   const value = data.args?.[arg.name];
   if (type === "float") {
     const isNumber = typeof value === "number";

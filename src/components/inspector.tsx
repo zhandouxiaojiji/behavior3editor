@@ -1,5 +1,5 @@
 import { EditNode, EditTree, useWorkspace } from "@/contexts/workspace-context";
-import { NodeArg, NodeArgType, NodeModel, TreeGraphData } from "@/misc/b3type";
+import { NodeArg, NodeModel, TreeGraphData } from "@/misc/b3type";
 import { checkOneof } from "@/misc/b3util";
 import { Hotkey, isMacos } from "@/misc/keys";
 import { EditOutlined } from "@ant-design/icons";
@@ -388,7 +388,7 @@ const NodeInspector: FC = () => {
               </Divider>
               {def.args.map((v) => {
                 const required = v.type.indexOf("?") === -1;
-                const type = v.type.replace("?", "") as NodeArgType;
+                const type = v.type.replace("?", "") as NodeArg["type"];
                 return (
                   <Form.Item
                     name={`args.${v.name}`}
