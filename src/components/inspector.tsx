@@ -339,11 +339,11 @@ const NodeInspector: FC = () => {
                           const arg = def.args?.find((a) => a.oneof && v.startsWith(a.oneof));
                           if (arg) {
                             const argName = `args.${arg.name}`;
-                            if (!checkOneof(getFieldValue(argName), value)) {
-                              if (!isFieldValidating(argName)) {
-                                setFieldValue(`input.${i}`, value);
-                                validateFields([argName]);
-                              }
+                            if (!isFieldValidating(argName)) {
+                              setFieldValue(`input.${i}`, value);
+                              validateFields([argName]);
+                            }
+                            if (!checkOneof(getFieldValue(argName) ?? "", value)) {
                               return Promise.reject(
                                 new Error(
                                   t("node.oneof.error", {
@@ -354,9 +354,6 @@ const NodeInspector: FC = () => {
                                 )
                               );
                             } else {
-                              if (!isFieldValidating(argName)) {
-                                validateFields([argName]);
-                              }
                               return Promise.resolve();
                             }
                           }
@@ -419,11 +416,11 @@ const NodeInspector: FC = () => {
                             );
                           }
                           const inputName = `input.${idx}`;
-                          if (!checkOneof(getFieldValue(inputName), value)) {
-                            if (!isFieldValidating(inputName)) {
-                              setFieldValue(`args.${v.name}`, value);
-                              validateFields([inputName]);
-                            }
+                          if (!isFieldValidating(inputName)) {
+                            setFieldValue(`args.${v.name}`, value);
+                            validateFields([inputName]);
+                          }
+                          if (!checkOneof(getFieldValue(inputName) ?? "", value)) {
                             return Promise.reject(
                               new Error(
                                 t("node.oneof.error", {
@@ -434,9 +431,6 @@ const NodeInspector: FC = () => {
                               )
                             );
                           } else {
-                            if (!isFieldValidating(inputName)) {
-                              validateFields([inputName]);
-                            }
                             return Promise.resolve();
                           }
                         },
