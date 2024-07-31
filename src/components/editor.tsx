@@ -148,7 +148,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     index: 0,
     filterStr: "",
     filterCase: false,
-    filterFocus: false,
+    filterFocus: true,
     filterType: "content",
     placeholder: "",
   });
@@ -167,6 +167,16 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     } else {
       selectNode(null);
     }
+    editor.graph.findAll("node", () => true).forEach((item) => item.draw());
+  };
+
+  const updateSearchState = () => {
+    const option = { ...filterOption };
+    option.results.length = 0;
+    filterNodes(option, findDataById("1"));
+    setFilterOption({
+      ...option,
+    });
     editor.graph.findAll("node", () => true).forEach((item) => item.draw());
   };
 
@@ -236,7 +246,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const filterNodes = (option: FilterOption, node: TreeGraphData | null) => {
     if (node) {
-      node.highlightGray = option.filterFocus;
+      node.highlightGray = option.filterFocus && !!option.filterStr;
       if (option.filterStr) {
         let found = false;
         if (option.filterType === "id") {
@@ -577,6 +587,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     if (editor.historyIndex > 0) {
       const data = editor.historyStack[--editor.historyIndex];
       useStackData(data);
+      updateSearchState();
     }
   };
 
@@ -584,6 +595,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     if (editor.historyIndex < editor.historyStack.length - 1) {
       const data = editor.historyStack[++editor.historyIndex];
       useStackData(data);
+      updateSearchState();
     }
   };
 
@@ -613,7 +625,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       editor.graph.changeData(editor.data);
       editor.graph.layout();
       restoreViewport();
-
+      updateSearchState();
       updateState();
     }
   };
@@ -1273,7 +1285,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                   results: [],
                   index: 0,
                   filterCase: false,
-                  filterFocus: false,
+                  filterFocus: true,
                   filterStr: "",
                   filterType: "content",
                   placeholder: "",
