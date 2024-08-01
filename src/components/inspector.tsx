@@ -451,9 +451,9 @@ const NodeInspector: FC = () => {
                     {type === "code" && <Input disabled={disabled} onBlur={form.submit} />}
                     {type === "enum" && (
                       <Select disabled={disabled} onBlur={form.submit} onChange={form.submit}>
-                        {v.options?.map((value) => {
+                        {v.options?.map((value, index) => {
                           return (
-                            <Select.Option key={value.name} value={value.value}>
+                            <Select.Option key={index} value={value.value}>
                               {value.name}
                             </Select.Option>
                           );
