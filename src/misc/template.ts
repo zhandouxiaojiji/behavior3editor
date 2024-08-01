@@ -7,7 +7,7 @@ export const zhNodeDef = () => {
         children: 1,
         status: ["failure", "|running"],
         desc: "始终返回失败",
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 不管子节点是否成功都返回`failure`\n",
+        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 不管子节点是否成功都返回 `failure`\n",
       },
       {
         name: "AlwaysSuccess",
@@ -15,7 +15,22 @@ export const zhNodeDef = () => {
         children: 1,
         status: ["success", "|running"],
         desc: "始终返回成功",
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 不管子节点是否成功都返回`success`\n",
+        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 不管子节点是否成功都返回 `success`\n",
+      },
+      {
+        name: "Assert",
+        type: "Decorator",
+        children: 1,
+        status: ["success"],
+        desc: "断言",
+        args: [
+          {
+            name: "message",
+            type: "string",
+            desc: "消息",
+          },
+        ],
+        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点返回 `failure` 时，抛出异常\n+ 其余情况返回子节点的执行状态\n",
       },
       {
         name: "Assign",
@@ -36,6 +51,11 @@ export const zhNodeDef = () => {
             type: "json?",
             desc: "常量value",
             oneof: "输入value",
+          },
+          {
+            name: "underscore",
+            type: "boolean?",
+            desc: "允许下划线",
           },
         ],
         doc: "+ 对输入对象设置 `key` 和 `value`\n+ 输入参数1必须为对象，否则返回 `failure`\n+ 如果 `key` 为 `undefined`, 也返回 `failure`\n+ 如果 `value` 为 `undefined` 或 `null`, 则删除 `key` 的值\n",
@@ -69,7 +89,7 @@ export const zhNodeDef = () => {
             desc: "值",
           },
         ],
-        doc: "+ 做简单数值公式判定，返回`success`或`failure`\n",
+        doc: "+ 做简单数值公式判定，返回 `success` 或 `failure`\n",
       },
       {
         name: "Concat",
@@ -79,7 +99,7 @@ export const zhNodeDef = () => {
         desc: "将两个输入合并为一个数组，并返回新数组",
         input: ["数组1", "数组2"],
         output: ["新数组"],
-        doc: "+ 如果输入不是数组，则返回`failure`\n",
+        doc: "+ 如果输入不是数组，则返回 `failure`\n",
       },
       {
         name: "Delay",
@@ -106,7 +126,7 @@ export const zhNodeDef = () => {
         desc: "返回满足条件的元素",
         input: ["输入数组"],
         output: ["变量", "新数组"],
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 遍历输入数组，将当前元素写入`变量`，满足条件的元素放入新数组\n+ 只有当新数组不为空时，才返回`success`\n",
+        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 遍历输入数组，将当前元素写入`变量`，满足条件的元素放入新数组\n+ 只有当新数组不为空时，才返回 `success`\n",
       },
       {
         name: "ForEach",
@@ -116,7 +136,7 @@ export const zhNodeDef = () => {
         desc: "遍历数组",
         input: ["数组"],
         output: ["变量"],
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 遍历输入数组，将当前元素写入`变量`\n+ 当子节点返回`failure`时，退出遍历并返回`failure`状态\n+ 执行完所有子节点后，返回`success`",
+        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 遍历输入数组，将当前元素写入`变量`\n+ 当子节点返回 `failure` 时，退出遍历并返回 `failure` 状态\n+ 执行完所有子节点后，返回 `success`",
       },
       {
         name: "IfElse",
@@ -124,7 +144,7 @@ export const zhNodeDef = () => {
         children: 3,
         status: ["|success", "|failure", "|running"],
         desc: "条件执行",
-        doc: "+ 必须有三个子节点\n+ 第一个子节点为条件节点\n+ 第二个子节点为条件为`success`时执行的节点\n+ 第三个子节点为条件为`failure`时执行的节点,\n",
+        doc: "+ 必须有三个子节点\n+ 第一个子节点为条件节点\n+ 第二个子节点为条件为 `success` 时执行的节点\n+ 第三个子节点为条件为 `failure` 时执行的节点,\n",
       },
       {
         name: "Includes",
@@ -133,7 +153,7 @@ export const zhNodeDef = () => {
         status: ["success", "failure"],
         desc: "判断元素是否在数组中",
         input: ["数组", "元素"],
-        doc: "+ 若输入的元素不合法，返回`failure`\n+ 只有数组包含元素时返回`success`，否则返回`failure`\n",
+        doc: "+ 若输入的元素不合法，返回 `failure`\n+ 只有数组包含元素时返回 `success`，否则返回 `failure`\n",
       },
       {
         name: "Index",
@@ -151,7 +171,7 @@ export const zhNodeDef = () => {
         ],
         input: ["输入目标", "索引?"],
         output: ["输出目标"],
-        doc: "+ 合法元素不包括 `undefined` 和 `null`\n+ 只有索引到有合法元素时候才会返回`success`，否则返回`failure`\n",
+        doc: "+ 合法元素不包括 `undefined` 和 `null`\n+ 只有索引到有合法元素时候才会返回 `success`，否则返回 `failure`\n",
       },
       {
         name: "Invert",
@@ -159,7 +179,7 @@ export const zhNodeDef = () => {
         children: 1,
         status: ["!success", "!failure", "|running"],
         desc: "反转子节点运行结果",
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点返回`success`时返回`failure`\n+ 当子节点返回`failure`时返回`success`\n",
+        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点返回 `success` 时返回 `failure`\n+ 当子节点返回 `failure` 时返回 `success`\n",
       },
       {
         name: "IsNull",
@@ -222,6 +242,10 @@ export const zhNodeDef = () => {
                 value: "afterRunTreeFailure",
               },
               {
+                name: "行为树被清理",
+                value: "treeCleaned",
+              },
+              {
                 name: "testOff",
                 value: "testOff",
               },
@@ -240,6 +264,7 @@ export const zhNodeDef = () => {
         children: 0,
         status: ["success"],
         desc: "打印日志",
+        input: ["日志?"],
         args: [
           {
             name: "message",
@@ -294,7 +319,7 @@ export const zhNodeDef = () => {
         children: 1,
         status: ["success", "failure", "|running"],
         desc: "只执行一次",
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 第一次执行完全部子节点时返回`success`，之后永远返回`failure`",
+        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 第一次执行完全部子节点时返回 `success`，之后永远返回 `failure`",
       },
       {
         name: "Parallel",
@@ -302,7 +327,7 @@ export const zhNodeDef = () => {
         status: ["success", "|running"],
         children: -1,
         desc: "并行执行",
-        doc: "+ 并行执行所有子节点\n+ 当有子节点返回`running`时，返回`running`状态\n+ 执行完所有子节点后，返回`success`",
+        doc: "+ 并行执行所有子节点\n+ 当有子节点返回 `running` 时，返回 `running` 状态\n+ 执行完所有子节点后，返回 `success`",
       },
       {
         name: "Push",
@@ -311,7 +336,7 @@ export const zhNodeDef = () => {
         status: ["success", "failure"],
         desc: "向数组中添加元素",
         input: ["数组", "元素"],
-        doc: "+ 当变量`数组`不是数组类型时返回`failure`\n+ 其余返回`success`\n",
+        doc: "+ 当变量`数组`不是数组类型时返回 `failure`\n+ 其余返回 `success`\n",
       },
       {
         name: "Random",
@@ -349,7 +374,7 @@ export const zhNodeDef = () => {
         desc: "随机返回输入的其中一个!",
         input: ["输入目标"],
         output: ["随机目标"],
-        doc: "+ 合法元素不包括 `undefined` 和 `null`\n+ 在输入数组中，随机返回其中一个\n+ 当输入数组为空时，或者没有合法元素，返回`failure`\n",
+        doc: "+ 合法元素不包括 `undefined` 和 `null`\n+ 在输入数组中，随机返回其中一个\n+ 当输入数组为空时，或者没有合法元素，返回 `failure`\n",
       },
       {
         name: "Repeat",
@@ -366,7 +391,7 @@ export const zhNodeDef = () => {
             oneof: "循环次数",
           },
         ],
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点返回`failure`时，退出遍历并返回`failure`状态\n+ 执行完所有子节点后，返回`success`\n",
+        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点返回 `failure` 时，退出遍历并返回 `failure` 状态\n+ 执行完所有子节点后，返回 `success`\n",
       },
       {
         name: "RepeatUntilFailure",
@@ -383,7 +408,7 @@ export const zhNodeDef = () => {
             oneof: "最大循环次数",
           },
         ],
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 只有当子节点返回`failure`时，才返回`success`，其它情况返回`running`状态\n+ 如果设定了尝试次数，超过指定次数则返回`failure`",
+        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 只有当子节点返回 `failure` 时，才返回 `success`，其它情况返回 `running` 状态\n+ 如果设定了尝试次数，超过指定次数则返回 `failure`",
       },
       {
         name: "RepeatUntilSuccess",
@@ -400,7 +425,7 @@ export const zhNodeDef = () => {
             oneof: "最大循环次数",
           },
         ],
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 只有当子节点返回`success`时，才返回`success`，其它情况返回`running`状态\n+ 如果设定了尝试次数，超过指定次数则返回`failure`",
+        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 只有当子节点返回 `success` 时，才返回 `success`，其它情况返回 `running` 状态\n+ 如果设定了尝试次数，超过指定次数则返回 `failure`",
       },
       {
         name: "Selector",
@@ -408,7 +433,7 @@ export const zhNodeDef = () => {
         children: -1,
         desc: "选择执行",
         status: ["|success", "&failure", "|running"],
-        doc: "+ 一直往下执行，直到有子节点返回`success`则返回`success`\n+ 若全部节点返回`failure`则返回`failure`",
+        doc: "+ 一直往下执行，直到有子节点返回 `success` 则返回 `success`\n+ 若全部节点返回 `failure` 则返回 `failure`",
       },
       {
         name: "Sequence",
@@ -416,7 +441,7 @@ export const zhNodeDef = () => {
         children: -1,
         status: ["&success", "|failure", "|running"],
         desc: "顺序执行",
-        doc: "+ 一直往下执行，只有当所有子节点都返回`success`, 才返回`success`\n+ 若子节点返回`failure`，则直接返回`failure`状态\n+ 其余情况返回`running`状态\n",
+        doc: "+ 一直往下执行，只有当所有子节点都返回 `success`, 才返回 `success`\n+ 若子节点返回 `failure`，则直接返回 `failure` 状态\n+ 其余情况返回 `running` 状态\n",
       },
       {
         name: "Timeout",
@@ -433,7 +458,7 @@ export const zhNodeDef = () => {
             oneof: "超时时间",
           },
         ],
-        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点执行超时或返回`failure`时，返回`failure`\n+ 其余情况返回子节点的执行状态\n",
+        doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点执行超时或返回 `failure` 时，返回 `failure`\n+ 其余情况返回子节点的执行状态\n",
       },
       {
         name: "Wait",
