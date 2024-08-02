@@ -206,11 +206,18 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
     data.output.length = conf.output?.length || 0;
   }
   if (conf.args) {
+    const args: { [k: string]: unknown } = {};
     for (let i = 0; i < conf.args.length; i++) {
+      const key = conf.args[i].name;
+      const value = data.args?.[key];
+      if (value !== undefined) {
+        args[key] = value;
+      }
       if (!checkNodeArg(data, conf, i, true)) {
         hasError = true;
       }
     }
+    data.args = args;
   }
 
   if (data.children) {
