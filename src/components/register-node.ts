@@ -177,9 +177,7 @@ G6.registerNode(
 
       // icon
       const img = nodeDef.icon
-        ? process.env.VITE_DEV_SERVER_URL && isMacos
-          ? `${Path.basename(workspace.workdir)}/${nodeDef.icon}`
-          : `${workspace.workdir}/${nodeDef.icon}`
+        ? `file:///${workspace.workdir}/${nodeDef.icon}`
         : `./icons/${classify}.svg`;
       addShape("image", {
         attrs: {

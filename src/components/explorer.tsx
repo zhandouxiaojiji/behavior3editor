@@ -35,6 +35,7 @@ type MenuEvent =
 
 export type NodeTreeType = {
   title: string;
+  path: string;
   def?: NodeDef;
   icon?: React.ReactNode;
   isLeaf?: boolean;
@@ -72,7 +73,7 @@ const findParent = (node: FileTreeType, parent?: FileTreeType): FileTreeType | u
   }
 };
 
-const resolveKeys = (path: string, node: FileTreeType, keys: React.Key[]) => {
+const resolveKeys = (path: string, node: FileTreeType | NodeTreeType, keys: React.Key[]) => {
   if (node.path === path) {
     return true;
   }
@@ -274,6 +275,7 @@ export const Explorer: FC = () => {
   const workspace = {
     close: useWorkspace((state) => state.close),
     editing: useWorkspace((state) => state.editing),
+    editingNodeDef: useWorkspace((state) => state.editingNodeDef),
     editors: useWorkspace((state) => state.editors),
     fileTree: useWorkspace((state) => state.fileTree),
     nodeDefs: useWorkspace((state) => state.nodeDefs),
@@ -290,6 +292,10 @@ export const Explorer: FC = () => {
   const [newName, setNewName] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ItemType[]>([]);
 
+  const rootNodedefName = "nodeTree.root";
+  const [selectedNodedefKeys, setSelectedNodedefKeys] = useState<string[]>([]);
+  const [expandedNodedefKeys, setExpandedNodedefKeys] = useState<React.Key[]>([rootNodedefName]);
+
   if (workspace.fileTree) {
     workspace.fileTree.icon = (
       <Flex justify="center" align="center" style={{ height: "100%" }}>
@@ -301,6 +307,7 @@ export const Explorer: FC = () => {
   const nodeTree = useMemo(() => {
     const data: NodeTreeType = {
       title: t("nodeDefinition"),
+      path: rootNodedefName,
       icon: (
         <Flex justify="center" align="center" style={{ height: "100%" }}>
           <PiTreeStructureFill size={19} />
@@ -318,6 +325,7 @@ export const Explorer: FC = () => {
         const type = getNodeType(nodeDef);
         catalog = {
           title: nodeDef.type,
+          path: `nodeTree.catalog.${nodeDef.type}`,
           children: [],
           icon: (
             <Flex justify="center" align="center" style={{ height: "100%" }}>
@@ -335,17 +343,14 @@ export const Explorer: FC = () => {
         title: `${nodeDef.name}(${nodeDef.desc})`,
         isLeaf: true,
         def: nodeDef,
+        path: `${nodeDef.name}`,
         icon: nodeDef.icon ? (
           <Flex justify="center" align="center" style={{ height: "100%" }}>
             <img
               className="b3-node-icon"
               key={catalog.title}
               style={{ width: "13px", height: "13px", color: "white" }}
-              src={
-                process.env.VITE_DEV_SERVER_URL && isMacos
-                  ? `${Path.basename(workspace.workdir)}/${nodeDef.icon}`
-                  : `${workspace.workdir}/${nodeDef.icon}`
-              }
+              src={`file:///${workspace.workdir}/${nodeDef.icon}`}
             />
           </Flex>
         ) : (
@@ -362,6 +367,7 @@ export const Explorer: FC = () => {
     return data;
   }, [t, workspace.nodeDefs]);
 
+  // expand the selected tree
   useEffect(() => {
     if (workspace.editing) {
       const keys: React.Key[] = [];
@@ -375,6 +381,21 @@ export const Explorer: FC = () => {
       setSelectedKeys([workspace.editing.path]);
     }
   }, [workspace.editing]);
+
+  // expand the selected node def
+  useEffect(() => {
+    if (workspace.editingNodeDef) {
+      const keys: React.Key[] = [];
+      resolveKeys(workspace.editingNodeDef.data.name, nodeTree, keys);
+      for (const k of expandedNodedefKeys) {
+        if (keys.indexOf(k) === -1) {
+          keys.push(k);
+        }
+      }
+      setExpandedNodedefKeys(keys);
+      setSelectedNodedefKeys([workspace.editingNodeDef.data.name]);
+    }
+  }, [t, workspace.editingNodeDef]);
 
   const keysRef = useHotkeys<HTMLDivElement>(
     [
@@ -763,6 +784,8 @@ export const Explorer: FC = () => {
               tabIndex={-1}
               treeData={workspace.fileTree ? [workspace.fileTree] : []}
               fieldNames={{ key: "path" }}
+              expandedKeys={expandedKeys}
+              selectedKeys={selectedKeys}
               onExpand={(keys) => {
                 setExpandedKeys(keys);
               }}
@@ -840,7 +863,6 @@ export const Explorer: FC = () => {
               onDragStart={(e) => {
                 e.event.dataTransfer.setData("explore-file", e.node.path);
               }}
-              defaultExpandedKeys={[workspace.fileTree.path]}
               draggable={
                 newName !== null
                   ? false
@@ -852,17 +874,19 @@ export const Explorer: FC = () => {
                       },
                     }
               }
-              expandedKeys={expandedKeys}
               switcherIcon={<DownOutlined />}
-              selectedKeys={selectedKeys}
             />
           </div>
         </Dropdown>
         <DirectoryTree
           tabIndex={-1}
-          fieldNames={{ key: "title" }}
-          treeData={nodeTree ? [nodeTree] : []}
-          defaultExpandedKeys={[nodeTree.title]}
+          fieldNames={{ key: "path" }}
+          treeData={[nodeTree]}
+          expandedKeys={expandedNodedefKeys}
+          selectedKeys={selectedNodedefKeys}
+          onExpand={(keys) => {
+            setExpandedNodedefKeys(keys);
+          }}
           draggable={{ icon: false, nodeDraggable: (node) => !!node.isLeaf }}
           titleRender={(node) => (
             <div style={{ flex: 1, width: 0, minWidth: 0 }}>
@@ -879,10 +903,13 @@ export const Explorer: FC = () => {
           )}
           onSelect={(_, info) => {
             const node = info.node;
-            if (node && node.isLeaf) {
-              workspace.onEditingNodeDef({
-                data: node.def!,
-              });
+            if (node) {
+              if (node.isLeaf) {
+                workspace.onEditingNodeDef({
+                  data: node.def!,
+                });
+              }
+              setSelectedNodedefKeys([node.path]);
             }
           }}
           onDragStart={(e) => {

@@ -5,19 +5,23 @@ import { SearchOutlined } from "@ant-design/icons";
 import { Button, Flex, LayoutProps, Select } from "antd";
 import React, { FC, useMemo } from "react";
 import { Menu } from "./menu";
+import { NodeDef } from "@/misc/b3type";
 
 interface OptionType {
   label: string | React.ReactNode;
   value: string;
-  path: string;
+  path?: string;
+  nodeDef?: NodeDef;
 }
 
 export const TitleBar: FC<LayoutProps> = () => {
   const workspace = {
     allFiles: useWorkspace((state) => state.allFiles),
     fileTree: useWorkspace((state) => state.fileTree),
+    nodeDefs: useWorkspace((state) => state.nodeDefs),
     isShowingSearch: useWorkspace((state) => state.isShowingSearch),
     onShowingSearch: useWorkspace((state) => state.onShowingSearch),
+    onEditingNodeDef: useWorkspace((state) => state.onEditingNodeDef),
     open: useWorkspace((state) => state.open),
     name: useWorkspace((state) => state.path),
     relative: useWorkspace((state) => state.relative),
@@ -41,7 +45,23 @@ export const TitleBar: FC<LayoutProps> = () => {
         path: file.path,
       });
     });
-    options.sort((a, b) => a.path.localeCompare(b.path));
+    workspace.nodeDefs.forEach((def) => {
+      const value = def.name;
+      const desc = def.desc ?? "";
+      options.push({
+        label: (
+          <div>
+            {value}
+            <span> </span>
+            <span style={{ color: "gray", fontSize: "12px" }}>
+              {value} {desc}
+            </span>
+          </div>
+        ),
+        value: `${value.toLocaleLowerCase()} ${desc.toLocaleLowerCase()}`,
+        nodeDef: def,
+      });
+    });
     return options;
   }, [workspace.allFiles, workspace.fileTree]);
   return (
@@ -103,17 +123,23 @@ export const TitleBar: FC<LayoutProps> = () => {
             onChange={(_, option) => {
               if (!(option instanceof Array)) {
                 workspace.onShowingSearch(false);
-                workspace.open(option.path);
+                if (option.path) {
+                  workspace.open(option.path);
+                } else if (option.nodeDef) {
+                  workspace.onEditingNodeDef({
+                    data: option.nodeDef,
+                  });
+                }
               }
             }}
             filterOption={(input, option) =>
               (option?.value ?? "").includes(input.toLocaleLowerCase())
             }
-            filterSort={(optionA, optionB) =>
-              (optionA?.value ?? "")
-                .toLowerCase()
-                .localeCompare((optionB?.value ?? "").toLowerCase())
-            }
+            // filterSort={(optionA, optionB) =>
+            //   (optionA?.value ?? "")
+            //     .toLowerCase()
+            //     .localeCompare((optionB?.value ?? "").toLowerCase())
+            // }
             options={searchOptions}
           />
         )}

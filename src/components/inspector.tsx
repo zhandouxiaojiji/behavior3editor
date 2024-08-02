@@ -2,6 +2,7 @@ import { EditNode, EditTree, useWorkspace } from "@/contexts/workspace-context";
 import { NodeArg, NodeModel, TreeGraphData } from "@/misc/b3type";
 import { checkOneof } from "@/misc/b3util";
 import { Hotkey, isMacos } from "@/misc/keys";
+import { mergeClassNames } from "@/misc/util";
 import { EditOutlined } from "@ant-design/icons";
 import {
   AutoComplete,
@@ -57,8 +58,8 @@ const TreeInspector: FC = () => {
         <span style={{ fontSize: "18px", fontWeight: "600" }}>{t("tree.overview")}</span>
       </div>
       <div
-        className={isMacos ? undefined : "b3-overflow"}
-        style={{ overflow: "auto", height: "100%", padding: "24px" }}
+        className={mergeClassNames("b3-inspector-content", isMacos ? "" : "b3-overflow")}
+        style={{ overflow: "auto", height: "100%" }}
       >
         <Form form={form} labelCol={{ span: 8 }} onFinish={finish}>
           <Form.Item name="name" label={t("tree.name")}>
@@ -263,8 +264,8 @@ const NodeInspector: FC = () => {
         <span style={{ fontSize: "18px", fontWeight: "600" }}>{def.desc}</span>
       </div>
       <div
-        className={isMacos ? undefined : "b3-overflow"}
-        style={{ overflow: "auto", height: "100%", padding: "24px" }}
+        className={mergeClassNames("b3-inspector-content", isMacos ? "" : "b3-overflow")}
+        style={{ overflow: "auto", height: "100%" }}
       >
         <Form
           form={form}
@@ -549,8 +550,8 @@ const NodeDefInspector: FC = () => {
         <span style={{ fontSize: "18px", fontWeight: "600" }}>{t("nodeDefinition")}</span>
       </div>
       <div
-        className={isMacos ? undefined : "b3-overflow"}
-        style={{ overflow: "auto", height: "100%", padding: "24px" }}
+        className={mergeClassNames("b3-inspector-content", isMacos ? "" : "b3-overflow")}
+        style={{ overflow: "auto", height: "100%" }}
       >
         <Form
           form={form}
