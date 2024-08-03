@@ -53,9 +53,7 @@ export const TitleBar: FC<LayoutProps> = () => {
           <div>
             {value}
             <span> </span>
-            <span style={{ color: "gray", fontSize: "12px" }}>
-              {value} {desc}
-            </span>
+            <span style={{ color: "gray", fontSize: "12px" }}>{desc}</span>
           </div>
         ),
         value: `${value.toLocaleLowerCase()} ${desc.toLocaleLowerCase()}`,
@@ -116,7 +114,7 @@ export const TitleBar: FC<LayoutProps> = () => {
             }}
             suffixIcon={<SearchOutlined />}
             className="b3-search b3-no-drag-region"
-            style={{ width: "400px", top: "5px", position: "absolute", zIndex: 999 }}
+            style={{ width: "500px", top: "5px", position: "absolute", zIndex: 999 }}
             placeholder=""
             optionFilterProp="value"
             onBlur={() => workspace.onShowingSearch(false)}

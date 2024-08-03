@@ -30,8 +30,6 @@ export interface NodeArg {
   options?: NodeArgOption[];
 }
 
-type Status = "success" | "running" | "failure";
-
 export interface NodeDef {
   name: string;
   type: NodeType;
