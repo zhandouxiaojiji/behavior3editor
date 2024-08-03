@@ -84,7 +84,7 @@
 
   "node.args": "Const arguments",
   "node.children.unlimited": "Unlimited",
-  "node.children": "Subnode limit",
+  "node.children": "Num children",
   "node.debug": "Debug",
   "node.deleteRootNodeDenied": "Unable to delete the root node",
   "node.desc": "Node desc",

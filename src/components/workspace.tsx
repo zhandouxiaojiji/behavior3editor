@@ -349,7 +349,6 @@ export const Workspace: FC = () => {
                   { label: t("searchFile"), hotkeys: isMacos ? "⌘ P" : "Ctrl + P" },
                   { label: t("build"), hotkeys: isMacos ? "⌘ B" : "Ctrl + B" },
                   { label: t("searchNode"), hotkeys: isMacos ? "⌘ F" : "Ctrl + F" },
-                  { label: t("jumpNode"), hotkeys: isMacos ? "⌘ G" : "Ctrl + G" },
                   { label: t("insertNode"), hotkeys: "Enter" },
                   { label: t("deleteNode"), hotkeys: "Backspace" },
                 ].map((v) => (
