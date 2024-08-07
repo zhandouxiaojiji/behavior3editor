@@ -337,7 +337,9 @@ const NodeInspector: FC = () => {
                       { required, message: t("node.fileRequired", { field: desc }) },
                       ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                         validator(_, value) {
-                          const arg = def.args?.find((a) => a.oneof && v.startsWith(a.oneof));
+                          const arg = def.args?.find(
+                            (a) => a.oneof && v.replace("?", "") === a.oneof
+                          );
                           if (arg) {
                             const argName = `args.${arg.name}`;
                             if (!isFieldValidating(argName)) {
@@ -407,10 +409,12 @@ const NodeInspector: FC = () => {
                               return Promise.reject(new Error(t("node.invalidValue")));
                             }
                           }
-                          if (v.oneof === undefined) {
+                          if (!v.oneof) {
                             return Promise.resolve();
                           }
-                          const idx = def.input?.findIndex((input) => input.startsWith(v.oneof!));
+                          const idx = def.input?.findIndex(
+                            (input) => input.replace("?", "") === v.oneof
+                          );
                           if (idx === undefined || idx < 0) {
                             return Promise.reject(
                               new Error(t("node.oneof.inputNotfound", { input: v.oneof }))
