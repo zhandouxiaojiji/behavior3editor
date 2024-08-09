@@ -2,8 +2,6 @@ import { useWorkspace } from "@/contexts/workspace-context";
 import { TreeGraphData, getNodeType } from "@/misc/b3type";
 import { checkTreeData, cutWordTo, toBreakWord } from "@/misc/b3util";
 import i18n from "@/misc/i18n";
-import { isMacos } from "@/misc/keys";
-import Path from "@/misc/path";
 import G6 from "@antv/g6";
 
 const NODE_COLORS: any = {
@@ -250,7 +248,7 @@ G6.registerNode(
       let desc = (cfg.desc || nodeDef.desc) as string;
       if (desc) {
         desc = i18n.t("regnode.mark") + desc;
-        desc = cutWordTo(desc, 33);
+        desc = cutWordTo(desc, w - 15);
         addShape("text", {
           attrs: {
             textBaseline: "top",
@@ -267,7 +265,7 @@ G6.registerNode(
 
       const args: any = cfg.args;
       if (nodeDef.args && args && Object.keys(args).length > 0) {
-        const { str, line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 36);
+        const { str, line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 200);
         addShape("text", {
           attrs: {
             textBaseline: "top",
@@ -285,7 +283,10 @@ G6.registerNode(
 
       const input: [] = cfg.input ? (cfg.input as []) : [];
       if (nodeDef.input && input.length > 0) {
-        const { str, line } = toBreakWord(`${i18n.t("regnode.input")}${JSON.stringify(input)}`, 35);
+        const { str, line } = toBreakWord(
+          `${i18n.t("regnode.input")}${JSON.stringify(input)}`,
+          200
+        );
         if (cfg.highlightInput) {
           addShape("rect", {
             attrs: {
@@ -322,7 +323,7 @@ G6.registerNode(
       if (nodeDef.output && output.length > 0) {
         const { str, line } = toBreakWord(
           `${i18n.t("regnode.output")}${JSON.stringify(output)}`,
-          35
+          200
         );
         if (cfg.highlightOutput) {
           addShape("rect", {
@@ -358,7 +359,7 @@ G6.registerNode(
 
       if (cfg.path) {
         let path = (i18n.t("regnode.subtree") + cfg.path) as string;
-        path = cutWordTo(path, 35);
+        path = cutWordTo(path, w - 15);
         addShape("text", {
           attrs: {
             textBaseline: "top",
