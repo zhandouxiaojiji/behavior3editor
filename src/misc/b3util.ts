@@ -4,6 +4,45 @@ import * as fs from "fs";
 import { message } from "./hooks";
 import Path from "./path";
 import { zhNodeDef } from "./template";
+import i18n from "@/misc/i18n";
+import { isMacos } from "./keys";
+
+let ctx: CanvasRenderingContext2D | null = null;
+let defaultFontSize = "";
+const textWidthMap = new Map<string, number>();
+
+const isAsciiChar = (c: number) => {
+  return (c >= 0x0001 && c <= 0x007e) || (0xff60 <= c && c <= 0xff9f);
+};
+
+const calcTextWith = (text: string, fontSize?: string) => {
+  fontSize = fontSize ?? defaultFontSize;
+  let b3Workspace: HTMLDivElement | null;
+  let css: CSSStyleDeclaration | null;
+  if (!fontSize) {
+    b3Workspace = document.querySelector(".b3-workspace");
+    if (b3Workspace) {
+      css = getComputedStyle(b3Workspace);
+      defaultFontSize = css.fontSize || "13px";
+      fontSize = defaultFontSize;
+    }
+  }
+  const key = `${text}-${fontSize}`;
+  let width = textWidthMap.get(key);
+  if (!width) {
+    b3Workspace ||= document.querySelector(".b3-workspace");
+    if (b3Workspace) {
+      css ||= getComputedStyle(b3Workspace);
+      ctx = ctx || document.createElement("canvas").getContext("2d")!;
+      ctx.font = `${fontSize} ${css.fontFamily}`;
+      const metrics = ctx.measureText(text);
+      width = metrics.width;
+      width = width - (isMacos ? 1.6 : 0.8);
+      textWidthMap.set(key, width);
+    }
+  }
+  return width ?? 13;
+};
 
 export const isSubtreeRoot = (data: TreeGraphData) => {
   return data.path && data.id.toString() !== "1";
@@ -395,8 +434,8 @@ export const refreshTreeDataId = (data: TreeGraphData, id?: number) => {
 export const calcTreeDataSize = (data: TreeGraphData) => {
   let height = 50 + 2;
   const updateHeight = (obj: any) => {
-    if (Array.isArray(obj) || (obj && Object.keys(obj).length > 0)) {
-      const { str, line } = toBreakWord(`参数:${JSON.stringify(obj)}`, 35);
+    if ((Array.isArray(obj) && obj.length) || (obj && Object.keys(obj).length > 0)) {
+      const { line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(obj)}`, 200);
       height += 20 * line;
     }
   };
@@ -563,24 +602,16 @@ export const isTreeFile = (path: string) => {
   return path.toLocaleLowerCase().endsWith(".json");
 };
 
-const isAsciiChar = (c: number) => {
-  return (c >= 0x0001 && c <= 0x007e) || (0xff60 <= c && c <= 0xff9f);
-};
-
-const isUppercase = (c: number) => {
-  return c >= 0x0041 && c <= 0x005a;
-};
-
-export const toBreakWord = (str: string, maxlen: number) => {
+export const toBreakWord = (str: string, maxWidth: number, fontSize?: string) => {
   const chars: string[] = [];
-  let line = 1;
-  let len = 0;
+  let line = str.length > 0 ? 1 : 0;
+  let width = maxWidth;
   for (let i = 0; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    len += isAsciiChar(c) ? (isUppercase(c) ? 1.5 : 1) : 2;
-    chars.push(String.fromCharCode(c));
-    if (len >= maxlen && i < str.length - 1) {
-      len = 0;
+    width -= calcTextWith(str.charAt(i), fontSize);
+    if (width > 0) {
+      chars.push(str.charAt(i));
+    } else {
+      width = maxWidth;
       line++;
       chars.push("\n");
     }
@@ -591,12 +622,12 @@ export const toBreakWord = (str: string, maxlen: number) => {
   };
 };
 
-export const cutWordTo = (str: string, maxlen: number) => {
+export const cutWordTo = (str: string, maxWidth: number, fontSize?: string) => {
   let i = 0;
   for (; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    maxlen -= isAsciiChar(c) ? (isUppercase(c) ? 1.5 : 1) : 2;
-    if (maxlen <= 0) {
+    maxWidth -= calcTextWith(str.charAt(i), fontSize);
+    if (maxWidth < 0) {
+      i--;
       break;
     }
   }
