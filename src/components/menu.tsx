@@ -6,7 +6,7 @@ import { Hotkey, isMacos, sendInputEvent } from "@/misc/keys";
 import { CheckOutlined } from "@ant-design/icons";
 import { Menu as AppMenu, BrowserWindow, app, dialog } from "@electron/remote";
 import { Button, DropDownProps, Dropdown, Flex, FlexProps, LayoutProps, Space } from "antd";
-import { ItemType } from "antd/es/menu/hooks/useItems";
+import { ItemType } from "antd/es/menu/interface";
 import { ipcRenderer } from "electron";
 import { MenuItemConstructorOptions } from "electron/renderer";
 import * as fs from "fs";
