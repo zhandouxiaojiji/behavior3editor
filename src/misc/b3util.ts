@@ -614,6 +614,7 @@ export const toBreakWord = (str: string, maxWidth: number, fontSize?: string) =>
       width = maxWidth;
       line++;
       chars.push("\n");
+      i--;
     }
   }
   return {
