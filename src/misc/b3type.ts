@@ -2,32 +2,34 @@ import { TreeGraphData as G6TreeGraphData } from "@antv/g6";
 
 export type NodeType = "Action" | "Composite" | "Decorator" | "Condition" | "Other" | "Error";
 
-export interface NodeArgOption {
-  name: string;
-  value: string | number;
-}
-
 export interface NodeArg {
   name: string;
   type:
     | "boolean"
     | "boolean?"
+    | "boolean[]"
     | "int"
     | "int?"
+    | "int[]"
     | "float"
     | "float?"
+    | "float[]"
     | "string"
     | "string?"
+    | "string[]"
     | "json"
     | "json?"
+    | "json[]"
     | "enum"
     | "enum?"
+    | "enum[]"
     | "code"
-    | "code?";
+    | "code?"
+    | "code[]";
   desc: string;
   oneof?: string;
   default?: unknown;
-  options?: NodeArgOption[];
+  options?: { name: string; value: string | number }[];
 }
 
 export interface NodeDef {
