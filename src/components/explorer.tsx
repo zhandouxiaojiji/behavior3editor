@@ -8,7 +8,7 @@ import Path from "@/misc/path";
 import { DownOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Flex, FlexProps, Input, MenuProps, Space, Tree } from "antd";
 import { ItemType } from "antd/es/menu/interface";
-import { ipcRenderer, shell } from "electron";
+import { ipcRenderer } from "electron";
 import * as fs from "fs";
 import React, { FC, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";

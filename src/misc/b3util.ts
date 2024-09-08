@@ -1,11 +1,11 @@
 import { useWorkspace } from "@/contexts/workspace-context";
 import { NodeArg, NodeDef, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
+import i18n from "@/misc/i18n";
 import * as fs from "fs";
 import { message } from "./hooks";
+import { isMacos } from "./keys";
 import Path from "./path";
 import { zhNodeDef } from "./template";
-import i18n from "@/misc/i18n";
-import { isMacos } from "./keys";
 
 let ctx: CanvasRenderingContext2D | null = null;
 let defaultFontSize = "";
@@ -110,7 +110,86 @@ const error = (data: NodeModel | TreeGraphData, msg: string) => {
   console.error(`check ${data.id}|${data.name}: ${msg}`);
 };
 
-const checkNodeArg = (
+export const getNodeArgRawType = (arg: NodeArg) => {
+  return arg.type.match(/^\w+/)![0] as NodeArg["type"];
+};
+
+export const isNodeArgArray = (arg: NodeArg) => {
+  return arg.type.includes("[]");
+};
+
+export const isNodeArgOptional = (arg: NodeArg) => {
+  return arg.type.includes("?");
+};
+
+export const checkNodeArgValue = (
+  data: NodeModel | TreeGraphData,
+  arg: NodeArg,
+  value: unknown,
+  verbose?: boolean
+) => {
+  let hasError = false;
+  const type = getNodeArgRawType(arg);
+  if (type === "float") {
+    const isNumber = typeof value === "number";
+    const isOptional = value === undefined && isNodeArgOptional(arg);
+    if (!(isNumber || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a number`);
+      }
+      hasError = true;
+    }
+  } else if (type === "int") {
+    const isInt = typeof value === "number" && value === Math.floor(value);
+    const isOptional = value === undefined && isNodeArgOptional(arg);
+    if (!(isInt || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a int`);
+      }
+      hasError = true;
+    }
+  } else if (type === "string") {
+    const isString = typeof value === "string" && value;
+    const isOptional = (value === undefined || value === "") && isNodeArgOptional(arg);
+    if (!(isString || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a string`);
+      }
+      hasError = true;
+    }
+  } else if (type === "enum") {
+    const isEnum = !!arg.options?.find((option) => option.value === value);
+    const isOptional = value === undefined && isNodeArgOptional(arg);
+    if (!(isEnum || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a one of the option values`);
+      }
+      hasError = true;
+    }
+  } else if (type === "code") {
+    const isCode = typeof value === "string" && value;
+    const isOptional = (value === undefined || value === "") && isNodeArgOptional(arg);
+    if (!(isCode || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a string`);
+      }
+      hasError = true;
+    }
+  } else if (type === "json") {
+    const isJson = value !== undefined && value !== "";
+    const isOptional = isNodeArgOptional(arg);
+    if (!(isJson || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${value}' is not an invalid object`);
+      }
+      hasError = true;
+    }
+  }
+
+  return !hasError;
+};
+
+export const checkNodeArg = (
   data: NodeModel | TreeGraphData,
   conf: NodeDef,
   i: number,
@@ -118,62 +197,22 @@ const checkNodeArg = (
 ) => {
   let hasError = false;
   const arg = conf.args![i] as NodeArg;
-  const type = arg.type.replace("?", "") as NodeArg["type"];
   const value = data.args?.[arg.name];
-  if (type === "float") {
-    const isNumber = typeof value === "number";
-    const isOptional = value === undefined && arg.type === "float?";
-    if (!(isNumber || isOptional)) {
+  if (isNodeArgArray(arg)) {
+    if (!Array.isArray(value)) {
       if (verbose) {
-        error(data, `'${arg.name}=${value}' is not a number`);
+        error(data, `'${arg.name}=${value}' is not an array`);
       }
       hasError = true;
-    }
-  } else if (type === "int") {
-    const isInt = typeof value === "number" && value === Math.floor(value);
-    const isOptional = value === undefined && arg.type === "int?";
-    if (!(isInt || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${value}' is not a int`);
+    } else {
+      for (let j = 0; j < value.length; j++) {
+        if (!checkNodeArgValue(data, arg, value[j], verbose)) {
+          hasError = true;
+        }
       }
-      hasError = true;
     }
-  } else if (type === "string") {
-    const isString = typeof value === "string" && value;
-    const isOptional = (value === undefined || value === "") && arg.type === "string?";
-    if (!(isString || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${value}' is not a string`);
-      }
-      hasError = true;
-    }
-  } else if (type === "enum") {
-    const isEnum = !!arg.options?.find((option) => option.value === value);
-    const isOptional = value === undefined && arg.type === "enum?";
-    if (!(isEnum || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${value}' is not a one of the option values`);
-      }
-      hasError = true;
-    }
-  } else if (type === "code") {
-    const isCode = typeof value === "string" && value;
-    const isOptional = (value === undefined || value === "") && arg.type === "code?";
-    if (!(isCode || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${value}' is not a string`);
-      }
-      hasError = true;
-    }
-  } else if (type === "json") {
-    const isJson = value !== undefined && value !== "";
-    const isOptional = arg.type === "json?";
-    if (!(isJson || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${value}' is not an invalid object`);
-      }
-      hasError = true;
-    }
+  } else if (!checkNodeArgValue(data, arg, value, verbose)) {
+    hasError = true;
   }
   if (arg.oneof !== undefined) {
     const idx = conf.input?.findIndex((v) => v.startsWith(arg.oneof!)) ?? -1;
@@ -210,6 +249,8 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
       error(data, `expect ${conf.children} children, but got ${count}`);
     }
   }
+
+  let hasVaridicInput = false;
   if (conf.input) {
     for (let i = 0; i < conf.input.length; i++) {
       if (!data.input) {
@@ -218,15 +259,20 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
       if (!data.input[i]) {
         data.input[i] = "";
       }
-      if (conf.input[i].indexOf("?") === -1 && !data.input[i]) {
+      if (!isValidInputOrOutput(conf.input, data.input, i)) {
         error(data, `intput field '${conf.input[i]}' is required`);
         hasError = true;
       }
+      if (i === conf.input.length - 1 && conf.input.at(-1)?.endsWith("...")) {
+        hasVaridicInput = true;
+      }
     }
   }
-  if (data.input) {
+  if (data.input && !hasVaridicInput) {
     data.input.length = conf.input?.length || 0;
   }
+
+  let hasVaridicOutput = false;
   if (conf.output) {
     for (let i = 0; i < conf.output.length; i++) {
       if (!data.output) {
@@ -235,13 +281,16 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
       if (!data.output[i]) {
         data.output[i] = "";
       }
-      if (conf.output[i].indexOf("?") === -1 && !data.output[i]) {
+      if (!isValidInputOrOutput(conf.output, data.output, i)) {
         error(data, `output field '${conf.output[i]}' is required`);
         hasError = true;
       }
+      if (i === conf.output.length - 1 && conf.output.at(-1)?.endsWith("...")) {
+        hasVaridicOutput = true;
+      }
     }
   }
-  if (data.output) {
+  if (data.output && !hasVaridicOutput) {
     data.output.length = conf.output?.length || 0;
   }
   if (conf.args) {
@@ -456,18 +505,30 @@ export const checkChildrenLimit = (data: TreeGraphData) => {
   return true;
 };
 
+const isValidInputOrOutput = (
+  inputDef: string[],
+  inputData: string[] | undefined,
+  index: number
+) => {
+  return (
+    inputDef[index].includes("?") ||
+    inputData?.[index] ||
+    (index === inputDef.length - 1 && inputDef[index].endsWith("..."))
+  );
+};
+
 export const checkTreeData = (data: TreeGraphData) => {
   const conf = data.def;
   if (conf.input) {
     for (let i = 0; i < conf.input.length; i++) {
-      if (conf.input[i].indexOf("?") === -1 && !data.input?.[i]) {
+      if (!isValidInputOrOutput(conf.input, data.input, i)) {
         return false;
       }
     }
   }
   if (conf.output) {
     for (let i = 0; i < conf.output.length; i++) {
-      if (conf.output[i].indexOf("?") === -1 && !data.output?.[i]) {
+      if (!isValidInputOrOutput(conf.output, data.output, i)) {
         return false;
       }
     }

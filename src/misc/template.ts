@@ -33,34 +33,6 @@ export const zhNodeDef = () => {
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 当子节点返回 `failure` 时，抛出异常\n+ 其余情况返回子节点的执行状态\n",
       },
       {
-        name: "Assign",
-        type: "Action",
-        children: 0,
-        status: ["success"],
-        desc: "对输入对象设置 key 和 value",
-        input: ["输入对象", "输入key?", "输入value?"],
-        args: [
-          {
-            name: "key",
-            type: "string?",
-            desc: "常量key",
-            oneof: "输入key",
-          },
-          {
-            name: "value",
-            type: "json?",
-            desc: "常量value",
-            oneof: "输入value",
-          },
-          {
-            name: "underscore",
-            type: "boolean?",
-            desc: "允许下划线",
-          },
-        ],
-        doc: "+ 对输入对象设置 `key` 和 `value`\n+ 输入参数1必须为对象，否则返回 `failure`\n+ 如果 `key` 为 `undefined`, 也返回 `failure`\n+ 如果 `value` 为 `undefined` 或 `null`, 则删除 `key` 的值\n",
-      },
-      {
         name: "Calculate",
         type: "Action",
         children: 0,
@@ -139,6 +111,24 @@ export const zhNodeDef = () => {
         doc: "+ 只能有一个子节点，多个仅执行第一个\n+ 遍历输入数组，将当前元素写入`变量`\n+ 当子节点返回 `failure` 时，退出遍历并返回 `failure` 状态\n+ 执行完所有子节点后，返回 `success`",
       },
       {
+        name: "GetField",
+        type: "Action",
+        children: 0,
+        status: ["success", "failure"],
+        desc: "获取对象的字段值",
+        args: [
+          {
+            name: "field",
+            type: "string?",
+            desc: "字段(field)",
+            oneof: "字段(field)",
+          },
+        ],
+        input: ["对象", "字段(field)?"],
+        output: ["字段值(value)"],
+        doc: "+ 合法元素不包括 `undefined` 和 `null`\n+ 只有获取到合法元素时候才会返回 `success`，否则返回 `failure`\n",
+      },
+      {
         name: "IfElse",
         type: "Composite",
         children: 3,
@@ -160,18 +150,18 @@ export const zhNodeDef = () => {
         type: "Action",
         children: 0,
         status: ["success", "failure"],
-        desc: "索引输入的数组或对象",
+        desc: "索引输入的数组",
         args: [
           {
-            name: "idx",
-            type: "string?",
+            name: "index",
+            type: "int?",
             desc: "索引",
             oneof: "索引",
           },
         ],
-        input: ["输入目标", "索引?"],
-        output: ["输出目标"],
-        doc: "+ 合法元素不包括 `undefined` 和 `null`\n+ 只有索引到有合法元素时候才会返回 `success`，否则返回 `failure`\n",
+        input: ["数组", "索引?"],
+        output: ["值"],
+        doc: "+ 合法元素不包括 `undefined` 和 `null`\n+ 索引数组的时候，第一个元素的索引为 0\n+ 只有索引到有合法元素时候才会返回 `success`，否则返回 `failure`\n",
       },
       {
         name: "Invert",
@@ -198,14 +188,14 @@ export const zhNodeDef = () => {
         input: ["已存在变量名?"],
         args: [
           {
-            name: "expr",
+            name: "value",
             type: "json?",
-            desc: "表达式",
+            desc: "值(value)",
             oneof: "已存在变量名",
           },
         ],
         output: ["新变量名"],
-        doc: "+ 如果有输入变量，则给已有变量重新定义一个名字\n+ 如果有表达式，则使用表达式\n+ 如果表达式为 `null`，则清除变量\n",
+        doc: "+ 如果有输入变量，则给已有变量重新定义一个名字\n+ 如果`值(value)`为 `null`，则清除变量\n",
       },
       {
         name: "Listen",
@@ -440,6 +430,29 @@ export const zhNodeDef = () => {
         status: ["&success", "|failure", "|running"],
         desc: "顺序执行",
         doc: "+ 一直往下执行，只有当所有子节点都返回 `success`, 才返回 `success`\n+ 若子节点返回 `failure`，则直接返回 `failure` 状态\n+ 其余情况返回 `running` 状态\n",
+      },
+      {
+        name: "SetField",
+        type: "Action",
+        children: 0,
+        status: ["success", "failure"],
+        desc: "设置对象字段值",
+        input: ["输入对象", "字段(field)?", "值(value)?"],
+        args: [
+          {
+            name: "field",
+            type: "string?",
+            desc: "字段(field)",
+            oneof: "字段(field)",
+          },
+          {
+            name: "value",
+            type: "json?",
+            desc: "值(value)",
+            oneof: "值(value)",
+          },
+        ],
+        doc: "+ 对输入对象设置 `field` 和 `value`\n+ 输入参数1必须为对象，否则返回 `failure`\n+ 如果 `field` 不为 `string`, 也返回 `failure`\n+ 如果 `value` 为 `undefined` 或 `null`, 则删除 `field` 的值\n",
       },
       {
         name: "Timeout",

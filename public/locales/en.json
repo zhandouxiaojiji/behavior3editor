@@ -83,6 +83,9 @@
   "regnode.subtree": "Subtree: ",
 
   "node.args": "Const arguments",
+  "node.args.add": "Add Sub Item",
+  "node.input.add": "Add Input Item",
+  "node.output.add": "Add Output Item",
   "node.children.unlimited": "Unlimited",
   "node.children": "Num children",
   "node.debug": "Debug",

@@ -83,6 +83,9 @@
   "regnode.subtree": "子树：",
 
   "node.args": "常量参数",
+  "node.args.add": "添加子项",
+  "node.input.add": "添加输入项",
+  "node.output.add": "添加输出项",
   "node.children.unlimited": "无限制",
   "node.children": "子节点数量",
   "node.debug": "调试",

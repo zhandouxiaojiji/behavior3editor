@@ -2,16 +2,15 @@ import { NodeDef, NodeModel, TreeGraphData, TreeModel, unknownNodeDef } from "@/
 import * as b3util from "@/misc/b3util";
 import { message } from "@/misc/hooks";
 import i18n from "@/misc/i18n";
-import { readJson, writeJson } from "@/misc/util";
 import Path from "@/misc/path";
+import { readJson, writeJson } from "@/misc/util";
 import { Matrix, TreeGraph } from "@antv/g6";
 import { BrowserWindow, dialog } from "@electron/remote";
+import { ipcRenderer } from "electron";
 import * as fs from "fs";
 import React from "react";
 import { create } from "zustand";
 import { useSetting } from "./setting-context";
-import { ipcRenderer } from "electron";
-import { Editor } from "../components/editor";
 
 let buildDir: string | undefined;
 
