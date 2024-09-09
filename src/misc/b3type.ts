@@ -8,24 +8,31 @@ export interface NodeArg {
     | "boolean"
     | "boolean?"
     | "boolean[]"
+    | "boolean[]?"
     | "int"
     | "int?"
     | "int[]"
+    | "int[]?"
     | "float"
     | "float?"
     | "float[]"
+    | "float[]?"
     | "string"
     | "string?"
     | "string[]"
+    | "string[]?"
     | "json"
     | "json?"
     | "json[]"
+    | "json[]?"
     | "enum"
     | "enum?"
     | "enum[]"
+    | "enum[]?"
     | "code"
     | "code?"
-    | "code[]";
+    | "code[]"
+    | "code[]?";
   desc: string;
   oneof?: string;
   default?: unknown;

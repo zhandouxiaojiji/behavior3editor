@@ -637,6 +637,7 @@ const NodeInspector: FC = () => {
                                 }}
                                 style={{ width: "100%" }}
                                 icon={<PlusOutlined />}
+                                danger={items.length === 0 && !isNodeArgOptional(arg)}
                               >
                                 {t("node.args.add")}
                               </Button>
