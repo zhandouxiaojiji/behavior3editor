@@ -200,10 +200,12 @@ export const checkNodeArg = (
   const value = data.args?.[arg.name];
   if (isNodeArgArray(arg)) {
     if (!Array.isArray(value)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${value}' is not an array`);
+      if (value !== undefined) {
+        if (verbose) {
+          error(data, `'${arg.name}=${value}' is not an array`);
+        }
+        hasError = true;
       }
-      hasError = true;
     } else {
       for (let j = 0; j < value.length; j++) {
         if (!checkNodeArgValue(data, arg, value[j], verbose)) {
@@ -298,11 +300,13 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
     for (let i = 0; i < conf.args.length; i++) {
       const key = conf.args[i].name;
       const value = data.args?.[key];
-      if (value !== undefined) {
-        args[key] = value;
-      }
       if (!checkNodeArg(data, conf, i, true)) {
         hasError = true;
+      }
+      if (value !== undefined) {
+        args[key] = value;
+      } else if (isNodeArgArray(conf.args[i])) {
+        args[key] = [];
       }
     }
     data.args = args;
