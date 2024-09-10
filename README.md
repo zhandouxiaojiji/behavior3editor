@@ -27,18 +27,32 @@ export interface NodeDef {
         type:
             | "boolean"
             | "boolean?"
+            | "boolean[]"
+            | "boolean[]?"
             | "int"
             | "int?"
+            | "int[]"
+            | "int[]?"
             | "float"
             | "float?"
-            | "enum"
-            | "enum?"
+            | "float[]"
+            | "float[]?"
             | "string"
             | "string?"
+            | "string[]"
+            | "string[]?"
             | "json"
             | "json?"
+            | "json[]"
+            | "json[]?"
+            | "enum"
+            | "enum?"
+            | "enum[]"
+            | "enum[]?"
             | "code"
-            | "code?";
+            | "code?"
+            | "code[]"
+            | "code[]?";
         desc: string;
         default?: unknown;
         /** Input `value`, only one is allowed between `value` and this arg.*/
