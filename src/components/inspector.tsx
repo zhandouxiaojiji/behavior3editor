@@ -668,6 +668,8 @@ const NodeInspector: FC = () => {
                               } catch (e) {
                                 return Promise.reject(new Error(t("node.invalidValue")));
                               }
+                            } else if (value === null && !required) {
+                              value = undefined;
                             }
                             if (!checkNodeArgValue(editingNode.data, arg, value)) {
                               return Promise.reject(new Error(t("node.invalidValue")));
