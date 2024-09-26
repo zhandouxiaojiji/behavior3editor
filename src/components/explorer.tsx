@@ -3,7 +3,7 @@ import { NodeDef, getNodeType } from "@/misc/b3type";
 import * as b3util from "@/misc/b3util";
 import { modal } from "@/misc/hooks";
 import i18n from "@/misc/i18n";
-import { Hotkey, isMacos, useKeyUp } from "@/misc/keys";
+import { Hotkey, isMacos, useKeyDown } from "@/misc/keys";
 import Path from "@/misc/path";
 import { DownOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Flex, FlexProps, Input, MenuProps, Space, Tree } from "antd";
@@ -399,7 +399,7 @@ export const Explorer: FC = () => {
 
   const keysRef = useRef<HTMLDivElement>(null);
 
-  useKeyUp([Hotkey.F2, isMacos ? Hotkey.Enter : ""], keysRef, (event) => {
+  useKeyDown([Hotkey.F2, isMacos ? Hotkey.Enter : ""], keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node && node !== workspace.fileTree) {
@@ -407,7 +407,7 @@ export const Explorer: FC = () => {
     }
   });
 
-  useKeyUp([Hotkey.Delete, isMacos ? Hotkey.MacDelete : ""], keysRef, (event) => {
+  useKeyDown([Hotkey.Delete, isMacos ? Hotkey.MacDelete : ""], keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node && node !== workspace.fileTree) {
@@ -415,7 +415,7 @@ export const Explorer: FC = () => {
     }
   });
 
-  useKeyUp(Hotkey.Escape, keysRef, (event) => {
+  useKeyDown(Hotkey.Escape, keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node) {
@@ -424,7 +424,7 @@ export const Explorer: FC = () => {
     }
   });
 
-  useKeyUp(Hotkey.Duplicate, keysRef, (event) => {
+  useKeyDown(Hotkey.Duplicate, keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node && node.isLeaf) {
@@ -432,7 +432,7 @@ export const Explorer: FC = () => {
     }
   });
 
-  useKeyUp(Hotkey.Copy, keysRef, (event) => {
+  useKeyDown(Hotkey.Copy, keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node && node.isLeaf) {
@@ -440,7 +440,7 @@ export const Explorer: FC = () => {
     }
   });
 
-  useKeyUp(Hotkey.Paste, keysRef, (event) => {
+  useKeyDown(Hotkey.Paste, keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node) {

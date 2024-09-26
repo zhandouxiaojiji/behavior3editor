@@ -13,17 +13,16 @@ const hotkey = (key: string) => {
   return key.toLowerCase();
 };
 
-export const useKeyUp = (
+export const useKeyDown = (
   keyFilter: KeyFilter,
   target: Target,
   eventHandler: (event: KeyboardEvent, key: KeyType) => void,
   option?: Options
 ) => {
   option = option || {};
-  option.events = ["keyup"];
   option.target = target;
   option.exactMatch = true;
-  return useKeyPress(keyFilter, eventHandler, option);
+  return useKeyPress(keyFilter, (e, key) => !e.repeat && eventHandler(e, key), option);
 };
 
 export const Hotkey = {

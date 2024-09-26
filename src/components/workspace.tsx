@@ -1,7 +1,7 @@
 import { useSetting } from "@/contexts/setting-context";
 import { EditorStore, useWorkspace } from "@/contexts/workspace-context";
 import { modal } from "@/misc/hooks";
-import { Hotkey, isMacos, setInputFocus, useKeyUp } from "@/misc/keys";
+import { Hotkey, isMacos, setInputFocus, useKeyDown } from "@/misc/keys";
 import Path from "@/misc/path";
 import { app } from "@electron/remote";
 import { useKeyPress } from "ahooks";
@@ -46,12 +46,12 @@ export const Workspace: FC = () => {
 
   const keysRef = useRef<HTMLDivElement>(null);
 
-  useKeyUp(Hotkey.Build, keysRef, (event) => {
+  useKeyDown(Hotkey.Build, keysRef, (event) => {
     event.preventDefault();
     workspace.buildProject();
   });
 
-  useKeyUp(Hotkey.Save, keysRef, (event) => {
+  useKeyDown(Hotkey.Save, keysRef, (event) => {
     event.preventDefault();
     workspace.save();
   });
@@ -60,7 +60,7 @@ export const Workspace: FC = () => {
     event.preventDefault();
   });
 
-  useKeyUp(Hotkey.CloseEditor, null, (event) => {
+  useKeyDown(Hotkey.CloseEditor, null, (event) => {
     if (workspace.editing) {
       event.preventDefault();
       if (workspace.editing.unsave) {
@@ -72,17 +72,17 @@ export const Workspace: FC = () => {
     keysRef.current?.focus();
   });
 
-  useKeyUp(Hotkey.SearchTree, keysRef, (event) => {
+  useKeyDown(Hotkey.SearchTree, keysRef, (event) => {
     event.preventDefault();
     workspace.onShowingSearch(true);
   });
 
-  useKeyUp(Hotkey.SearchNode, keysRef, (event) => {
+  useKeyDown(Hotkey.SearchNode, keysRef, (event) => {
     event.preventDefault();
     workspace.editing?.dispatch("searchNode");
   });
 
-  useKeyUp(Hotkey.JumpNode, keysRef, (event) => {
+  useKeyDown(Hotkey.JumpNode, keysRef, (event) => {
     event.preventDefault();
     workspace.editing?.dispatch("jumpNode");
   });

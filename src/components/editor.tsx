@@ -9,7 +9,7 @@ import { NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
 import * as b3util from "@/misc/b3util";
 import { message } from "@/misc/hooks";
 import i18n from "@/misc/i18n";
-import { Hotkey, isMacos, useKeyUp } from "@/misc/keys";
+import { Hotkey, isMacos, useKeyDown } from "@/misc/keys";
 import Path from "@/misc/path";
 import { mergeClassNames } from "@/misc/util";
 import { ArrowDownOutlined, ArrowUpOutlined, CloseOutlined } from "@ant-design/icons";
@@ -958,13 +958,13 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const keysRef = useRef<HTMLDivElement>(null);
 
-  useKeyUp(Hotkey.Copy, keysRef, () => copyNode());
-  useKeyUp(Hotkey.Replace, keysRef, () => replaceNode());
-  useKeyUp(Hotkey.Paste, keysRef, () => pasteNode());
-  useKeyUp(Hotkey.Undo, keysRef, () => undo());
-  useKeyUp(Hotkey.Redo, keysRef, () => redo());
-  useKeyUp([Hotkey.Insert, Hotkey.Enter], keysRef, () => createNode());
-  useKeyUp([Hotkey.Delete, Hotkey.Backspace], keysRef, () => deleteNode());
+  useKeyDown(Hotkey.Copy, keysRef, () => copyNode());
+  useKeyDown(Hotkey.Replace, keysRef, () => replaceNode());
+  useKeyDown(Hotkey.Paste, keysRef, () => pasteNode());
+  useKeyDown(Hotkey.Undo, keysRef, () => undo());
+  useKeyDown(Hotkey.Redo, keysRef, () => redo());
+  useKeyDown([Hotkey.Insert, Hotkey.Enter], keysRef, () => createNode());
+  useKeyDown([Hotkey.Delete, Hotkey.Backspace], keysRef, () => deleteNode());
 
   editor.dispatch = (event: EditEvent, data: unknown) => {
     switch (event) {
