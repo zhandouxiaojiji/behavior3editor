@@ -3,14 +3,14 @@ import { NodeDef, getNodeType } from "@/misc/b3type";
 import * as b3util from "@/misc/b3util";
 import { modal } from "@/misc/hooks";
 import i18n from "@/misc/i18n";
-import { Hotkey, isHotkeyPressed, isMacos, useHotkeys } from "@/misc/keys";
+import { Hotkey, isMacos, useKeyUp } from "@/misc/keys";
 import Path from "@/misc/path";
 import { DownOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Flex, FlexProps, Input, MenuProps, Space, Tree } from "antd";
 import { ItemType } from "antd/es/menu/interface";
 import { ipcRenderer } from "electron";
 import * as fs from "fs";
-import React, { FC, useEffect, useMemo, useState } from "react";
+import React, { FC, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BsBoxFill } from "react-icons/bs";
 import { FaExclamationTriangle, FaSwatchbook } from "react-icons/fa";
@@ -397,48 +397,56 @@ export const Explorer: FC = () => {
     }
   }, [t, workspace.editingNodeDef]);
 
-  const keysRef = useHotkeys<HTMLDivElement>(
-    [
-      Hotkey.F2,
-      Hotkey.Enter,
-      Hotkey.Copy,
-      Hotkey.Paste,
-      Hotkey.Delete,
-      Hotkey.MacDelete,
-      Hotkey.Escape,
-      Hotkey.Duplicate,
-    ],
-    (event) => {
-      event.preventDefault();
-      const node = findFile(selectedKeys[0], workspace.fileTree!);
-      if (isHotkeyPressed(Hotkey.F2) || (isMacos && isHotkeyPressed(Hotkey.Enter))) {
-        if (node && node !== workspace.fileTree) {
-          dispatch("rename", node);
-        }
-      } else if (isHotkeyPressed(Hotkey.Delete) || isHotkeyPressed(Hotkey.MacDelete)) {
-        if (node && node !== workspace.fileTree) {
-          dispatch("delete", node);
-        }
-      } else if (isHotkeyPressed(Hotkey.Escape)) {
-        if (node) {
-          node.editing = false;
-          setNewName(null);
-        }
-      } else if (isHotkeyPressed(Hotkey.Duplicate)) {
-        if (node && node.isLeaf) {
-          dispatch("duplicate", node);
-        }
-      } else if (isHotkeyPressed(Hotkey.Copy)) {
-        if (node && node.isLeaf) {
-          dispatch("copy", node);
-        }
-      } else if (isHotkeyPressed(Hotkey.Paste)) {
-        if (node) {
-          dispatch("paste", node);
-        }
-      }
+  const keysRef = useRef<HTMLDivElement>(null);
+
+  useKeyUp([Hotkey.F2, isMacos ? Hotkey.Enter : ""], keysRef, (event) => {
+    event.preventDefault();
+    const node = findFile(selectedKeys[0], workspace.fileTree!);
+    if (node && node !== workspace.fileTree) {
+      dispatch("rename", node);
     }
-  );
+  });
+
+  useKeyUp([Hotkey.Delete, isMacos ? Hotkey.MacDelete : ""], keysRef, (event) => {
+    event.preventDefault();
+    const node = findFile(selectedKeys[0], workspace.fileTree!);
+    if (node && node !== workspace.fileTree) {
+      dispatch("delete", node);
+    }
+  });
+
+  useKeyUp(Hotkey.Escape, keysRef, (event) => {
+    event.preventDefault();
+    const node = findFile(selectedKeys[0], workspace.fileTree!);
+    if (node) {
+      node.editing = false;
+      setNewName(null);
+    }
+  });
+
+  useKeyUp(Hotkey.Duplicate, keysRef, (event) => {
+    event.preventDefault();
+    const node = findFile(selectedKeys[0], workspace.fileTree!);
+    if (node && node.isLeaf) {
+      dispatch("duplicate", node);
+    }
+  });
+
+  useKeyUp(Hotkey.Copy, keysRef, (event) => {
+    event.preventDefault();
+    const node = findFile(selectedKeys[0], workspace.fileTree!);
+    if (node && node.isLeaf) {
+      dispatch("copy", node);
+    }
+  });
+
+  useKeyUp(Hotkey.Paste, keysRef, (event) => {
+    event.preventDefault();
+    const node = findFile(selectedKeys[0], workspace.fileTree!);
+    if (node) {
+      dispatch("paste", node);
+    }
+  });
 
   const submitRename = (node: FileTreeType) => {
     if (!newName) {

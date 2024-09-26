@@ -9,7 +9,7 @@ import { NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
 import * as b3util from "@/misc/b3util";
 import { message } from "@/misc/hooks";
 import i18n from "@/misc/i18n";
-import { Hotkey, isHotkeyPressed, isMacos, useHotkeys } from "@/misc/keys";
+import { Hotkey, isMacos, useKeyUp } from "@/misc/keys";
 import Path from "@/misc/path";
 import { mergeClassNames } from "@/misc/util";
 import { ArrowDownOutlined, ArrowUpOutlined, CloseOutlined } from "@ant-design/icons";
@@ -956,38 +956,15 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
   };
 
-  const keysRef = useHotkeys<HTMLDivElement>(
-    [
-      Hotkey.Copy,
-      Hotkey.Paste,
-      Hotkey.Save,
-      Hotkey.Replace,
-      Hotkey.Undo,
-      Hotkey.Redo,
-      Hotkey.Insert,
-      Hotkey.Delete,
-      Hotkey.Enter,
-      Hotkey.Backspace,
-    ],
-    (event) => {
-      event.preventDefault();
-      if (isHotkeyPressed(Hotkey.Copy)) {
-        copyNode();
-      } else if (isHotkeyPressed(Hotkey.Replace)) {
-        replaceNode();
-      } else if (isHotkeyPressed(Hotkey.Paste)) {
-        pasteNode();
-      } else if (isHotkeyPressed(Hotkey.Redo)) {
-        redo();
-      } else if (isHotkeyPressed(Hotkey.Undo)) {
-        undo();
-      } else if (isHotkeyPressed(Hotkey.Insert) || isHotkeyPressed(Hotkey.Enter)) {
-        createNode();
-      } else if (isHotkeyPressed(Hotkey.Delete) || isHotkeyPressed(Hotkey.Backspace)) {
-        deleteNode();
-      }
-    }
-  );
+  const keysRef = useRef<HTMLDivElement>(null);
+
+  useKeyUp(Hotkey.Copy, keysRef, () => copyNode());
+  useKeyUp(Hotkey.Replace, keysRef, () => replaceNode());
+  useKeyUp(Hotkey.Paste, keysRef, () => pasteNode());
+  useKeyUp(Hotkey.Undo, keysRef, () => undo());
+  useKeyUp(Hotkey.Redo, keysRef, () => redo());
+  useKeyUp([Hotkey.Insert, Hotkey.Enter], keysRef, () => createNode());
+  useKeyUp([Hotkey.Delete, Hotkey.Backspace], keysRef, () => deleteNode());
 
   editor.dispatch = (event: EditEvent, data: unknown) => {
     switch (event) {

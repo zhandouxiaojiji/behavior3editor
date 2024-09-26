@@ -1,11 +1,12 @@
 import { useSetting } from "@/contexts/setting-context";
 import { EditorStore, useWorkspace } from "@/contexts/workspace-context";
 import { modal } from "@/misc/hooks";
-import { Hotkey, isHotkeyPressed, isMacos, setInputFocus, useHotkeys } from "@/misc/keys";
+import { Hotkey, isMacos, setInputFocus, useKeyUp } from "@/misc/keys";
 import Path from "@/misc/path";
 import { app } from "@electron/remote";
+import { useKeyPress } from "ahooks";
 import { Button, Flex, Layout, Space, Tabs, Tag, Tooltip } from "antd";
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaExclamationTriangle } from "react-icons/fa";
 import { PiTreeStructureFill } from "react-icons/pi";
@@ -43,44 +44,48 @@ export const Workspace: FC = () => {
   const forceUpdate = useForceUpdate();
   const { width = 0, height = 0 } = useWindowSize();
 
-  const keysRef = useHotkeys<HTMLDivElement>(
-    [
-      Hotkey.Save,
-      Hotkey.CloseEditor,
-      Hotkey.SearchTree,
-      Hotkey.Build,
-      Hotkey.SearchNode,
-      Hotkey.JumpNode,
-    ],
-    (event) => {
-      if (isHotkeyPressed(Hotkey.Save)) {
-        event.preventDefault();
-        workspace.save();
-      } else if (isHotkeyPressed(Hotkey.CloseEditor)) {
-        if (workspace.editing) {
-          event.preventDefault();
-          if (workspace.editing.unsave) {
-            showSaveDialog(workspace.editing);
-          } else {
-            workspace.close(workspace.editing.path);
-          }
-        }
-        keysRef.current?.focus();
-      } else if (isHotkeyPressed(Hotkey.SearchTree)) {
-        event.preventDefault();
-        workspace.onShowingSearch(true);
-      } else if (isHotkeyPressed(Hotkey.Build)) {
-        event.preventDefault();
-        workspace.buildProject();
-      } else if (isHotkeyPressed(Hotkey.SearchNode)) {
-        event.preventDefault();
-        workspace.editing?.dispatch("searchNode");
-      } else if (isHotkeyPressed(Hotkey.JumpNode)) {
-        event.preventDefault();
-        workspace.editing?.dispatch("jumpNode");
+  const keysRef = useRef<HTMLDivElement>(null);
+
+  useKeyUp(Hotkey.Build, keysRef, (event) => {
+    event.preventDefault();
+    workspace.buildProject();
+  });
+
+  useKeyUp(Hotkey.Save, keysRef, (event) => {
+    event.preventDefault();
+    workspace.save();
+  });
+
+  useKeyPress(Hotkey.CloseEditor, (event) => {
+    event.preventDefault();
+  });
+
+  useKeyUp(Hotkey.CloseEditor, null, (event) => {
+    if (workspace.editing) {
+      event.preventDefault();
+      if (workspace.editing.unsave) {
+        showSaveDialog(workspace.editing);
+      } else {
+        workspace.close(workspace.editing.path);
       }
     }
-  );
+    keysRef.current?.focus();
+  });
+
+  useKeyUp(Hotkey.SearchTree, keysRef, (event) => {
+    event.preventDefault();
+    workspace.onShowingSearch(true);
+  });
+
+  useKeyUp(Hotkey.SearchNode, keysRef, (event) => {
+    event.preventDefault();
+    workspace.editing?.dispatch("searchNode");
+  });
+
+  useKeyUp(Hotkey.JumpNode, keysRef, (event) => {
+    event.preventDefault();
+    workspace.editing?.dispatch("jumpNode");
+  });
 
   useEffect(() => {
     if (!workspace.isShowingSearch && !isShowingSave) {
