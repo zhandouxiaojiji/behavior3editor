@@ -550,6 +550,10 @@ const NodeInspector: FC = () => {
                                   }
                                   valuePropName={type === "boolean" ? "checked" : undefined}
                                   rules={[
+                                    {
+                                      required,
+                                      message: t("node.fileRequired", { field: arg.desc }),
+                                    },
                                     () => ({
                                       validator(_, value) {
                                         if (type === "json") {
