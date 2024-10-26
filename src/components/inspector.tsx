@@ -600,18 +600,23 @@ const NodeInspector: FC = () => {
                                   )}
                                   {type === "enum" && (
                                     <Select
+                                      showSearch
                                       disabled={disabled}
                                       onBlur={form.submit}
                                       onChange={form.submit}
-                                    >
-                                      {arg.options?.map((value, i) => {
-                                        return (
-                                          <Select.Option key={i} value={value.value}>
-                                            {value.name}
-                                          </Select.Option>
-                                        );
+                                      options={(arg.options ?? []).map((option) => {
+                                        return {
+                                          value: option.value,
+                                          label: `${option.name}(${option.value})`,
+                                        };
                                       })}
-                                    </Select>
+                                      filterOption={(value, option) => {
+                                        value = value.toUpperCase();
+                                        return !!option?.label
+                                          .toLocaleUpperCase()
+                                          .includes(value.toUpperCase());
+                                      }}
+                                    />
                                   )}
                                 </Form.Item>
                                 <MinusCircleOutlined
@@ -724,15 +729,24 @@ const NodeInspector: FC = () => {
                       {type === "boolean" && <Switch disabled={disabled} onChange={form.submit} />}
                       {type === "code" && <Input disabled={disabled} onBlur={form.submit} />}
                       {type === "enum" && (
-                        <Select disabled={disabled} onBlur={form.submit} onChange={form.submit}>
-                          {arg.options?.map((value, index) => {
-                            return (
-                              <Select.Option key={index} value={value.value}>
-                                {value.name}
-                              </Select.Option>
-                            );
+                        <Select
+                          showSearch
+                          disabled={disabled}
+                          onBlur={form.submit}
+                          onChange={form.submit}
+                          options={(arg.options ?? []).map((option) => {
+                            return {
+                              value: option.value,
+                              label: `${option.name}(${option.value})`,
+                            };
                           })}
-                        </Select>
+                          filterOption={(value, option) => {
+                            value = value.toUpperCase();
+                            return !!option?.label
+                              .toLocaleUpperCase()
+                              .includes(value.toUpperCase());
+                          }}
+                        />
                       )}
                     </Form.Item>
                   );
