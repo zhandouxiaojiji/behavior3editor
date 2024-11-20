@@ -1,0 +1,3 @@
+[submodule "src/behavior3"]
+	path = src/behavior3
+	url = https://github.com/zhongfq/behavior3-ts.git
