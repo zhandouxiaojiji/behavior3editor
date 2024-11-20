@@ -42,6 +42,7 @@ interface FilterOption {
   filterFocus: boolean;
   filterType: "content" | "id";
   placeholder: string;
+  isFocused: boolean;
 }
 
 const createMenu = () => {
@@ -151,6 +152,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     filterFocus: true,
     filterType: "content",
     placeholder: "",
+    isFocused: false
   });
 
   const onSearchChange = (option: FilterOption) => {
@@ -516,6 +518,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const createNode = () => {
+    if (filterOption.isFocused) {
+      return;
+    }
+
     if (!editor.selectedId) {
       message.warning(t("node.noNodeSelected"));
       return;
@@ -1188,6 +1194,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                   index: 0,
                 })
               }
+              onFocus={() => setFilterOption({ ...filterOption, isFocused: true })}
+              onBlur={() => setFilterOption({ ...filterOption, isFocused: false })}
               onKeyDown={handleKeyDown}
               suffix={
                 <Flex gap="2px" style={{ alignItems: "center" }}>
@@ -1266,6 +1274,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                   filterStr: "",
                   filterType: "content",
                   placeholder: "",
+                  isFocused: false
                 });
                 keysRef.current?.focus();
               }}
