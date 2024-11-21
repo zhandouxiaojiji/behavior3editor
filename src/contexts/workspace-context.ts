@@ -130,6 +130,7 @@ export type WorkspaceStore = {
   allFiles: Map<string, FileMeta>;
   fileTree?: FileTreeType;
   editors: EditorStore[];
+  modifiedEditors: EditorStore[];
   editing?: EditorStore;
 
   isShowingSearch: boolean;
@@ -213,6 +214,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   allFiles: new Map(),
   fileTree: undefined,
   editors: [],
+  modifiedEditors: [],
   workdir: "",
   path: "",
 
@@ -498,10 +500,19 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           } else {
             const fullpath = fs.realpathSync(`${workspace.workdir}/${filename}`);
             const editor = workspace.find(fullpath);
-            if (editor) {
-              console.log(filename, editor, editor.modifiedTime, fs.statSync(fullpath).mtimeMs);
-              if (editor.modifiedTime + 500 < fs.statSync(fullpath).mtimeMs) {
-                console.log("reload", filename);
+            if (
+              editor &&
+              editor.modifiedTime + 500 < fs.statSync(fullpath).mtimeMs &&
+              !workspace.modifiedEditors.includes(editor)
+            ) {
+              if (editor.unsave) {
+                const modifiedEditors = workspace.modifiedEditors;
+                console.log("modified1:", editor.path, modifiedEditors);
+                modifiedEditors.push(editor);
+                set({ modifiedEditors: modifiedEditors });
+                console.log("modified2:", editor.path, modifiedEditors);
+              } else {
+                editor.dispatch("reload");
               }
             }
           }

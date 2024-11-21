@@ -11,7 +11,7 @@ import { message } from "@/misc/hooks";
 import i18n from "@/misc/i18n";
 import { Hotkey, isMacos, useKeyDown } from "@/misc/keys";
 import Path from "@/misc/path";
-import { mergeClassNames } from "@/misc/util";
+import { mergeClassNames, readJson } from "@/misc/util";
 import { ArrowDownOutlined, ArrowUpOutlined, CloseOutlined } from "@ant-design/icons";
 import G6, { G6GraphEvent, Item, TreeGraph } from "@antv/g6";
 import { dialog } from "@electron/remote";
@@ -330,6 +330,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   const refresh = () => {
     const rootData = findDataById("1");
     const rootNode = b3util.createNode(rootData);
+    editor.modifiedTime = fs.statSync(editor.path).mtimeMs;
     editor.data = b3util.createTreeData(rootNode);
     editor.autoId = b3util.refreshTreeDataId(editor.data);
     editor.graph.changeData(editor.data);
@@ -337,7 +338,14 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     restoreViewport();
   };
 
-  const reload = () => {};
+  const reload = () => {
+    const file = readJson(editor.path) as TreeModel;
+    editor.data = b3util.createTreeData(file.root);
+    editor.autoId = b3util.refreshTreeDataId(editor.data);
+    editor.graph.changeData(editor.data);
+    editor.graph.layout();
+    restoreViewport();
+  };
 
   const checkSubtree = () => {
     if (editor.graph) {

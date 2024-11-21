@@ -64,6 +64,7 @@
 
   "workspace.saveAllOnClose": "你需要保存对以下 {{count}} 个文件的修改吗？",
   "workspace.saveOnClose": "你需要保存对文件 {{name}} 的修改吗？",
+  "workspace.reloadFile": "文件 {{name}} 发生改变，你需要重新加载吗？",
 
   "explorer.deleteFile": "你确定要删除文件 '{{name}}'？",
   "explorer.deleteFolder": "你确定要删除目录 '{{name}}'？",

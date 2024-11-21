@@ -28,6 +28,7 @@ export const Workspace: FC = () => {
     edit: useWorkspace((state) => state.edit),
     editing: useWorkspace((state) => state.editing),
     editors: useWorkspace((state) => state.editors),
+    modifiedEditors: useWorkspace((state) => state.modifiedEditors),
     fileTree: useWorkspace((state) => state.fileTree),
     find: useWorkspace((state) => state.find),
     init: useWorkspace((state) => state.init),
@@ -39,7 +40,7 @@ export const Workspace: FC = () => {
   const settings = {
     recent: useSetting((state) => state.recent),
   };
-  const [isShowingSave, setShowingSave] = useState(false);
+  const [isShowingAlert, setShowingAlert] = useState(false);
   const { t } = useTranslation();
   const forceUpdate = useForceUpdate();
   const { width = 0, height = 0 } = useWindowSize();
@@ -88,16 +89,71 @@ export const Workspace: FC = () => {
   });
 
   useEffect(() => {
-    if (!workspace.isShowingSearch && !isShowingSave) {
+    if (!workspace.isShowingSearch && !isShowingAlert) {
       keysRef.current?.focus();
     }
   }, [workspace.isShowingSearch]);
 
+  useEffect(() => {
+    const editor = workspace.editing;
+    if (editor && workspace.modifiedEditors.includes(editor)) {
+      if (isShowingAlert) {
+        return;
+      }
+      setShowingAlert(true);
+      const modifiedEditors = workspace.modifiedEditors.filter((v) => v !== editor);
+      console.log(
+        "modified:",
+        editor.path,
+        modifiedEditors.map((v) => v.path)
+      );
+      const alert = modal.confirm({
+        centered: true,
+        content: (
+          <Flex vertical gap="middle">
+            <div>
+              <FaExclamationTriangle style={{ fontSize: "60px", color: "#FADB14" }} />
+            </div>
+            <div>{t("workspace.reloadFile", { name: Path.basename(editor.path) })}</div>
+          </Flex>
+        ),
+        footer: (
+          <Flex vertical gap="middle" style={{ paddingTop: "30px" }}>
+            <Flex vertical gap="6px">
+              <Button
+                type="primary"
+                onClick={() => {
+                  editor.dispatch("reload");
+                  alert.destroy();
+                  keysRef.current?.focus();
+                  setShowingAlert(false);
+                  useWorkspace.setState({ modifiedEditors: modifiedEditors });
+                }}
+              >
+                {t("reload")}
+              </Button>
+              <Button
+                onClick={() => {
+                  alert.destroy();
+                  keysRef.current?.focus();
+                  setShowingAlert(false);
+                  useWorkspace.setState({ modifiedEditors: modifiedEditors });
+                }}
+              >
+                {t("cancel")}
+              </Button>
+            </Flex>
+          </Flex>
+        ),
+      });
+    }
+  }, [workspace.modifiedEditors, workspace.editing]);
+
   const showSaveDialog = (editor: EditorStore) => {
-    if (isShowingSave) {
+    if (isShowingAlert) {
       return;
     }
-    setShowingSave(true);
+    setShowingAlert(true);
     const alert = modal.confirm({
       centered: true,
       content: (
@@ -118,7 +174,7 @@ export const Workspace: FC = () => {
                 workspace.close(editor.path);
                 alert.destroy();
                 keysRef.current?.focus();
-                setShowingSave(false);
+                setShowingAlert(false);
               }}
             >
               {t("save")}
@@ -129,7 +185,7 @@ export const Workspace: FC = () => {
                 workspace.close(editor.path);
                 alert.destroy();
                 keysRef.current?.focus();
-                setShowingSave(false);
+                setShowingAlert(false);
               }}
             >
               {t("donotSave")}
@@ -139,7 +195,7 @@ export const Workspace: FC = () => {
             onClick={() => {
               alert.destroy();
               keysRef.current?.focus();
-              setShowingSave(false);
+              setShowingAlert(false);
             }}
           >
             {t("cancel")}
@@ -150,10 +206,10 @@ export const Workspace: FC = () => {
   };
 
   const showSaveAllDialog = (unsaves: EditorStore[]) => {
-    if (isShowingSave) {
+    if (isShowingAlert) {
       return;
     }
-    setShowingSave(true);
+    setShowingAlert(true);
     const alert = modal.confirm({
       centered: true,
       content: (
@@ -169,7 +225,7 @@ export const Workspace: FC = () => {
               <div>{t("workspace.saveAllOnClose", { count: unsaves.length })}</div>
               <Flex vertical style={{ fontSize: "12px" }}>
                 {unsaves.map((editor) => (
-                  <div>{Path.basename(editor.path)}</div>
+                  <div key={editor.path}>{Path.basename(editor.path)}</div>
                 ))}
               </Flex>
             </>
@@ -185,7 +241,7 @@ export const Workspace: FC = () => {
                 unsaves.forEach((editor) => editor.dispatch("save"));
                 alert.destroy();
                 window.close();
-                setShowingSave(false);
+                setShowingAlert(false);
               }}
             >
               {unsaves.length > 1 ? t("saveAll") : t("save")}
@@ -196,7 +252,7 @@ export const Workspace: FC = () => {
                 workspace.editors.length = 0;
                 alert.destroy();
                 window.close();
-                setShowingSave(false);
+                setShowingAlert(false);
               }}
             >
               {t("donotSave")}
@@ -205,7 +261,7 @@ export const Workspace: FC = () => {
           <Button
             onClick={() => {
               alert.destroy();
-              setShowingSave(false);
+              setShowingAlert(false);
             }}
           >
             {t("cancel")}

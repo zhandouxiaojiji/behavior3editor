@@ -64,6 +64,7 @@
 
   "workspace.saveAllOnClose": "Do you want to save the changes to the following {{count}} files?",
   "workspace.saveOnClose": "Do you want to save the changes you made to '{{name}}'?",
+  "workspace.reloadFile": "'{{name}}' has changed, do you want to reload now?",
 
   "explorer.deleteFile": "Are you sure you want delete '{{name}}'?",
   "explorer.deleteFolder": "Are you sure you want delete '{{name}}' and its contents?",
