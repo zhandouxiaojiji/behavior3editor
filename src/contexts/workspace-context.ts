@@ -51,6 +51,8 @@ export class EditorStore {
   dragDstId?: string;
   unsave: boolean = false;
   modifiedTime: number = Date.now();
+  alertReload: boolean = false;
+
   historyStack: NodeModel[] = [];
   historyIndex: number = 0;
   selectedId?: string | null;
@@ -130,8 +132,9 @@ export type WorkspaceStore = {
   allFiles: Map<string, FileMeta>;
   fileTree?: FileTreeType;
   editors: EditorStore[];
-  modifiedEditors: EditorStore[];
   editing?: EditorStore;
+
+  modifiedTime: number;
 
   isShowingSearch: boolean;
   onShowingSearch: (isShowingSearch: boolean) => void;
@@ -392,6 +395,8 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     }
   },
 
+  modifiedTime: 0,
+
   isShowingSearch: false,
   onShowingSearch: (isShowingSearch) => {
     set({ isShowingSearch });
@@ -500,17 +505,10 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           } else {
             const fullpath = fs.realpathSync(`${workspace.workdir}/${filename}`);
             const editor = workspace.find(fullpath);
-            if (
-              editor &&
-              editor.modifiedTime + 500 < fs.statSync(fullpath).mtimeMs &&
-              !workspace.modifiedEditors.includes(editor)
-            ) {
+            if (editor && editor.modifiedTime + 500 < fs.statSync(fullpath).mtimeMs) {
               if (editor.unsave) {
-                const modifiedEditors = workspace.modifiedEditors;
-                console.log("modified1:", editor.path, modifiedEditors);
-                modifiedEditors.push(editor);
-                set({ modifiedEditors: modifiedEditors });
-                console.log("modified2:", editor.path, modifiedEditors);
+                editor.alertReload = true;
+                set({ modifiedTime: Date.now() });
               } else {
                 editor.dispatch("reload");
               }

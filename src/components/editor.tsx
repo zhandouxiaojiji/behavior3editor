@@ -342,9 +342,13 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     const file = readJson(editor.path) as TreeModel;
     editor.data = b3util.createTreeData(file.root);
     editor.autoId = b3util.refreshTreeDataId(editor.data);
-    editor.graph.changeData(editor.data);
-    editor.graph.layout();
-    restoreViewport();
+    editor.unsave = false;
+    updateState();
+    if (editor.graph) {
+      editor.graph.changeData(editor.data);
+      editor.graph.layout();
+      restoreViewport();
+    }
   };
 
   const checkSubtree = () => {

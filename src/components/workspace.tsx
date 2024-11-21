@@ -28,10 +28,10 @@ export const Workspace: FC = () => {
     edit: useWorkspace((state) => state.edit),
     editing: useWorkspace((state) => state.editing),
     editors: useWorkspace((state) => state.editors),
-    modifiedEditors: useWorkspace((state) => state.modifiedEditors),
     fileTree: useWorkspace((state) => state.fileTree),
     find: useWorkspace((state) => state.find),
     init: useWorkspace((state) => state.init),
+    modifiedTime: useWorkspace((state) => state.modifiedTime),
     isShowingSearch: useWorkspace((state) => state.isShowingSearch),
     onShowingSearch: useWorkspace((state) => state.onShowingSearch),
     openProject: useWorkspace((state) => state.openProject),
@@ -96,17 +96,11 @@ export const Workspace: FC = () => {
 
   useEffect(() => {
     const editor = workspace.editing;
-    if (editor && workspace.modifiedEditors.includes(editor)) {
+    if (editor?.alertReload) {
       if (isShowingAlert) {
         return;
       }
       setShowingAlert(true);
-      const modifiedEditors = workspace.modifiedEditors.filter((v) => v !== editor);
-      console.log(
-        "modified:",
-        editor.path,
-        modifiedEditors.map((v) => v.path)
-      );
       const alert = modal.confirm({
         centered: true,
         content: (
@@ -123,21 +117,21 @@ export const Workspace: FC = () => {
               <Button
                 type="primary"
                 onClick={() => {
+                  editor.alertReload = false;
                   editor.dispatch("reload");
                   alert.destroy();
                   keysRef.current?.focus();
                   setShowingAlert(false);
-                  useWorkspace.setState({ modifiedEditors: modifiedEditors });
                 }}
               >
                 {t("reload")}
               </Button>
               <Button
                 onClick={() => {
+                  editor.alertReload = false;
                   alert.destroy();
                   keysRef.current?.focus();
                   setShowingAlert(false);
-                  useWorkspace.setState({ modifiedEditors: modifiedEditors });
                 }}
               >
                 {t("cancel")}
@@ -147,7 +141,7 @@ export const Workspace: FC = () => {
         ),
       });
     }
-  }, [workspace.modifiedEditors, workspace.editing]);
+  }, [workspace.editing, workspace.modifiedTime]);
 
   const showSaveDialog = (editor: EditorStore) => {
     if (isShowingAlert) {
