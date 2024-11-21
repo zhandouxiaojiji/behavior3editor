@@ -694,7 +694,7 @@ export const Explorer: FC = () => {
               console.log("editor move", editor.path === newPath, editor.path, newPath);
               if (editor.path.startsWith(newPath)) {
                 console.log("editor reload", editor.path === newPath, editor.path, newPath);
-                editor.dispatch("reload");
+                editor.dispatch("refresh");
               }
             }
           };

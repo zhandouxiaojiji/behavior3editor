@@ -133,7 +133,6 @@ export const Menu: FC<LayoutProps> = () => {
             accelerator: "CmdOrCtrl+S",
             enabled: enabled,
             click: () => {
-              console.log("save1");
               workspace.save();
             },
           },

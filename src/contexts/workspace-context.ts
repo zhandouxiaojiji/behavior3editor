@@ -30,8 +30,9 @@ export type EditEvent =
   | "jumpNode"
   | "undo"
   | "redo"
-  | "reload"
+  | "refresh"
   | "rename"
+  | "reload"
   | "updateTree"
   | "updateNode"
   | "searchNode"
@@ -49,6 +50,7 @@ export class EditorStore {
   dragSrcId?: string;
   dragDstId?: string;
   unsave: boolean = false;
+  modifiedTime: number = Date.now();
   historyStack: NodeModel[] = [];
   historyIndex: number = 0;
   selectedId?: string | null;
@@ -66,6 +68,7 @@ export class EditorStore {
 
     const file = readJson(path) as TreeModel;
     this.data = b3util.createTreeData(file.root);
+    this.modifiedTime = fs.statSync(path).mtimeMs;
     this.desc = file.desc ?? "";
     this.export = file.export !== false;
     this.name = file.name || path.slice(0, -5);
@@ -393,6 +396,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   },
 
   open: (path) => {
+    path = fs.realpathSync(path);
     const workspace = get();
     let editor = workspace.editors.find((v) => v.path === path);
     if (!editor) {
@@ -488,8 +492,19 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
             hasEvent = true;
           }
         }
-        if (event === "change" && filename === "node-config.b3-setting") {
-          workspace.loadNodeDefs();
+        if (event === "change" && filename) {
+          if (filename === "node-config.b3-setting") {
+            workspace.loadNodeDefs();
+          } else {
+            const fullpath = fs.realpathSync(`${workspace.workdir}/${filename}`);
+            const editor = workspace.find(fullpath);
+            if (editor) {
+              console.log(filename, editor, editor.modifiedTime, fs.statSync(fullpath).mtimeMs);
+              if (editor.modifiedTime + 500 < fs.statSync(fullpath).mtimeMs) {
+                console.log("reload", filename);
+              }
+            }
+          }
         }
       });
     } catch (e) {
@@ -550,7 +565,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       nodeDefs.set(v.name, v);
     }
     set({ nodeDefs });
-    workspace.editing?.dispatch("reload");
+    workspace.editing?.dispatch("refresh");
   },
 
   // node edit

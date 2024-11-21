@@ -152,7 +152,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     filterFocus: true,
     filterType: "content",
     placeholder: "",
-    isFocused: false
+    isFocused: false,
   });
 
   const onSearchChange = (option: FilterOption) => {
@@ -327,7 +327,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
   };
 
-  const reload = () => {
+  const refresh = () => {
     const rootData = findDataById("1");
     const rootNode = b3util.createNode(rootData);
     editor.data = b3util.createTreeData(rootNode);
@@ -337,11 +337,13 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     restoreViewport();
   };
 
+  const reload = () => {};
+
   const checkSubtree = () => {
     if (editor.graph) {
       const data = findDataById("1");
       if (b3util.isSubtreeUpdated(data)) {
-        reload();
+        refresh();
         pushHistory();
         onChange();
       }
@@ -383,7 +385,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     b3util.copyFromNode(data, newNode);
     data.size = b3util.calcTreeDataSize(data);
     if (oldNode.path !== newNode.path) {
-      reload();
+      refresh();
       selectNode(null);
       selectNode(data.id);
     } else {
@@ -623,6 +625,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         export: editor.export,
         desc: editor.desc,
       } as TreeModel;
+      editor.modifiedTime = Date.now();
       fs.writeFileSync(path, JSON.stringify(treeModel, null, 2));
       workspace.updateFileMeta(editor);
       editor.unsave = false;
@@ -684,7 +687,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       } as TreeModel;
       fs.writeFileSync(subpath, JSON.stringify(subtreeModel, null, 2));
       data.path = workspace.relative(subpath);
-      reload();
+      refresh();
       pushHistory();
       onChange();
     }, 200);
@@ -1006,6 +1009,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         redo();
         break;
       }
+      case "refresh": {
+        refresh();
+        break;
+      }
       case "reload": {
         reload();
         break;
@@ -1274,7 +1281,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                   filterStr: "",
                   filterType: "content",
                   placeholder: "",
-                  isFocused: false
+                  isFocused: false,
                 });
                 keysRef.current?.focus();
               }}
