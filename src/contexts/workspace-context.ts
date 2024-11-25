@@ -61,7 +61,7 @@ export class EditorStore {
   graphMatrix?: Matrix;
   graph!: TreeGraph;
 
-  editNode: EditNode | null = null;
+  editNode: EditNode | number | null = null;
 
   dispatch!: (event: EditEvent, data?: unknown) => void;
 
@@ -139,8 +139,8 @@ export type WorkspaceStore = {
   isShowingSearch: boolean;
   onShowingSearch: (isShowingSearch: boolean) => void;
 
-  open: (path: string) => void;
-  edit: (path: string) => void;
+  open: (path: string, selectedNode?: number) => void;
+  edit: (path: string, selectedNode?: number) => void;
   close: (path: string) => void;
   find: (path: string) => EditorStore | undefined;
   relative: (path: string) => string;
@@ -402,7 +402,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     set({ isShowingSearch });
   },
 
-  open: (path) => {
+  open: (path, selectedNode) => {
     path = fs.realpathSync(path);
     const workspace = get();
     let editor = workspace.editors.find((v) => v.path === path);
@@ -412,25 +412,28 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         workspace.editors.push(editor);
         set({ editors: workspace.editors });
         workspace.updateFileMeta(editor);
-        workspace.edit(editor.path);
+        workspace.edit(editor.path, selectedNode);
       } catch (error) {
         console.error(error);
         message.error(`invalid file: ${path}`);
       }
     } else if (workspace.editing !== editor) {
-      workspace.edit(editor.path);
+      workspace.edit(editor.path, selectedNode);
     }
   },
 
-  edit: (path) => {
+  edit: (path, selectedNode) => {
     const workspace = get();
     const editor = workspace.editors.find((v) => v.path === path);
+    if (editor && selectedNode) {
+      editor.editNode = selectedNode;
+    }
     set({ editing: editor, editingNode: null, editingTree: null });
     if (editor) {
-      if (editor.editNode) {
-        workspace.onEditingNode(editor.editNode);
-      } else {
+      if (!editor.editNode) {
         workspace.onEditingTree(editor);
+      } else if (typeof editor.editNode === "object") {
+        workspace.onEditingNode(editor.editNode);
       }
     } else {
       set({ editingNode: null, editingTree: null });

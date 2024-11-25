@@ -660,7 +660,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     const data = findSubtree(findDataById(editor.selectedId));
     if (data?.path) {
       const path = `${workspace.workdir}/${data.path}`;
-      workspace.open(path);
+      workspace.open(path, Number(editor.selectedId) - Number(data.id) + 1);
     }
   };
 
@@ -1074,6 +1074,15 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       createGraph(graphRef);
       editor.size.width = editorSize.width;
       editor.size.height = editorSize.height;
+    }
+
+    if (typeof editor.editNode === "number") {
+      const id = editor.editNode.toString();
+      selectNode(null);
+      setTimeout(() => {
+        editor.graph.focusItem(id);
+        selectNode(id);
+      }, 100);
     }
   });
 
