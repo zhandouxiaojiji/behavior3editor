@@ -402,7 +402,7 @@ export const Explorer: FC = () => {
   useKeyDown([Hotkey.F2, isMacos ? Hotkey.Enter : ""], keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
-    if (node && node !== workspace.fileTree) {
+    if (node && node !== workspace.fileTree && !node.editing) {
       dispatch("rename", node);
     }
   });
