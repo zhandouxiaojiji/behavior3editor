@@ -5,12 +5,16 @@ const Path = path;
 declare module "path" {
   interface PlatformPath {
     basenameWithoutExt(path: string): string;
+    posixPath(path: string): string;
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-shadow
-path.basenameWithoutExt = (path: string) => {
-  return Path.basename(path, Path.extname(path));
+path.basenameWithoutExt = (str: string) => {
+  return Path.basename(str, Path.extname(str));
+};
+
+path.posixPath = (str: string) => {
+  return path.normalize(str).replace(/\\/g, "/");
 };
 
 export default Path;

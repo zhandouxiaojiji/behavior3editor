@@ -172,7 +172,7 @@ export type WorkspaceStore = {
 };
 
 const loadFileTree = (workdir: string, filename: string) => {
-  const fullpath = fs.realpathSync(`${workdir}/${filename}`);
+  const fullpath = Path.posixPath(`${workdir}/${filename}`);
 
   if (!fs.existsSync(fullpath) || filename.endsWith(".DS_Store")) {
     return;
@@ -403,7 +403,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   },
 
   open: (path, selectedNode) => {
-    path = fs.realpathSync(path);
+    path = Path.posixPath(path);
     const workspace = get();
     let editor = workspace.editors.find((v) => v.path === path);
     if (!editor) {
@@ -506,7 +506,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           if (filename === "node-config.b3-setting") {
             workspace.loadNodeDefs();
           } else {
-            const fullpath = fs.realpathSync(`${workspace.workdir}/${filename}`);
+            const fullpath = Path.posixPath(`${workspace.workdir}/${filename}`);
             const editor = workspace.find(fullpath);
             if (editor && editor.modifiedTime + 500 < fs.statSync(fullpath).mtimeMs) {
               if (editor.unsave) {
