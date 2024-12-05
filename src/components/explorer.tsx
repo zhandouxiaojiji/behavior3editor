@@ -805,7 +805,7 @@ export const Explorer: FC = () => {
               }}
               onSelect={(_, info) => {
                 const node = info.selectedNodes.at(0);
-                if (node) {
+                if (node && !node.editing) {
                   dispatch("open", node);
                   setSelectedKeys([node.path]);
                 }
