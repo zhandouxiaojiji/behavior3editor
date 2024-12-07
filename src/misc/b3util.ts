@@ -1,5 +1,19 @@
 import { useWorkspace } from "@/contexts/workspace-context";
-import { NodeArg, NodeDef, NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
+import {
+  isBoolType,
+  isEnumType,
+  isExprType,
+  isFloatType,
+  isIntType,
+  isJsonType,
+  isStringType,
+  NodeArg,
+  NodeDef,
+  NodeModel,
+  TreeGraphData,
+  TreeModel,
+  unknownNodeDef,
+} from "@/misc/b3type";
 import i18n from "@/misc/i18n";
 import * as fs from "fs";
 import { message } from "./hooks";
@@ -130,7 +144,7 @@ export const checkNodeArgValue = (
 ) => {
   let hasError = false;
   const type = getNodeArgRawType(arg);
-  if (type === "float") {
+  if (isFloatType(type)) {
     const isNumber = typeof value === "number";
     const isOptional = value === undefined && isNodeArgOptional(arg);
     if (!(isNumber || isOptional)) {
@@ -139,7 +153,7 @@ export const checkNodeArgValue = (
       }
       hasError = true;
     }
-  } else if (type === "int") {
+  } else if (isIntType(type)) {
     const isInt = typeof value === "number" && value === Math.floor(value);
     const isOptional = value === undefined && isNodeArgOptional(arg);
     if (!(isInt || isOptional)) {
@@ -148,7 +162,7 @@ export const checkNodeArgValue = (
       }
       hasError = true;
     }
-  } else if (type === "string") {
+  } else if (isStringType(type)) {
     const isString = typeof value === "string" && value;
     const isOptional = (value === undefined || value === "") && isNodeArgOptional(arg);
     if (!(isString || isOptional)) {
@@ -157,7 +171,7 @@ export const checkNodeArgValue = (
       }
       hasError = true;
     }
-  } else if (type === "enum") {
+  } else if (isEnumType(type)) {
     const isEnum = !!arg.options?.find((option) => option.value === value);
     const isOptional = value === undefined && isNodeArgOptional(arg);
     if (!(isEnum || isOptional)) {
@@ -166,16 +180,16 @@ export const checkNodeArgValue = (
       }
       hasError = true;
     }
-  } else if (type === "code") {
-    const isCode = typeof value === "string" && value;
+  } else if (isExprType(type)) {
+    const isExpr = typeof value === "string" && value;
     const isOptional = (value === undefined || value === "") && isNodeArgOptional(arg);
-    if (!(isCode || isOptional)) {
+    if (!(isExpr || isOptional)) {
       if (verbose) {
-        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a string`);
+        error(data, `'${arg.name}=${JSON.stringify(value)}' is not an expr string`);
       }
       hasError = true;
     }
-  } else if (type === "json") {
+  } else if (isJsonType(type)) {
     const isJson = value !== undefined && value !== "";
     const isOptional = isNodeArgOptional(arg);
     if (!(isJson || isOptional)) {
@@ -184,6 +198,16 @@ export const checkNodeArgValue = (
       }
       hasError = true;
     }
+  } else if (isBoolType(type)) {
+    const isBool = typeof value === "boolean" || value === undefined;
+    if (!isBool) {
+      if (verbose) {
+        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a boolean`);
+      }
+      hasError = true;
+    }
+  } else {
+    error(data, `unknown arg type '${arg.type}'`);
   }
 
   return !hasError;
@@ -240,8 +264,14 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   if (!data) {
     return false;
   }
-  let hasError = false;
   const conf = useWorkspace.getState().getNodeDef(data.name);
+  if (conf.name === unknownNodeDef.name) {
+    error(data, `undefined node: ${data.name}`);
+    return false;
+  }
+
+  let hasError = false;
+
   if (conf.children !== undefined && conf.children !== -1) {
     const count = data.children?.length || 0;
     if (conf.children !== count) {

@@ -5,10 +5,10 @@ export type NodeType = "Action" | "Composite" | "Decorator" | "Condition" | "Oth
 export interface NodeArg {
   name: string;
   type:
-    | "boolean"
-    | "boolean?"
-    | "boolean[]"
-    | "boolean[]?"
+    | "bool"
+    | "bool?"
+    | "bool[]"
+    | "bool[]?"
     | "int"
     | "int?"
     | "int[]"
@@ -29,15 +29,23 @@ export interface NodeArg {
     | "enum?"
     | "enum[]"
     | "enum[]?"
-    | "code"
-    | "code?"
-    | "code[]"
-    | "code[]?";
+    | "expr"
+    | "expr?"
+    | "expr[]"
+    | "expr[]?";
   desc: string;
   oneof?: string;
   default?: unknown;
   options?: { name: string; value: string | number }[];
 }
+
+export const isIntType = (type: string) => type.startsWith("int");
+export const isFloatType = (type: string) => type.startsWith("float");
+export const isStringType = (type: string) => type.startsWith("string");
+export const isBoolType = (type: string) => type.startsWith("bool");
+export const isEnumType = (type: string) => type.startsWith("enum");
+export const isExprType = (type: string) => type.startsWith("expr") || type.startsWith("code");
+export const isJsonType = (type: string) => type.startsWith("json");
 
 export interface NodeDef {
   name: string;

@@ -1,5 +1,15 @@
 import { EditNode, EditTree, useWorkspace } from "@/contexts/workspace-context";
-import { NodeModel, TreeGraphData } from "@/misc/b3type";
+import {
+  isBoolType,
+  isEnumType,
+  isExprType,
+  isFloatType,
+  isIntType,
+  isJsonType,
+  isStringType,
+  NodeModel,
+  TreeGraphData,
+} from "@/misc/b3type";
 import {
   checkNodeArgValue,
   checkOneof,
@@ -132,14 +142,14 @@ const NodeInspector: FC = () => {
         form.setFieldValue(
           name,
           (Array.isArray(value) ? value : []).map((item) => {
-            if (type === "json") {
+            if (isJsonType(type)) {
               return item === null ? "null" : JSON.stringify(item ?? arg.default, null, 2);
             } else {
               return item;
             }
           })
         );
-      } else if (type === "json") {
+      } else if (isJsonType(type)) {
         form.setFieldValue(
           name,
           value === null ? "null" : JSON.stringify(value ?? arg.default, null, 2)
@@ -249,7 +259,7 @@ const NodeInspector: FC = () => {
             const arr: unknown[] = [];
             if (Array.isArray(value)) {
               value.forEach((item) => {
-                if (type === "json") {
+                if (isJsonType(type)) {
                   try {
                     arr.push(item === "null" ? null : JSON.parse(item));
                   } catch {
@@ -261,7 +271,7 @@ const NodeInspector: FC = () => {
               });
             }
             data.args[arg.name] = arr;
-          } else if (type === "json") {
+          } else if (isJsonType(type)) {
             try {
               data.args[arg.name] = value === "null" ? null : JSON.parse(value);
             } catch {
@@ -546,9 +556,9 @@ const NodeInspector: FC = () => {
                                   validateTrigger={["onChange", "onBlur"]}
                                   style={{ width: "100%", marginBottom: 5 }}
                                   initialValue={
-                                    type === "boolean" ? arg.default ?? false : arg.default
+                                    isBoolType(type) ? arg.default ?? false : arg.default
                                   }
-                                  valuePropName={type === "boolean" ? "checked" : undefined}
+                                  valuePropName={isBoolType(type) ? "checked" : undefined}
                                   rules={[
                                     {
                                       required,
@@ -556,7 +566,7 @@ const NodeInspector: FC = () => {
                                     },
                                     () => ({
                                       validator(_, value) {
-                                        if (type === "json") {
+                                        if (isJsonType(type)) {
                                           try {
                                             if (value !== "null") {
                                               JSON.parse(value);
@@ -576,29 +586,29 @@ const NodeInspector: FC = () => {
                                     }),
                                   ]}
                                 >
-                                  {type === "string" && (
+                                  {isStringType(type) && (
                                     <TextArea autoSize disabled={disabled} onBlur={form.submit} />
                                   )}
-                                  {type === "json" && (
+                                  {isJsonType(type) && (
                                     <TextArea autoSize disabled={disabled} onBlur={form.submit} />
                                   )}
-                                  {type === "int" && (
+                                  {isIntType(type) && (
                                     <InputNumber
                                       disabled={disabled}
                                       onBlur={form.submit}
                                       precision={0}
                                     />
                                   )}
-                                  {type === "float" && (
+                                  {isFloatType(type) && (
                                     <InputNumber disabled={disabled} onBlur={form.submit} />
                                   )}
-                                  {type === "boolean" && (
+                                  {isBoolType(type) && (
                                     <Switch disabled={disabled} onChange={form.submit} />
                                   )}
-                                  {type === "code" && (
+                                  {isExprType(type) && (
                                     <Input disabled={disabled} onBlur={form.submit} />
                                   )}
-                                  {type === "enum" && (
+                                  {isEnumType(type) && (
                                     <Select
                                       showSearch
                                       disabled={disabled}
@@ -639,8 +649,8 @@ const NodeInspector: FC = () => {
                               <Button
                                 type="dashed"
                                 onClick={() => {
-                                  add(arg.default ?? type === "boolean" ? false : "");
-                                  if (type === "boolean") {
+                                  add(arg.default ?? isBoolType(type) ? false : "");
+                                  if (isBoolType(type)) {
                                     form.submit();
                                   }
                                 }}
@@ -663,13 +673,13 @@ const NodeInspector: FC = () => {
                       name={`args.${arg.name}`}
                       key={`args.${arg.name}`}
                       label={arg.desc}
-                      initialValue={type === "boolean" ? arg.default ?? false : arg.default}
-                      valuePropName={type === "boolean" ? "checked" : undefined}
+                      initialValue={isBoolType(type) ? arg.default ?? false : arg.default}
+                      valuePropName={isBoolType(type) ? "checked" : undefined}
                       rules={[
                         { required, message: t("node.fileRequired", { field: arg.desc }) },
                         ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                           validator(_, value) {
-                            if (value && type === "json") {
+                            if (value && isJsonType(type)) {
                               try {
                                 if (value !== "null") {
                                   JSON.parse(value);
@@ -716,19 +726,21 @@ const NodeInspector: FC = () => {
                         }),
                       ]}
                     >
-                      {type === "string" && (
+                      {isStringType(type) && (
                         <TextArea autoSize disabled={disabled} onBlur={form.submit} />
                       )}
-                      {type === "json" && (
+                      {isJsonType(type) && (
                         <TextArea autoSize disabled={disabled} onBlur={form.submit} />
                       )}
-                      {type === "int" && (
+                      {isIntType(type) && (
                         <InputNumber disabled={disabled} onBlur={form.submit} precision={0} />
                       )}
-                      {type === "float" && <InputNumber disabled={disabled} onBlur={form.submit} />}
-                      {type === "boolean" && <Switch disabled={disabled} onChange={form.submit} />}
-                      {type === "code" && <Input disabled={disabled} onBlur={form.submit} />}
-                      {type === "enum" && (
+                      {isFloatType(type) && (
+                        <InputNumber disabled={disabled} onBlur={form.submit} />
+                      )}
+                      {isBoolType(type) && <Switch disabled={disabled} onChange={form.submit} />}
+                      {isExprType(type) && <Input disabled={disabled} onBlur={form.submit} />}
+                      {isEnumType(type) && (
                         <Select
                           showSearch
                           disabled={disabled}
