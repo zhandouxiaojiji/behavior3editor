@@ -327,10 +327,15 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
     const args: { [k: string]: unknown } = {};
     for (let i = 0; i < conf.args.length; i++) {
       const key = conf.args[i].name;
+      if (data.args && data.args[key] === undefined && conf.args[i].default !== undefined) {
+        data.args[key] = conf.args[i].default;
+      }
+
       const value = data.args?.[key];
       if (value !== undefined) {
         args[key] = value;
       }
+
       if (!checkNodeArg(data, conf, i, true)) {
         hasError = true;
       }
