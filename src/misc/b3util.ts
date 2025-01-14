@@ -597,6 +597,13 @@ export const createTreeData = (node: NodeModel, parent?: string) => {
     parent: parent,
   };
 
+  treeData.def.args?.forEach((arg) => {
+    treeData.args ||= {};
+    if (treeData.args[arg.name] === undefined && arg.default !== undefined) {
+      treeData.args[arg.name] = arg.default;
+    }
+  });
+
   treeData.size = calcTreeDataSize(treeData);
 
   if (!parent) {
