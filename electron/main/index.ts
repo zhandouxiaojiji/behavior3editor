@@ -1,9 +1,7 @@
-import { app, BrowserWindow, shell, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { release } from "node:os";
 import path, { join } from "node:path";
-import { update } from "./update";
-
-import * as fs from "fs";
+import { argv } from "node:process";
 
 // The built directory structure
 //
@@ -46,6 +44,20 @@ const preload = "../preload/index.js";
 const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, "index.html");
 const windows: Workspace[] = [];
+
+let buildProject: string;
+let buildOutput: string;
+
+for (let i = 0; i < argv.length; i++) {
+  const arg = argv[i];
+  if (arg === "--project") {
+    buildProject = argv[i + 1];
+    i++;
+  } else if (arg === "--build") {
+    buildOutput = argv[i + 1];
+    i++;
+  }
+}
 
 async function createWindow(projectPath?: string) {
   const win = new BrowserWindow({
@@ -98,6 +110,10 @@ async function createWindow(projectPath?: string) {
       win?.webContents.send("open-project", workspace.projectPath);
     }
 
+    if (buildProject && buildOutput) {
+      win?.webContents.send("build-project", buildProject, buildOutput);
+    }
+
     const nextWin = BrowserWindow.getAllWindows().at(-1);
     if (nextWin) {
       nextWin.focus();
@@ -110,6 +126,13 @@ async function createWindow(projectPath?: string) {
   win.on("closed", () => {
     const index = windows.findIndex((w) => w.window === win);
     windows.splice(index, 1);
+
+    if (buildOutput && buildProject && windows.length === 0) {
+      app.exit(0);
+    } else {
+      buildOutput = undefined;
+      buildProject = undefined;
+    }
   });
 
   // Make all links open with the browser, not with the application
