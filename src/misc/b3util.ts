@@ -14,73 +14,13 @@ import {
   TreeModel,
   unknownNodeDef,
 } from "@/misc/b3type";
-import i18n from "@/misc/i18n";
 import * as fs from "fs";
 import { message } from "./hooks";
-import { isMacos } from "./keys";
 import Path from "./path";
 import { zhNodeDef } from "./template";
 
-let ctx: CanvasRenderingContext2D | null = null;
-let defaultFontSize = "";
-const textWidthMap = new Map<string, number>();
-
-const isAsciiChar = (c: number) => {
-  return (c >= 0x0001 && c <= 0x007e) || (0xff60 <= c && c <= 0xff9f);
-};
-
-const calcTextWith = (text: string, fontSize?: string) => {
-  fontSize = fontSize ?? defaultFontSize;
-  let b3Workspace: HTMLDivElement | null;
-  let css: CSSStyleDeclaration | null;
-  if (!fontSize) {
-    b3Workspace = document.querySelector(".b3-workspace");
-    if (b3Workspace) {
-      css = getComputedStyle(b3Workspace);
-      defaultFontSize = css.fontSize || "13px";
-      fontSize = defaultFontSize;
-    }
-  }
-  const key = `${text}-${fontSize}`;
-  let width = textWidthMap.get(key);
-  if (!width) {
-    b3Workspace ||= document.querySelector(".b3-workspace");
-    if (b3Workspace) {
-      css ||= getComputedStyle(b3Workspace);
-      ctx = ctx || document.createElement("canvas").getContext("2d")!;
-      ctx.font = `${fontSize} ${css.fontFamily}`;
-      const metrics = ctx.measureText(text);
-      width = metrics.width;
-      width = width - (isMacos ? 1.6 : 0.8);
-      textWidthMap.set(key, width);
-    }
-  }
-  return width ?? 13;
-};
-
 export const isSubtreeRoot = (data: TreeGraphData) => {
   return data.path && data.id.toString() !== "1";
-};
-
-export const isSubtreeUpdated = (data: TreeGraphData) => {
-  if (data.path) {
-    try {
-      const subtreePath = useWorkspace.getState().workdir + "/" + data.path;
-      if (fs.statSync(subtreePath).mtimeMs !== data.lastModified) {
-        return true;
-      }
-    } catch (error) {
-      return true;
-    }
-  }
-  if (data.children) {
-    for (const child of data.children) {
-      if (isSubtreeUpdated(child)) {
-        return true;
-      }
-    }
-  }
-  return false;
 };
 
 export const isNodeEqual = (node1: NodeModel, node2: NodeModel) => {
@@ -515,23 +455,6 @@ export const refreshTreeDataId = (data: TreeGraphData, id?: number) => {
   return id;
 };
 
-export const calcTreeDataSize = (data: TreeGraphData) => {
-  let height = 50 + 2;
-  const updateHeight = (obj: any) => {
-    if ((Array.isArray(obj) && obj.length) || (obj && Object.keys(obj).length > 0)) {
-      const { line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(obj)}`, 200);
-      height += 20 * line;
-    }
-  };
-  if (data.path) {
-    height += 20;
-  }
-  updateHeight(data.args);
-  updateHeight(data.input);
-  updateHeight(data.output);
-  return [220, height];
-};
-
 export const checkChildrenLimit = (data: TreeGraphData) => {
   const conf = data.def;
   if (conf.children !== undefined && conf.children !== -1) {
@@ -582,7 +505,11 @@ export const checkTreeData = (data: TreeGraphData) => {
   return true;
 };
 
-export const createTreeData = (node: NodeModel, parent?: string) => {
+export const createTreeData = (
+  node: NodeModel,
+  parent?: string,
+  calcSize?: (d: TreeGraphData) => number[]
+) => {
   const workspace = useWorkspace.getState();
   let treeData: TreeGraphData = {
     id: node.id.toFixed(),
@@ -604,7 +531,9 @@ export const createTreeData = (node: NodeModel, parent?: string) => {
     }
   });
 
-  treeData.size = calcTreeDataSize(treeData);
+  if (calcSize) {
+    treeData.size = calcSize(treeData);
+  }
 
   if (!parent) {
     parsingStack.length = 0;
@@ -613,12 +542,14 @@ export const createTreeData = (node: NodeModel, parent?: string) => {
   if (node.children) {
     treeData.children = [];
     node.children.forEach((child) => {
-      treeData.children!.push(createTreeData(child, treeData.id));
+      treeData.children!.push(createTreeData(child, treeData.id, calcSize));
     });
   } else if (node.path) {
     if (parsingStack.indexOf(node.path) >= 0) {
       treeData.path = node.path;
-      treeData.size = calcTreeDataSize(treeData);
+      if (calcSize) {
+        treeData.size = calcSize(treeData);
+      }
       message.error(`循环引用节点：${node.path}`, 4);
       return treeData;
     }
@@ -626,21 +557,23 @@ export const createTreeData = (node: NodeModel, parent?: string) => {
     try {
       const subtreePath = workspace.workdir + "/" + node.path;
       const str = fs.readFileSync(subtreePath, "utf8");
-      treeData = createTreeData(JSON.parse(str).root, treeData.id);
+      treeData = createTreeData(JSON.parse(str).root, treeData.id, calcSize);
       treeData.lastModified = fs.statSync(subtreePath).mtimeMs;
       treeData.path = node.path;
       treeData.debug = node.debug;
       treeData.disabled = node.disabled;
       treeData.parent = parent;
       treeData.id = node.id.toFixed();
-      treeData.size = calcTreeDataSize(treeData);
+      if (calcSize) {
+        treeData.size = calcSize(treeData);
+      }
     } catch (e) {
       message.error(`解析子树失败：${node.path}`);
       console.log("parse subtree:", e);
     }
     parsingStack.pop();
   }
-  calcTreeDataSize(treeData);
+
   return treeData;
 };
 
@@ -703,39 +636,6 @@ export const createNewTree = (path: string) => {
 
 export const isTreeFile = (path: string) => {
   return path.toLocaleLowerCase().endsWith(".json");
-};
-
-export const toBreakWord = (str: string, maxWidth: number, fontSize?: string) => {
-  const chars: string[] = [];
-  let line = str.length > 0 ? 1 : 0;
-  let width = maxWidth;
-  for (let i = 0; i < str.length; i++) {
-    width -= calcTextWith(str.charAt(i), fontSize);
-    if (width > 0) {
-      chars.push(str.charAt(i));
-    } else {
-      width = maxWidth;
-      line++;
-      chars.push("\n");
-      i--;
-    }
-  }
-  return {
-    str: chars.join(""),
-    line,
-  };
-};
-
-export const cutWordTo = (str: string, maxWidth: number, fontSize?: string) => {
-  let i = 0;
-  for (; i < str.length; i++) {
-    maxWidth -= calcTextWith(str.charAt(i), fontSize);
-    if (maxWidth < 0) {
-      i--;
-      break;
-    }
-  }
-  return str.slice(0, i) + (i < str.length - 1 ? "..." : "");
 };
 
 export const createProject = (path: string) => {

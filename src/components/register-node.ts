@@ -1,8 +1,93 @@
 import { useWorkspace } from "@/contexts/workspace-context";
 import { TreeGraphData, getNodeType } from "@/misc/b3type";
-import { checkTreeData, cutWordTo, toBreakWord } from "@/misc/b3util";
+import { checkTreeData } from "@/misc/b3util";
+
 import i18n from "@/misc/i18n";
+import { isMacos } from "@/misc/keys";
 import G6 from "@antv/g6";
+
+let ctx: CanvasRenderingContext2D | null = null;
+let defaultFontSize = "";
+const textWidthMap = new Map<string, number>();
+
+const calcTextWith = (text: string, fontSize?: string) => {
+  fontSize = fontSize ?? defaultFontSize;
+  let b3Workspace: HTMLDivElement | null;
+  let css: CSSStyleDeclaration | null;
+  if (!fontSize) {
+    b3Workspace = document.querySelector(".b3-workspace");
+    if (b3Workspace) {
+      css = getComputedStyle(b3Workspace);
+      defaultFontSize = css.fontSize || "13px";
+      fontSize = defaultFontSize;
+    }
+  }
+  const key = `${text}-${fontSize}`;
+  let width = textWidthMap.get(key);
+  if (!width) {
+    b3Workspace ||= document.querySelector(".b3-workspace");
+    if (b3Workspace) {
+      css ||= getComputedStyle(b3Workspace);
+      ctx = ctx || document.createElement("canvas").getContext("2d")!;
+      ctx.font = `${fontSize} ${css.fontFamily}`;
+      const metrics = ctx.measureText(text);
+      width = metrics.width;
+      width = width - (isMacos ? 1.6 : 0.8);
+      textWidthMap.set(key, width);
+    }
+  }
+  return width ?? 13;
+};
+
+const cutWordTo = (str: string, maxWidth: number, fontSize?: string) => {
+  let i = 0;
+  for (; i < str.length; i++) {
+    maxWidth -= calcTextWith(str.charAt(i), fontSize);
+    if (maxWidth < 0) {
+      i--;
+      break;
+    }
+  }
+  return str.slice(0, i) + (i < str.length - 1 ? "..." : "");
+};
+
+const toBreakWord = (str: string, maxWidth: number, fontSize?: string) => {
+  const chars: string[] = [];
+  let line = str.length > 0 ? 1 : 0;
+  let width = maxWidth;
+  for (let i = 0; i < str.length; i++) {
+    width -= calcTextWith(str.charAt(i), fontSize);
+    if (width > 0) {
+      chars.push(str.charAt(i));
+    } else {
+      width = maxWidth;
+      line++;
+      chars.push("\n");
+      i--;
+    }
+  }
+  return {
+    str: chars.join(""),
+    line,
+  };
+};
+
+export const calcTreeDataSize = (data: TreeGraphData) => {
+  let height = 50 + 2;
+  const updateHeight = (obj: any) => {
+    if ((Array.isArray(obj) && obj.length) || (obj && Object.keys(obj).length > 0)) {
+      const { line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(obj)}`, 200);
+      height += 20 * line;
+    }
+  };
+  if (data.path) {
+    height += 20;
+  }
+  updateHeight(data.args);
+  updateHeight(data.input);
+  updateHeight(data.output);
+  return [220, height];
+};
 
 const NODE_COLORS: any = {
   ["Composite"]: "#34d800",

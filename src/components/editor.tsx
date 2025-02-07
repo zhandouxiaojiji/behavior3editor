@@ -28,6 +28,7 @@ import { VscCaseSensitive } from "react-icons/vsc";
 import { mergeRefs } from "react-merge-refs";
 import { useDebounceCallback } from "usehooks-ts";
 import "./register-node";
+import { calcTreeDataSize } from "./register-node";
 
 export interface EditorProps extends React.HTMLAttributes<HTMLElement> {
   data: EditorStore;
@@ -44,6 +45,40 @@ interface FilterOption {
   placeholder: string;
   isFocused: boolean;
 }
+
+const createTreeData = (node: NodeModel, parent?: string) => {
+  return b3util.createTreeData(node, parent, calcTreeDataSize);
+};
+
+const refreshTreeData = (data: TreeGraphData) => {
+  data.size = calcTreeDataSize(data);
+  if (data.children) {
+    for (const child of data.children) {
+      refreshTreeData(child);
+    }
+  }
+};
+
+const isSubtreeUpdated = (data: TreeGraphData) => {
+  if (data.path) {
+    try {
+      const subtreePath = useWorkspace.getState().workdir + "/" + data.path;
+      if (fs.statSync(subtreePath).mtimeMs !== data.lastModified) {
+        return true;
+      }
+    } catch (error) {
+      return true;
+    }
+  }
+  if (data.children) {
+    for (const child of data.children) {
+      if (isSubtreeUpdated(child)) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
 
 const createMenu = () => {
   const t = i18n.t;
@@ -331,7 +366,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     const rootData = findDataById("1");
     const rootNode = b3util.createNode(rootData);
     editor.modifiedTime = fs.statSync(editor.path).mtimeMs;
-    editor.data = b3util.createTreeData(rootNode);
+    editor.data = createTreeData(rootNode);
     editor.autoId = b3util.refreshTreeDataId(editor.data);
     editor.graph.changeData(editor.data);
     editor.graph.layout();
@@ -340,7 +375,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const reload = () => {
     const file = readJson(editor.path) as TreeModel;
-    editor.data = b3util.createTreeData(file.root);
+    editor.data = createTreeData(file.root);
     editor.autoId = b3util.refreshTreeDataId(editor.data);
     editor.unsave = false;
     updateState();
@@ -354,7 +389,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   const checkSubtree = () => {
     if (editor.graph) {
       const data = findDataById("1");
-      if (b3util.isSubtreeUpdated(data)) {
+      if (isSubtreeUpdated(data)) {
         refresh();
         pushHistory();
         onChange();
@@ -395,7 +430,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       return;
     }
     b3util.copyFromNode(data, newNode);
-    data.size = b3util.calcTreeDataSize(data);
+    data.size = calcTreeDataSize(data);
     if (oldNode.path !== newNode.path) {
       refresh();
       selectNode(null);
@@ -475,7 +510,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         return;
       }
       const curNodeData = findDataById(editor.selectedId);
-      const data = b3util.createTreeData(JSON.parse(str), editor.selectedId);
+      const data = createTreeData(JSON.parse(str), editor.selectedId);
       editor.autoId = b3util.refreshTreeDataId(data, editor.autoId);
       selectNode(null);
       curNodeData.children ||= [];
@@ -510,13 +545,13 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       if (curNodeData.parent) {
         const parentData = findDataById(curNodeData.parent);
         const idx = parentData.children!.indexOf(curNodeData);
-        const data = b3util.createTreeData(JSON.parse(str), editor.selectedId);
+        const data = createTreeData(JSON.parse(str), editor.selectedId);
         editor.autoId = b3util.refreshTreeDataId(data, editor.autoId);
         parentData.children![idx] = data;
         refreshItem(parentData);
         updateGrahp();
       } else {
-        editor.data = b3util.createTreeData(JSON.parse(str), editor.selectedId);
+        editor.data = createTreeData(JSON.parse(str), editor.selectedId);
         editor.autoId = b3util.refreshTreeDataId(editor.data);
         editor.graph.changeData(editor.data);
         editor.graph.render();
@@ -552,7 +587,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       name: "unknow",
     };
     curNodeData.children ||= [];
-    curNodeData.children.push(b3util.createTreeData(newNodeData, editor.selectedId));
+    curNodeData.children.push(createTreeData(newNodeData, editor.selectedId));
     refreshItem(curNodeData);
     updateGrahp();
     pushHistory();
@@ -590,7 +625,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const useStackData = (data: NodeModel) => {
-    editor.data = b3util.createTreeData(data);
+    editor.data = createTreeData(data);
     editor.autoId = b3util.refreshTreeDataId(editor.data);
     editor.graph.changeData(editor.data);
     editor.graph.layout();
@@ -641,7 +676,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       fs.writeFileSync(path, JSON.stringify(treeModel, null, 2));
       workspace.updateFileMeta(editor);
       editor.unsave = false;
-      editor.data = b3util.createTreeData(root);
+      editor.data = createTreeData(root);
       editor.autoId = b3util.refreshTreeDataId(editor.data);
       editor.graph.changeData(editor.data);
       editor.graph.layout();
@@ -877,7 +912,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         const dstData = findDataById(dstNode.getID());
 
         if (exploreNode) {
-          const newTreeData: TreeGraphData = b3util.createTreeData(
+          const newTreeData: TreeGraphData = createTreeData(
             {
               id: editor.autoId++,
               name: exploreNode,
@@ -889,7 +924,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
           refreshItem(dstData);
           srcNodeId = newTreeData.id;
         } else if (exploreFile && exploreFile !== editor.path) {
-          const newTreeData: TreeGraphData = b3util.createTreeData(
+          const newTreeData: TreeGraphData = createTreeData(
             {
               id: editor.autoId++,
               name: "unknow",
@@ -968,6 +1003,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       onChange();
     });
 
+    refreshTreeData(editor.data);
     editor.graph.data(editor.data);
     editor.graph.render();
     if (editor.graphMatrix) {
