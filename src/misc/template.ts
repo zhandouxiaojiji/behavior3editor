@@ -1,12 +1,6 @@
 import { Context, Node, NodeDef } from "@/behavior3/src/behavior3";
 import { DeepReadonly } from "../behavior3/src/behavior3/context";
 
-class NodeContext extends Context {
-  loadTree(path: string): Promise<Node> {
-    throw new Error("Method not implemented.");
-  }
-}
-
 export const zhNodeDef = () => {
   const context = new (class extends Context {
     loadTree(path: string): Promise<Node> {
