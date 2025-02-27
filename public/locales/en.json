@@ -98,6 +98,7 @@
   "node.id": "Node id",
   "node.inputVariable": "Input variables",
   "node.invalidValue": "Invalid value",
+  "node.invalidVariableName": "Invalid variable name, should start with a letter or underscore",
   "node.name": "Node name",
   "node.noNodeSelected": "No node selected",
   "node.oneof.error": "Only one is allowed between input '{{input}}' and argument '{{arg}}({{desc}})'",

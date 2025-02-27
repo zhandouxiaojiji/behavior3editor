@@ -98,6 +98,7 @@
   "node.id": "节点标识",
   "node.inputVariable": "输入变量",
   "node.invalidValue": "无效的值",
+  "node.invalidVariableName": "变量名必须以字母或下划线开头",
   "node.name": "节点名称",
   "node.noNodeSelected": "未选择任务节点",
   "node.oneof.error": "输入项 “{{input}}” 和参数 “{{arg}}({{desc}})” 之中，只能选择设置其中之一",

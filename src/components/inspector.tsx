@@ -16,6 +16,7 @@ import {
   getNodeArgRawType,
   isNodeArgArray,
   isNodeArgOptional,
+  isValidVariableName,
 } from "@/misc/b3util";
 import { Hotkey, isMacos } from "@/misc/keys";
 import { mergeClassNames } from "@/misc/util";
@@ -436,6 +437,18 @@ const NodeInspector: FC = () => {
                                   name={field.name}
                                   validateTrigger={["onChange", "onBlur"]}
                                   style={{ width: "100%", marginBottom: 5 }}
+                                  rules={[
+                                    {
+                                      validator(_, value) {
+                                        if (value && !isValidVariableName(value)) {
+                                          return Promise.reject(
+                                            new Error(t("node.invalidVariableName"))
+                                          );
+                                        }
+                                        return Promise.resolve();
+                                      },
+                                    },
+                                  ]}
                                 >
                                   <AutoComplete
                                     disabled={disabled}
@@ -489,6 +502,9 @@ const NodeInspector: FC = () => {
                         { required, message: t("node.fileRequired", { field: desc }) },
                         ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                           validator(_, value) {
+                            if (value && !isValidVariableName(value)) {
+                              return Promise.reject(new Error(t("node.invalidVariableName")));
+                            }
                             const arg = def.args?.find(
                               (a) => a.oneof && v.replace("?", "") === a.oneof
                             );
@@ -792,6 +808,18 @@ const NodeInspector: FC = () => {
                                   name={field.name}
                                   validateTrigger={["onChange", "onBlur"]}
                                   style={{ width: "100%", marginBottom: 5 }}
+                                  rules={[
+                                    {
+                                      validator(_, value) {
+                                        if (value && !isValidVariableName(value)) {
+                                          return Promise.reject(
+                                            new Error(t("node.invalidVariableName"))
+                                          );
+                                        }
+                                        return Promise.resolve();
+                                      },
+                                    },
+                                  ]}
                                 >
                                   <AutoComplete
                                     disabled={disabled}
@@ -841,7 +869,17 @@ const NodeInspector: FC = () => {
                       label={desc}
                       name={`output.${i}`}
                       key={`output.${i}`}
-                      rules={[{ required, message: t("node.fileRequired", { field: desc }) }]}
+                      rules={[
+                        { required, message: t("node.fileRequired", { field: desc }) },
+                        {
+                          validator(_, value) {
+                            if (value && !isValidVariableName(value)) {
+                              return Promise.reject(new Error(t("node.invalidVariableName")));
+                            }
+                            return Promise.resolve();
+                          },
+                        },
+                      ]}
                     >
                       <AutoComplete
                         disabled={disabled}

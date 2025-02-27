@@ -19,6 +19,10 @@ import { message } from "./hooks";
 import Path from "./path";
 import { zhNodeDef } from "./template";
 
+export const isValidVariableName = (name: string) => {
+  return /^[a-zA-Z_]/.test(name);
+};
+
 export const isSubtreeRoot = (data: TreeGraphData) => {
   return data.path && data.id.toString() !== "1";
 };
@@ -229,6 +233,14 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
       if (!data.input[i]) {
         data.input[i] = "";
       }
+      if (data.input[i] && !isValidVariableName(data.input[i])) {
+        error(
+          data,
+          `input field '${data.input[i]}' is not a valid variable name,` +
+            `should start with a letter or underscore`
+        );
+        hasError = true;
+      }
       if (!isValidInputOrOutput(conf.input, data.input, i)) {
         error(data, `intput field '${conf.input[i]}' is required`);
         hasError = true;
@@ -250,6 +262,14 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
       }
       if (!data.output[i]) {
         data.output[i] = "";
+      }
+      if (data.output[i] && !isValidVariableName(data.output[i])) {
+        error(
+          data,
+          `output field '${data.output[i]}' is not a valid variable name,` +
+            `should start with a letter or underscore`
+        );
+        hasError = true;
       }
       if (!isValidInputOrOutput(conf.output, data.output, i)) {
         error(data, `output field '${conf.output[i]}' is required`);
