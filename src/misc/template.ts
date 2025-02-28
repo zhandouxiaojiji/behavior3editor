@@ -1,5 +1,5 @@
-import { Context, Node, NodeDef } from "@/behavior3/src/behavior3";
-import { DeepReadonly } from "../behavior3/src/behavior3/context";
+import { Node, NodeDef } from "../behavior3/src/behavior3";
+import { Context, DeepReadonly } from "../behavior3/src/behavior3/context";
 
 export const zhNodeDef = () => {
   const context = new (class extends Context {

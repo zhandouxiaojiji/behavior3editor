@@ -1,4 +1,4 @@
-import { useWorkspace } from "@/contexts/workspace-context";
+import * as fs from "fs";
 import {
   isBoolType,
   isEnumType,
@@ -12,12 +12,33 @@ import {
   NodeModel,
   TreeGraphData,
   TreeModel,
-  unknownNodeDef,
-} from "@/misc/b3type";
-import * as fs from "fs";
-import { message } from "./hooks";
+} from "./b3type";
 import Path from "./path";
-import { zhNodeDef } from "./template";
+import { readJson } from "./util";
+
+export let workdir: string = "";
+let alertError: (msg: string, duration?: number) => void = () => {};
+
+const unknownNodeDef: NodeDef = {
+  name: "unknown",
+  desc: "",
+  type: "Action",
+};
+
+export const nodeDefs = new (class extends Map<string, NodeDef> {
+  get(key: string): NodeDef {
+    return super.get(key) ?? unknownNodeDef;
+  }
+})();
+
+export const initWorkdir = (path: string, handler: typeof alertError) => {
+  workdir = path;
+  alertError = handler;
+  const nodeDefData = readJson(`${workdir}/node-config.b3-setting`) as NodeDef[];
+  for (const v of nodeDefData) {
+    nodeDefs.set(v.name, v);
+  }
+};
 
 export const isValidVariableName = (name: string) => {
   return /^[a-zA-Z_]/.test(name);
@@ -35,7 +56,7 @@ export const isNodeEqual = (node1: NodeModel, node2: NodeModel) => {
     node1.debug === node2.debug &&
     node1.disabled === node2.disabled
   ) {
-    const def = useWorkspace.getState().getNodeDef(node1.name);
+    const def = nodeDefs.get(node1.name);
 
     for (const arg of def.args ?? []) {
       if (node1.args?.[arg.name] !== node2.args?.[arg.name]) {
@@ -208,7 +229,7 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   if (!data) {
     return false;
   }
-  const conf = useWorkspace.getState().getNodeDef(data.name);
+  const conf = nodeDefs.get(data.name);
   if (conf.name === unknownNodeDef.name) {
     error(data, `undefined node: ${data.name}`);
     return false;
@@ -530,7 +551,6 @@ export const createTreeData = (
   parent?: string,
   calcSize?: (d: TreeGraphData) => number[]
 ) => {
-  const workspace = useWorkspace.getState();
   let treeData: TreeGraphData = {
     id: node.id.toFixed(),
     name: node.name,
@@ -540,7 +560,7 @@ export const createTreeData = (
     output: node.output,
     debug: node.debug,
     disabled: node.disabled,
-    def: workspace.getNodeDef(node.name),
+    def: nodeDefs.get(node.name),
     parent: parent,
   };
 
@@ -570,12 +590,12 @@ export const createTreeData = (
       if (calcSize) {
         treeData.size = calcSize(treeData);
       }
-      message.error(`循环引用节点：${node.path}`, 4);
+      alertError(`循环引用节点：${node.path}`, 4);
       return treeData;
     }
     parsingStack.push(node.path);
     try {
-      const subtreePath = workspace.workdir + "/" + node.path;
+      const subtreePath = workdir + "/" + node.path;
       const str = fs.readFileSync(subtreePath, "utf8");
       treeData = createTreeData(JSON.parse(str).root, treeData.id, calcSize);
       treeData.lastModified = fs.statSync(subtreePath).mtimeMs;
@@ -588,7 +608,7 @@ export const createTreeData = (
         treeData.size = calcSize(treeData);
       }
     } catch (e) {
-      message.error(`解析子树失败：${node.path}`);
+      alertError(`解析子树失败：${node.path}`);
       console.log("parse subtree:", e);
     }
     parsingStack.pop();
@@ -623,7 +643,7 @@ export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) =>
     disabled: data.disabled || undefined,
     path: data.path || undefined,
   };
-  const conf = useWorkspace.getState().getNodeDef(data.name);
+  const conf = nodeDefs.get(data.name);
   if (!conf.input?.length) {
     nodeData.input = undefined;
   }
@@ -656,49 +676,4 @@ export const createNewTree = (path: string) => {
 
 export const isTreeFile = (path: string) => {
   return path.toLocaleLowerCase().endsWith(".json");
-};
-
-export const createProject = (path: string) => {
-  fs.writeFileSync(Path.dirname(path) + "/node-config.b3-setting", zhNodeDef());
-  fs.writeFileSync(
-    Path.dirname(path) + "/example.json",
-    JSON.stringify(
-      {
-        name: "example",
-        root: {
-          id: 1,
-          name: "Sequence",
-          children: [
-            {
-              id: 2,
-              name: "Log",
-              args: {
-                str: "hello",
-              },
-            },
-            {
-              id: 3,
-              name: "Wait",
-              args: {
-                time: 1,
-              },
-            },
-          ],
-        },
-      },
-      null,
-      2
-    )
-  );
-  fs.writeFileSync(
-    path,
-    JSON.stringify(
-      {
-        nodeConf: "node-config.b3-setting",
-        metadata: [],
-      },
-      null,
-      2
-    )
-  );
 };

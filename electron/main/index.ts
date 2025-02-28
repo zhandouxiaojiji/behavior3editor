@@ -47,6 +47,7 @@ const windows: Workspace[] = [];
 
 let buildProject: string;
 let buildOutput: string;
+let buildHelp: boolean = false;
 
 for (let i = 0; i < argv.length; i++) {
   const arg = argv[i];
@@ -56,7 +57,30 @@ for (let i = 0; i < argv.length; i++) {
   } else if (arg === "--build") {
     buildOutput = argv[i + 1];
     i++;
+  } else if (arg === "--help") {
+    buildHelp = true;
   }
+}
+
+const printHelp = () => {
+  console.log("Usage: Behavior3 Editor [options]");
+  console.log("Options:");
+  console.log("  --project <path>  Set the project path");
+  console.log("  --build <path>    Set the build output path");
+  console.log("  --help            Print this help");
+};
+
+if (buildOutput || buildProject || buildHelp) {
+  if (buildHelp) {
+    printHelp();
+    app.exit(0);
+  } else if (!buildOutput || !buildProject) {
+    console.error("build output or project is not set");
+    printHelp();
+    app.exit(0);
+  }
+  console.log("todo: build output");
+  app.exit(0);
 }
 
 async function createWindow(projectPath?: string) {
@@ -108,10 +132,6 @@ async function createWindow(projectPath?: string) {
     win.webContents.setZoomFactor(1);
     if (workspace.projectPath) {
       win?.webContents.send("open-project", workspace.projectPath);
-    }
-
-    if (buildProject && buildOutput) {
-      win?.webContents.send("build-project", buildProject, buildOutput);
     }
 
     const nextWin = BrowserWindow.getAllWindows().at(-1);

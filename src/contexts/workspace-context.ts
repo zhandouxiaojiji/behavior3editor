@@ -1,15 +1,16 @@
-import { NodeDef, NodeModel, TreeGraphData, TreeModel, unknownNodeDef } from "@/misc/b3type";
-import * as b3util from "@/misc/b3util";
-import { message } from "@/misc/hooks";
-import i18n from "@/misc/i18n";
-import Path from "@/misc/path";
-import { readJson, writeJson } from "@/misc/util";
 import { Matrix, TreeGraph } from "@antv/g6";
 import { BrowserWindow, dialog } from "@electron/remote";
 import { ipcRenderer } from "electron";
 import * as fs from "fs";
 import React from "react";
 import { create } from "zustand";
+import { NodeDef, NodeModel, TreeGraphData, TreeModel } from "../misc/b3type";
+import * as b3util from "../misc/b3util";
+import { message } from "../misc/hooks";
+import i18n from "../misc/i18n";
+import Path from "../misc/path";
+import { zhNodeDef } from "../misc/template";
+import { readJson, writeJson } from "../misc/util";
 import { useSetting } from "./setting-context";
 
 let buildDir: string | undefined;
@@ -151,7 +152,9 @@ export type WorkspaceStore = {
 
   watch(): void;
   loadTrees: () => void;
+
   loadNodeDefs: () => void;
+  nodeDefs: Map<string, NodeDef>;
 
   // edit node
   editingNode?: EditNode | null;
@@ -164,11 +167,6 @@ export type WorkspaceStore = {
   // edit tree
   editingTree?: EditTree | null;
   onEditingTree: (editor: EditorStore) => void;
-
-  // node setting
-  nodeDefs: Map<string, NodeDef>;
-  getNodeDef: (name: string) => NodeDef;
-  hasNodeDef: (name: string) => boolean;
 };
 
 const loadFileTree = (workdir: string, filename: string) => {
@@ -249,7 +247,48 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     });
     if (path) {
       const workspace = get();
-      b3util.createProject(path);
+      fs.writeFileSync(Path.dirname(path) + "/node-config.b3-setting", zhNodeDef());
+      fs.writeFileSync(
+        Path.dirname(path) + "/example.json",
+        JSON.stringify(
+          {
+            name: "example",
+            root: {
+              id: 1,
+              name: "Sequence",
+              children: [
+                {
+                  id: 2,
+                  name: "Log",
+                  args: {
+                    str: "hello",
+                  },
+                },
+                {
+                  id: 3,
+                  name: "Wait",
+                  args: {
+                    time: 1,
+                  },
+                },
+              ],
+            },
+          },
+          null,
+          2
+        )
+      );
+      fs.writeFileSync(
+        path,
+        JSON.stringify(
+          {
+            nodeConf: "node-config.b3-setting",
+            metadata: [],
+          },
+          null,
+          2
+        )
+      );
       workspace.init(path);
     }
   },
@@ -569,14 +608,11 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     }
   },
 
+  nodeDefs: new Map(),
   loadNodeDefs: () => {
     const workspace = get();
-    const nodeDefData = readJson(`${workspace.workdir}/node-config.b3-setting`) as NodeDef[];
-    const nodeDefs: Map<string, NodeDef> = new Map();
-    for (const v of nodeDefData) {
-      nodeDefs.set(v.name, v);
-    }
-    set({ nodeDefs });
+    b3util.initWorkdir(workspace.workdir, message.error.bind(message));
+    set({ nodeDefs: b3util.nodeDefs });
     workspace.editing?.dispatch("refresh");
   },
 
@@ -615,17 +651,5 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       editingNodeDef: null,
       editingNode: null,
     });
-  },
-
-  // node def
-  nodeDefs: new Map(),
-  getNodeDef: (name) => {
-    const workspace = get();
-    unknownNodeDef.desc = i18n.t("node.unknown.desc");
-    return workspace.nodeDefs.get(name) || unknownNodeDef;
-  },
-  hasNodeDef: (name) => {
-    const workspace = get();
-    return workspace.nodeDefs.has(name);
   },
 }));

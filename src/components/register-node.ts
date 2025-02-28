@@ -1,10 +1,8 @@
-import { useWorkspace } from "@/contexts/workspace-context";
-import { TreeGraphData, getNodeType } from "@/misc/b3type";
-import { checkTreeData } from "@/misc/b3util";
-
-import i18n from "@/misc/i18n";
-import { isMacos } from "@/misc/keys";
 import G6 from "@antv/g6";
+import { TreeGraphData, getNodeType } from "../misc/b3type";
+import { checkTreeData, nodeDefs, workdir } from "../misc/b3util";
+import i18n from "../misc/i18n";
+import { isMacos } from "../misc/keys";
 
 let ctx: CanvasRenderingContext2D | null = null;
 let defaultFontSize = "";
@@ -142,12 +140,11 @@ G6.registerNode(
       },
     },
     draw(cfg, group) {
-      const workspace = useWorkspace.getState();
-      const nodeDef = workspace.getNodeDef(cfg.name as string);
+      const nodeDef = nodeDefs.get(cfg.name as string);
       let classify = getNodeType(nodeDef);
       let color = nodeDef.color || NODE_COLORS[classify] || NODE_COLORS["Other"];
       if (
-        !workspace.hasNodeDef(cfg.name as string) ||
+        !nodeDefs.has(cfg.name as string) ||
         (cfg.path && (!cfg.children || (cfg.children as []).length === 0)) ||
         !checkTreeData(cfg as TreeGraphData)
       ) {
@@ -259,9 +256,7 @@ G6.registerNode(
       });
 
       // icon
-      const img = nodeDef.icon
-        ? `file:///${workspace.workdir}/${nodeDef.icon}`
-        : `./icons/${classify}.svg`;
+      const img = nodeDef.icon ? `file:///${workdir}/${nodeDef.icon}` : `./icons/${classify}.svg`;
       addShape("image", {
         attrs: {
           x: 5,

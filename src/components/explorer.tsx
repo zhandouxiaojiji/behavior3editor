@@ -1,10 +1,3 @@
-import { FileTreeType, useWorkspace } from "@/contexts/workspace-context";
-import { NodeDef, getNodeType } from "@/misc/b3type";
-import * as b3util from "@/misc/b3util";
-import { modal } from "@/misc/hooks";
-import i18n from "@/misc/i18n";
-import { Hotkey, isMacos, useKeyDown } from "@/misc/keys";
-import Path from "@/misc/path";
 import { DownOutlined } from "@ant-design/icons";
 import { Button, Dropdown, Flex, FlexProps, Input, MenuProps, Space, Tree } from "antd";
 import { ItemType } from "antd/es/menu/interface";
@@ -17,6 +10,13 @@ import { FaExclamationTriangle, FaSwatchbook } from "react-icons/fa";
 import { FiCommand, FiDelete } from "react-icons/fi";
 import { IoMdReturnLeft } from "react-icons/io";
 import { PiTreeStructureFill } from "react-icons/pi";
+import { FileTreeType, useWorkspace } from "../contexts/workspace-context";
+import { NodeDef, getNodeType } from "../misc/b3type";
+import * as b3util from "../misc/b3util";
+import { modal } from "../misc/hooks";
+import i18n from "../misc/i18n";
+import { Hotkey, isMacos, useKeyDown } from "../misc/keys";
+import Path from "../misc/path";
 
 const { DirectoryTree } = Tree;
 

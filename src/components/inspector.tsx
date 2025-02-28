@@ -1,25 +1,3 @@
-import { EditNode, EditTree, useWorkspace } from "@/contexts/workspace-context";
-import {
-  isBoolType,
-  isEnumType,
-  isExprType,
-  isFloatType,
-  isIntType,
-  isJsonType,
-  isStringType,
-  NodeModel,
-  TreeGraphData,
-} from "@/misc/b3type";
-import {
-  checkNodeArgValue,
-  checkOneof,
-  getNodeArgRawType,
-  isNodeArgArray,
-  isNodeArgOptional,
-  isValidVariableName,
-} from "@/misc/b3util";
-import { Hotkey, isMacos } from "@/misc/keys";
-import { mergeClassNames } from "@/misc/util";
 import { EditOutlined, MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import {
   AutoComplete,
@@ -38,6 +16,29 @@ import { FC, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import { useDebounceCallback } from "usehooks-ts";
+import { EditNode, EditTree, useWorkspace } from "../contexts/workspace-context";
+import {
+  isBoolType,
+  isEnumType,
+  isExprType,
+  isFloatType,
+  isIntType,
+  isJsonType,
+  isStringType,
+  NodeModel,
+  TreeGraphData,
+} from "../misc/b3type";
+import {
+  checkNodeArgValue,
+  checkOneof,
+  getNodeArgRawType,
+  isNodeArgArray,
+  isNodeArgOptional,
+  isValidVariableName,
+  nodeDefs,
+} from "../misc/b3util";
+import { Hotkey, isMacos } from "../misc/keys";
+import { mergeClassNames } from "../misc/util";
 
 interface OptionType extends DefaultOptionType {
   value: string;
@@ -99,7 +100,6 @@ const NodeInspector: FC = () => {
   const workspace = {
     editing: useWorkspace((state) => state.editing),
     editingNode: useWorkspace((state) => state.editingNode)!,
-    getNodeDef: useWorkspace((state) => state.getNodeDef),
     nodeDefs: useWorkspace((state) => state.nodeDefs),
     onEditingNode: useWorkspace((state) => state.onEditingNode),
     allFiles: useWorkspace((state) => state.allFiles),
@@ -121,7 +121,7 @@ const NodeInspector: FC = () => {
   // set form values
   useEffect(() => {
     const data = workspace.editingNode.data;
-    const def = workspace.getNodeDef(workspace.editingNode.data.name);
+    const def = nodeDefs.get(workspace.editingNode.data.name);
     form.resetFields();
     form.setFieldValue("id", data.id);
     form.setFieldValue("name", data.name);
@@ -237,7 +237,7 @@ const NodeInspector: FC = () => {
   }, [workspace.allFiles, workspace.fileTree]);
 
   const editingNode = workspace.editingNode;
-  const def = workspace.getNodeDef(editingNode.data.name);
+  const def = nodeDefs.get(editingNode.data.name);
   const disabled = !editingNode.editable;
 
   // update value

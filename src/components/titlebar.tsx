@@ -1,10 +1,10 @@
-import { useWorkspace } from "@/contexts/workspace-context";
-import { NodeDef } from "@/misc/b3type";
-import { Hotkey, isMacos } from "@/misc/keys";
-import Path from "@/misc/path";
 import { SearchOutlined } from "@ant-design/icons";
 import { Button, Flex, LayoutProps, Select } from "antd";
 import React, { FC, useMemo } from "react";
+import { useWorkspace } from "../contexts/workspace-context";
+import { NodeDef } from "../misc/b3type";
+import { Hotkey, isMacos } from "../misc/keys";
+import Path from "../misc/path";
 import { Menu } from "./menu";
 
 interface OptionType {

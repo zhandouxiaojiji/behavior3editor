@@ -1,7 +1,7 @@
-import { readJson, writeJson } from "@/misc/util";
 import { app } from "@electron/remote";
 import * as fs from "fs";
 import { create } from "zustand";
+import { readJson, writeJson } from "../misc/util";
 
 const settingPath = app.getPath("userData") + "/settings.json";
 

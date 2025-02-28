@@ -122,12 +122,6 @@ export interface TreeGraphData extends G6TreeGraphData {
   status?: number;
 }
 
-export const unknownNodeDef: NodeDef = {
-  name: "unknown",
-  desc: "新建节点",
-  type: "Action",
-};
-
 export const getNodeType = (def: NodeDef): NodeType => {
   const type = def.type.toLocaleLowerCase().toString();
   if (type.startsWith("action")) {

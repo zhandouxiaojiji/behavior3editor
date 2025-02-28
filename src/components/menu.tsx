@@ -1,18 +1,5 @@
-import { useSetting } from "@/contexts/setting-context";
-import { useWorkspace } from "@/contexts/workspace-context";
-import * as b3util from "@/misc/b3util";
-import i18n from "@/misc/i18n";
-import { Hotkey, isMacos, sendInputEvent } from "@/misc/keys";
-import Path from "@/misc/path";
 import { CheckOutlined } from "@ant-design/icons";
-import {
-  Menu as AppMenu,
-  BrowserWindow,
-  app,
-  dialog,
-  getCurrentWindow,
-  getGlobal,
-} from "@electron/remote";
+import { Menu as AppMenu, BrowserWindow, app, dialog } from "@electron/remote";
 import { Button, DropDownProps, Dropdown, Flex, FlexProps, LayoutProps, Space } from "antd";
 import { ItemType } from "antd/es/menu/interface";
 import { ipcRenderer } from "electron";
@@ -21,6 +8,11 @@ import * as fs from "fs";
 import { FC, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PiTreeStructureFill } from "react-icons/pi";
+import { useSetting } from "../contexts/setting-context";
+import { useWorkspace } from "../contexts/workspace-context";
+import * as b3util from "../misc/b3util";
+import i18n from "../misc/i18n";
+import { Hotkey, isMacos, sendInputEvent } from "../misc/keys";
 
 const MenuItemLabel: FC<FlexProps> = (itemProps) => {
   return (
@@ -43,45 +35,6 @@ ipcRenderer.on("open-project", (_, dir) => {
 ipcRenderer.on("refresh-app-men", () => {
   // trigger refresh
   useSetting.getState().load();
-});
-
-ipcRenderer.on("build-project", (_, project, buildDir) => {
-  const mainConsole = getGlobal("console") as Console;
-  try {
-    let hasError = false;
-    project = Path.posixPath(project);
-    buildDir = Path.posixPath(buildDir);
-    if (!project.endsWith(".b3-workspace")) {
-      throw new Error(`'${project}' is not a workspace`);
-    }
-    const workspace = useWorkspace.getState();
-    workspace.workdir = Path.dirname(project);
-    workspace.loadNodeDefs();
-    for (const path of Path.ls(Path.dirname(project), true)) {
-      if (path.endsWith(".json")) {
-        const buildpath = buildDir + "/" + path.substring(workspace.workdir.length + 1);
-        const treeModel = b3util.createBuildData(path);
-        if (treeModel && treeModel.export === false) {
-          mainConsole.log("skip:", buildpath);
-          continue;
-        }
-        mainConsole.log("build:", buildpath);
-        if (!b3util.checkNodeData(treeModel?.root)) {
-          hasError = true;
-        }
-        fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
-        fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
-      }
-    }
-    if (hasError) {
-      mainConsole.error(i18n.t("buildFailed"));
-    } else {
-      mainConsole.log(i18n.t("buildCompleted"));
-    }
-  } catch (error) {
-    mainConsole.error(i18n.t("buildFailed"));
-  }
-  getCurrentWindow().close();
 });
 
 export const Menu: FC<LayoutProps> = () => {

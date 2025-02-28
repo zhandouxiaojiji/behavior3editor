@@ -1,17 +1,3 @@
-import {
-  EditEvent,
-  EditNode,
-  EditTree,
-  EditorStore,
-  useWorkspace,
-} from "@/contexts/workspace-context";
-import { NodeModel, TreeGraphData, TreeModel } from "@/misc/b3type";
-import * as b3util from "@/misc/b3util";
-import { message } from "@/misc/hooks";
-import i18n from "@/misc/i18n";
-import { Hotkey, isMacos, useKeyDown } from "@/misc/keys";
-import Path from "@/misc/path";
-import { mergeClassNames, readJson } from "@/misc/util";
 import { ArrowDownOutlined, ArrowUpOutlined, CloseOutlined } from "@ant-design/icons";
 import G6, { G6GraphEvent, Item, TreeGraph } from "@antv/g6";
 import { dialog } from "@electron/remote";
@@ -27,6 +13,20 @@ import { RiFocus3Line } from "react-icons/ri";
 import { VscCaseSensitive } from "react-icons/vsc";
 import { mergeRefs } from "react-merge-refs";
 import { useDebounceCallback } from "usehooks-ts";
+import {
+  EditEvent,
+  EditNode,
+  EditTree,
+  EditorStore,
+  useWorkspace,
+} from "../contexts/workspace-context";
+import { NodeModel, TreeGraphData, TreeModel } from "../misc/b3type";
+import * as b3util from "../misc/b3util";
+import { message } from "../misc/hooks";
+import i18n from "../misc/i18n";
+import { Hotkey, isMacos, useKeyDown } from "../misc/keys";
+import Path from "../misc/path";
+import { mergeClassNames, readJson } from "../misc/util";
 import "./register-node";
 import { calcTreeDataSize } from "./register-node";
 
