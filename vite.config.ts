@@ -1,7 +1,6 @@
-import { rmSync } from "node:fs";
-import path from "node:path";
-import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { rmSync } from "node:fs";
+import { defineConfig } from "vite";
 import electron from "vite-electron-plugin";
 import { customStart, loadViteEnv } from "vite-electron-plugin/plugin";
 import renderer from "vite-plugin-electron-renderer";
@@ -16,11 +15,6 @@ export default defineConfig(({ command }) => {
   return {
     build: {
       sourcemap: true,
-    },
-    resolve: {
-      alias: {
-        "@": path.join(__dirname, "src"),
-      },
     },
     plugins: [
       react(),

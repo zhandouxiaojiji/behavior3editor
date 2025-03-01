@@ -1,5 +1,5 @@
-import { TreeGraphData as G6TreeGraphData } from "@antv/g6";
-import { NodeDef } from "../behavior3/src/behavior3";
+import type { TreeGraphData as G6TreeGraphData } from "@antv/g6";
+import type { NodeDef } from "../behavior3/src/behavior3";
 
 export type NodeType = NodeDef["type"] | "Other" | "Error";
 export type NodeArg = Exclude<NodeDef["args"], undefined>[number];

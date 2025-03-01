@@ -45,8 +45,8 @@ const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, "index.html");
 const windows: Workspace[] = [];
 
-let buildProject: string;
-let buildOutput: string;
+let buildProject: string | undefined;
+let buildOutput: string | undefined;
 let buildHelp: boolean = false;
 
 for (let i = 0; i < argv.length; i++) {
@@ -79,7 +79,41 @@ if (buildOutput || buildProject || buildHelp) {
     printHelp();
     app.exit(0);
   }
-  console.log("todo: build output");
+  // try {
+  //   let hasError = false;
+  //   const project = Path.posixPath(buildProject!);
+  //   const buildDir = Path.posixPath(buildOutput!);
+  //   if (!project.endsWith(".b3-workspace")) {
+  //     throw new Error(`'${project}' is not a workspace`);
+  //   }
+  //   const workdir = Path.dirname(project);
+  //   b3util.initWorkdir(workdir, (msg) => {
+  //     console.error(msg);
+  //   });
+  //   for (const path of Path.ls(Path.dirname(project), true)) {
+  //     if (path.endsWith(".json")) {
+  //       const buildpath = buildDir + "/" + path.substring(workdir.length + 1);
+  //       const treeModel = b3util.createBuildData(path);
+  //       if (treeModel && treeModel.export === false) {
+  //         console.log("skip:", buildpath);
+  //         continue;
+  //       }
+  //       console.log("build:", buildpath);
+  //       if (!b3util.checkNodeData(treeModel?.root)) {
+  //         hasError = true;
+  //       }
+  //       fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
+  //       fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
+  //     }
+  //   }
+  //   if (hasError) {
+  //     console.error("build failed");
+  //   } else {
+  //     console.log("build completed");
+  //   }
+  // } catch (error) {
+  //   console.error("build failed");
+  // }
   app.exit(0);
 }
 
@@ -200,7 +234,7 @@ ipcMain.handle("open-win", (event, arg: string | undefined) => {
     }
 
     workspace = windows.find((v) => v.window.webContents.id === event.sender.id);
-    if (!workspace.projectPath) {
+    if (workspace && !workspace.projectPath) {
       workspace.projectPath = arg;
       workspace.window.webContents.send("open-project", arg);
       return;
