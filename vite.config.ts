@@ -19,7 +19,13 @@ export default defineConfig(({ command }) => {
     plugins: [
       react(),
       electron({
-        include: ["electron"],
+        include: [
+          "electron",
+          "src/misc/b3type.ts",
+          "src/misc/b3util.ts",
+          "src/misc/path.ts",
+          "src/misc/util.ts",
+        ],
         transformOptions: {
           sourcemap,
         },

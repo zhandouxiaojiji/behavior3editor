@@ -1,7 +1,91 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
+import * as fs from "node:fs";
 import { release } from "node:os";
 import path, { join } from "node:path";
 import { argv } from "node:process";
+import * as b3util from "../../src/misc/b3util";
+import Path from "../../src/misc/path";
+
+// Check command line arguments
+let buildProject: string | undefined;
+let buildOutput: string | undefined;
+let buildHelp: boolean = false;
+
+for (let i = 0; i < argv.length; i++) {
+  const arg = argv[i];
+  if (arg === "--project") {
+    buildProject = argv[i + 1];
+    i++;
+  } else if (arg === "--build") {
+    buildOutput = argv[i + 1];
+    i++;
+  } else if (arg === "--help") {
+    buildHelp = true;
+  }
+}
+
+const printHelp = () => {
+  console.log("Usage: Behavior3 Editor [options]");
+  console.log("Options:");
+  console.log("  --project <path>  Set the project path");
+  console.log("  --build <path>    Set the build output path");
+  console.log("  --help            Print this help");
+};
+
+if (buildOutput || buildProject || buildHelp) {
+  if (buildHelp) {
+    printHelp();
+    app.quit();
+    process.exit(1);
+  } else if (!buildOutput || !buildProject) {
+    console.error("build output or project is not set");
+    printHelp();
+    app.quit();
+    process.exit(1);
+  }
+  try {
+    let hasError = false;
+    const project = Path.posixPath(buildProject!);
+    const buildDir = Path.posixPath(buildOutput!);
+    console.log("start build project:", project);
+    if (!project.endsWith(".b3-workspace")) {
+      throw new Error(`'${project}' is not a workspace`);
+    }
+    const workdir = Path.dirname(project);
+    b3util.initWorkdir(workdir, (msg) => {
+      console.error(`${msg}`);
+    });
+    for (const path of Path.ls(Path.dirname(project), true)) {
+      if (path.endsWith(".json")) {
+        const buildpath = buildDir + "/" + path.substring(workdir.length + 1);
+        const treeModel = b3util.createBuildData(path);
+        if (treeModel && treeModel.export === false) {
+          console.log("skip:", buildpath);
+          continue;
+        }
+        console.log("build:", buildpath);
+        if (!b3util.checkNodeData(treeModel?.root)) {
+          hasError = true;
+        }
+        fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
+        fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
+      }
+    }
+    if (hasError) {
+      console.error("build failed***");
+      app.quit();
+      process.exit(1);
+    } else {
+      console.log("build completed");
+    }
+  } catch (error) {
+    console.error("build failed***");
+    app.quit();
+    process.exit(1);
+  }
+  app.quit();
+  process.exit(0);
+}
 
 // The built directory structure
 //
@@ -13,7 +97,7 @@ import { argv } from "node:process";
 // ├─┬ dist
 // │ └── index.html    > Electron-Renderer
 //
-process.env.DIST_ELECTRON = join(__dirname, "../");
+process.env.DIST_ELECTRON = join(__dirname, "../../");
 process.env.DIST = join(process.env.DIST_ELECTRON, "../dist");
 process.env.PUBLIC = process.env.VITE_DEV_SERVER_URL
   ? join(process.env.DIST_ELECTRON, "../public")
@@ -44,78 +128,6 @@ const preload = "../preload/index.js";
 const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, "index.html");
 const windows: Workspace[] = [];
-
-let buildProject: string | undefined;
-let buildOutput: string | undefined;
-let buildHelp: boolean = false;
-
-for (let i = 0; i < argv.length; i++) {
-  const arg = argv[i];
-  if (arg === "--project") {
-    buildProject = argv[i + 1];
-    i++;
-  } else if (arg === "--build") {
-    buildOutput = argv[i + 1];
-    i++;
-  } else if (arg === "--help") {
-    buildHelp = true;
-  }
-}
-
-const printHelp = () => {
-  console.log("Usage: Behavior3 Editor [options]");
-  console.log("Options:");
-  console.log("  --project <path>  Set the project path");
-  console.log("  --build <path>    Set the build output path");
-  console.log("  --help            Print this help");
-};
-
-if (buildOutput || buildProject || buildHelp) {
-  if (buildHelp) {
-    printHelp();
-    app.exit(0);
-  } else if (!buildOutput || !buildProject) {
-    console.error("build output or project is not set");
-    printHelp();
-    app.exit(0);
-  }
-  // try {
-  //   let hasError = false;
-  //   const project = Path.posixPath(buildProject!);
-  //   const buildDir = Path.posixPath(buildOutput!);
-  //   if (!project.endsWith(".b3-workspace")) {
-  //     throw new Error(`'${project}' is not a workspace`);
-  //   }
-  //   const workdir = Path.dirname(project);
-  //   b3util.initWorkdir(workdir, (msg) => {
-  //     console.error(msg);
-  //   });
-  //   for (const path of Path.ls(Path.dirname(project), true)) {
-  //     if (path.endsWith(".json")) {
-  //       const buildpath = buildDir + "/" + path.substring(workdir.length + 1);
-  //       const treeModel = b3util.createBuildData(path);
-  //       if (treeModel && treeModel.export === false) {
-  //         console.log("skip:", buildpath);
-  //         continue;
-  //       }
-  //       console.log("build:", buildpath);
-  //       if (!b3util.checkNodeData(treeModel?.root)) {
-  //         hasError = true;
-  //       }
-  //       fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
-  //       fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
-  //     }
-  //   }
-  //   if (hasError) {
-  //     console.error("build failed");
-  //   } else {
-  //     console.log("build completed");
-  //   }
-  // } catch (error) {
-  //   console.error("build failed");
-  // }
-  app.exit(0);
-}
 
 async function createWindow(projectPath?: string) {
   const win = new BrowserWindow({

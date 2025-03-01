@@ -1,7 +1,7 @@
 {
   "name": "behavior3editor",
   "version": "1.7.0",
-  "main": "dist-electron/main/index.js",
+  "main": "dist-electron/electron/main/index.js",
   "description": "行为树编辑器",
   "author": "zhandouxiaojiji & codetypes",
   "license": "MIT",
