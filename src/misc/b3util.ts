@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import { NodeDef } from "../behavior3/src/behavior3";
 import {
   isBoolType,
   isEnumType,
@@ -8,7 +9,6 @@ import {
   isJsonType,
   isStringType,
   NodeArg,
-  NodeDef,
   NodeModel,
   TreeGraphData,
   TreeModel,

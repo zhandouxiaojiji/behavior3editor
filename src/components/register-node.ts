@@ -140,18 +140,19 @@ G6.registerNode(
       },
     },
     draw(cfg, group) {
-      const nodeDef = nodeDefs.get(cfg.name as string);
+      const data = cfg as TreeGraphData;
+      const nodeDef = nodeDefs.get(data.name);
       let classify = getNodeType(nodeDef);
       let color = nodeDef.color || NODE_COLORS[classify] || NODE_COLORS["Other"];
       if (
-        !nodeDefs.has(cfg.name as string) ||
-        (cfg.path && (!cfg.children || (cfg.children as []).length === 0)) ||
-        !checkTreeData(cfg as TreeGraphData)
+        !nodeDefs.has(data.name) ||
+        (data.path && !data.children?.length) ||
+        !checkTreeData(data)
       ) {
         classify = "Error";
         color = NODE_COLORS[classify];
       }
-      const size = cfg.size ? (cfg.size as number[]) : [150, 40];
+      const size = data.size ? data.size : [150, 40];
       const w = size[0];
       const h = size[1];
       const r = 4;
@@ -159,7 +160,7 @@ G6.registerNode(
       let bgColor = "white";
       let textColor = "black";
 
-      if (cfg.highlightGray) {
+      if (data.highlightGray) {
         bgColor = "#0d1117";
         color = "#30363d";
         textColor = "#666";
@@ -207,7 +208,7 @@ G6.registerNode(
       );
 
       // is subtree
-      if (cfg.path && cfg.id !== "1") {
+      if (data.path && data.id !== "1") {
         addShape("rect", {
           attrs: {
             x: -10,
@@ -246,7 +247,7 @@ G6.registerNode(
           y: h / 2 - 8,
           fontSize: 20,
           lineHeight: 20,
-          text: cfg.id,
+          text: data.id,
           textAlign: "right",
           fill: "white",
           stroke: textColor,
@@ -269,7 +270,7 @@ G6.registerNode(
       });
 
       // status
-      const status = (((cfg.status ?? 0) as number) & 0b111).toString(2).padStart(3, "0");
+      const status = ((data.status ?? 0) & 0b111).toString(2).padStart(3, "0");
       addShape("image", {
         attrs: {
           x: 204,
@@ -288,7 +289,7 @@ G6.registerNode(
           x: 26,
           y: 5,
           fontWeight: 800,
-          text: cfg.name,
+          text: data.name,
           fill: textColor,
           fontSize: 13,
         },
@@ -296,7 +297,7 @@ G6.registerNode(
       });
 
       // debug
-      if (cfg.debug) {
+      if (data.debug) {
         addShape("image", {
           attrs: {
             x: 192,
@@ -309,10 +310,10 @@ G6.registerNode(
         });
       }
 
-      if (cfg.disabled) {
+      if (data.disabled) {
         addShape("image", {
           attrs: {
-            x: 200 - (cfg.debug ? 25 : 8),
+            x: 200 - (data.debug ? 25 : 8),
             y: 4,
             height: 16,
             width: 16,
@@ -325,7 +326,7 @@ G6.registerNode(
       const x = 6;
       let y = 32;
       // desc text
-      let desc = (cfg.desc || nodeDef.desc) as string;
+      let desc = (data.desc || nodeDef.desc) as string;
       if (desc) {
         desc = i18n.t("regnode.mark") + desc;
         desc = cutWordTo(desc, w - 15);
@@ -343,7 +344,7 @@ G6.registerNode(
         });
       }
 
-      const args: any = cfg.args;
+      const args: any = data.args;
       if (nodeDef.args && args && Object.keys(args).length > 0) {
         const { str, line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 200);
         addShape("text", {
@@ -361,13 +362,13 @@ G6.registerNode(
         y += 20 * line;
       }
 
-      const input: [] = cfg.input ? (cfg.input as []) : [];
+      const input = data.input ?? [];
       if (nodeDef.input && input.length > 0) {
         const { str, line } = toBreakWord(
           `${i18n.t("regnode.input")}${JSON.stringify(input)}`,
           200
         );
-        if (cfg.highlightInput) {
+        if (data.highlightInput) {
           addShape("rect", {
             attrs: {
               x: x - 2,
@@ -389,8 +390,8 @@ G6.registerNode(
               y: y + 20,
               lineHeight: 20,
               text: str,
-              fill: cfg.highlightInput ? "white" : textColor,
-              fontWeight: cfg.highlightInput ? "bolder" : undefined,
+              fill: data.highlightInput ? "white" : textColor,
+              fontWeight: data.highlightInput ? "bolder" : undefined,
             },
             name: "input-text",
           },
@@ -399,13 +400,13 @@ G6.registerNode(
         y += 20 * line;
       }
 
-      const output: [] = cfg.output ? (cfg.output as []) : [];
+      const output = data.output ?? [];
       if (nodeDef.output && output.length > 0) {
         const { str, line } = toBreakWord(
           `${i18n.t("regnode.output")}${JSON.stringify(output)}`,
           200
         );
-        if (cfg.highlightOutput) {
+        if (data.highlightOutput) {
           addShape("rect", {
             attrs: {
               x: x - 2,
@@ -427,8 +428,8 @@ G6.registerNode(
               y: y + 20,
               lineHeight: 20,
               text: str,
-              fill: cfg.highlightOutput ? "white" : textColor,
-              fontWeight: cfg.highlightOutput ? "bolder" : undefined,
+              fill: data.highlightOutput ? "white" : textColor,
+              fontWeight: data.highlightOutput ? "bolder" : undefined,
             },
             name: "output-text",
           },
@@ -437,8 +438,8 @@ G6.registerNode(
         y += 20 * line;
       }
 
-      if (cfg.path) {
-        let path = (i18n.t("regnode.subtree") + cfg.path) as string;
+      if (data.path) {
+        let path = (i18n.t("regnode.subtree") + data.path) as string;
         path = cutWordTo(path, w - 15);
         addShape("text", {
           attrs: {
@@ -505,7 +506,7 @@ G6.registerNode(
         draggable: true,
       });
 
-      if (Array.isArray(cfg.children) && cfg.children.length > 0) {
+      if (data.children?.length) {
         addShape("marker", {
           attrs: {
             x: w,

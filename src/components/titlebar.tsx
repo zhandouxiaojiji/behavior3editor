@@ -1,8 +1,8 @@
 import { SearchOutlined } from "@ant-design/icons";
 import { Button, Flex, LayoutProps, Select } from "antd";
 import React, { FC, useMemo } from "react";
+import { NodeDef } from "../behavior3/src/behavior3";
 import { useWorkspace } from "../contexts/workspace-context";
-import { NodeDef } from "../misc/b3type";
 import { Hotkey, isMacos } from "../misc/keys";
 import Path from "../misc/path";
 import { Menu } from "./menu";
