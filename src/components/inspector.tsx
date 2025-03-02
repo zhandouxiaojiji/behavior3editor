@@ -35,7 +35,6 @@ import {
   isNodeArgArray,
   isNodeArgOptional,
   isValidVariableName,
-  nodeDefs,
 } from "../misc/b3util";
 import { Hotkey, isMacos } from "../misc/keys";
 import { mergeClassNames } from "../misc/util";
@@ -121,7 +120,7 @@ const NodeInspector: FC = () => {
   // set form values
   useEffect(() => {
     const data = workspace.editingNode.data;
-    const def = nodeDefs.get(workspace.editingNode.data.name);
+    const def = workspace.nodeDefs.get(workspace.editingNode.data.name);
     form.resetFields();
     form.setFieldValue("id", data.id);
     form.setFieldValue("name", data.name);
@@ -237,7 +236,7 @@ const NodeInspector: FC = () => {
   }, [workspace.allFiles, workspace.fileTree]);
 
   const editingNode = workspace.editingNode;
-  const def = nodeDefs.get(editingNode.data.name);
+  const def = workspace.nodeDefs.get(editingNode.data.name);
   const disabled = !editingNode.editable;
 
   // update value

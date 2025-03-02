@@ -1,3 +1,28 @@
+// --------- Expose some API to the Renderer process ---------
+// contextBridge.exposeInMainWorld("ipcRenderer", {
+//   on(...args: Parameters<typeof ipcRenderer.on>) {
+//     const [channel, listener] = args;
+//     return ipcRenderer.on(channel, (event, ...args) => listener(event, ...args));
+//   },
+//   off(...args: Parameters<typeof ipcRenderer.off>) {
+//     const [channel, ...omit] = args;
+//     return ipcRenderer.off(channel, ...omit);
+//   },
+//   send(...args: Parameters<typeof ipcRenderer.send>) {
+//     const [channel, ...omit] = args;
+//     return ipcRenderer.send(channel, ...omit);
+//   },
+//   invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
+//     const [channel, ...omit] = args;
+//     return ipcRenderer.invoke(channel, ...omit);
+//   },
+
+//   // You can expose other APTs you need here.
+//   // ...
+// });
+// contextBridge.exposeInMainWorld("process", process);
+
+// --------- Preload scripts loading ---------
 function domReady(condition: DocumentReadyState[] = ["complete", "interactive"]) {
   return new Promise((resolve) => {
     if (condition.includes(document.readyState)) {
@@ -70,8 +95,8 @@ function useLoading() {
 
   return {
     appendLoading() {
-      safeDOM.append(document.head, oStyle);
-      safeDOM.append(document.body, oDiv);
+      // safeDOM.append(document.head, oStyle);
+      // safeDOM.append(document.body, oDiv);
     },
     removeLoading() {
       safeDOM.remove(document.head, oStyle);

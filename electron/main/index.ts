@@ -1,10 +1,15 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import * as fs from "node:fs";
-import { release } from "node:os";
-import path, { join } from "node:path";
+import { createRequire } from "node:module";
+import os from "node:os";
+import path from "node:path";
 import { argv } from "node:process";
+import { fileURLToPath } from "node:url";
 import * as b3util from "../../src/misc/b3util";
 import Path from "../../src/misc/path";
+
+const require = createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Check command line arguments
 let buildProject: string | undefined;
@@ -93,18 +98,22 @@ if (buildOutput || buildProject || buildHelp) {
 // │ ├─┬ main
 // │ │ └── index.js    > Electron-Main
 // │ └─┬ preload
-// │   └── index.js    > Preload-Scripts
+// │   └── index.mjs   > Preload-Scripts
 // ├─┬ dist
 // │ └── index.html    > Electron-Renderer
 //
-process.env.DIST_ELECTRON = join(__dirname, "../../");
-process.env.DIST = join(process.env.DIST_ELECTRON, "../dist");
-process.env.PUBLIC = process.env.VITE_DEV_SERVER_URL
-  ? join(process.env.DIST_ELECTRON, "../public")
-  : process.env.DIST;
+process.env.APP_ROOT = path.join(__dirname, "../..");
+
+export const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
+export const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
+export const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
+
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
+  ? path.join(process.env.APP_ROOT, "public")
+  : RENDERER_DIST;
 
 // Disable GPU Acceleration for Windows 7
-if (release().startsWith("6.1")) app.disableHardwareAcceleration();
+if (os.release().startsWith("6.1")) app.disableHardwareAcceleration();
 
 // Set application name for Windows 10+ notifications
 if (process.platform === "win32") app.setAppUserModelId(app.getName());
@@ -114,24 +123,19 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
-// Remove electron security warnings
-// This warning only shows in development mode
-// Read more on https://www.electronjs.org/docs/latest/tutorial/security
-// process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
-
 interface Workspace {
   projectPath?: string;
   window: BrowserWindow;
 }
 
-const preload = "../preload/index.js";
-const url = process.env.VITE_DEV_SERVER_URL;
-const indexHtml = join(process.env.DIST, "index.html");
+const preload = path.join(__dirname, "../preload/index.mjs");
+const indexHtml = path.join(RENDERER_DIST, "index.html");
 const windows: Workspace[] = [];
 
 async function createWindow(projectPath?: string) {
   const win = new BrowserWindow({
     title: "Behaviour3 Editor",
+    icon: Path.join(process.env.VITE_PUBLIC, "favicon.ico"),
     frame: false,
     width: 1280,
     height: 800,
@@ -147,7 +151,6 @@ async function createWindow(projectPath?: string) {
         : { color: "#0d1117", height: 35, symbolColor: "#7d8590" },
     backgroundColor: "#0d1117",
     trafficLightPosition: { x: 10, y: 10 },
-    icon: join(process.env.PUBLIC, "favicon.ico"),
     webPreferences: {
       preload,
       // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
@@ -164,9 +167,9 @@ async function createWindow(projectPath?: string) {
 
   win.maximizable = true;
 
-  if (process.env.VITE_DEV_SERVER_URL) {
-    // electron-vite-vue#298
-    win.loadURL(url);
+  if (VITE_DEV_SERVER_URL) {
+    // #298
+    win.loadURL(VITE_DEV_SERVER_URL);
     // Open devTool if the app is not packaged
     win.webContents.openDevTools();
   } else {
@@ -174,6 +177,7 @@ async function createWindow(projectPath?: string) {
     win.loadFile(indexHtml);
   }
 
+  // Test actively push message to the Electron-Renderer
   win.webContents.on("did-finish-load", () => {
     win.webContents.setZoomFactor(1);
     if (workspace.projectPath) {
@@ -209,7 +213,7 @@ async function createWindow(projectPath?: string) {
 
   require("@electron/remote/main").enable(win.webContents);
 
-  // Apply electron-updater
+  // Auto update
   // update(win);
 }
 
@@ -228,7 +232,6 @@ app.on("second-instance", () => {
 
 app.on("activate", () => {
   const allWindows = BrowserWindow.getAllWindows();
-
   if (allWindows.length) {
     allWindows[0].focus();
   } else {
@@ -237,7 +240,7 @@ app.on("activate", () => {
 });
 
 // New window example arg: new windows url
-ipcMain.handle("open-win", (event, arg: string | undefined) => {
+ipcMain.handle("open-win", (event, arg) => {
   if (arg) {
     let workspace = windows.find((v) => v.projectPath === arg);
     if (workspace) {
@@ -256,12 +259,12 @@ ipcMain.handle("open-win", (event, arg: string | undefined) => {
   createWindow(arg);
 });
 
-ipcMain.handle("trashItem", (_, arg: string) => {
+ipcMain.handle("trashItem", (_, arg) => {
   arg = arg.replace(/\//g, path.sep);
   shell.trashItem(arg).catch((e) => console.error(e));
 });
 
-ipcMain.handle("showItemInFolder", (_, arg: string) => {
+ipcMain.handle("showItemInFolder", (_, arg) => {
   arg = arg.replace(/\//g, path.sep);
   shell.showItemInFolder(arg);
 });

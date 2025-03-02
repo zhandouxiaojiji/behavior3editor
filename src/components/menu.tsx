@@ -12,7 +12,7 @@ import { useSetting } from "../contexts/setting-context";
 import { useWorkspace } from "../contexts/workspace-context";
 import * as b3util from "../misc/b3util";
 import i18n from "../misc/i18n";
-import { Hotkey, isMacos, sendInputEvent } from "../misc/keys";
+import { Hotkey, isMacos } from "../misc/keys";
 
 const MenuItemLabel: FC<FlexProps> = (itemProps) => {
   return (
@@ -175,9 +175,9 @@ export const Menu: FC<LayoutProps> = () => {
             id: "menu.edit.undo",
             label: t("undo"),
             enabled: enabled,
-            accelerator: Hotkey.Undo,
+            accelerator: Hotkey.Undo.replaceAll(".", "+"),
             click: () => {
-              sendInputEvent(Hotkey.Undo);
+              // sendInputEvent(Hotkey.Undo);
               getFocusedWebContents()?.undo();
             },
           },
@@ -185,9 +185,9 @@ export const Menu: FC<LayoutProps> = () => {
             id: "menu.edit.redo",
             label: t("redo"),
             enabled: enabled,
-            accelerator: Hotkey.Redo,
+            accelerator: Hotkey.Redo.replaceAll(".", "+"),
             click: () => {
-              sendInputEvent(Hotkey.Redo);
+              // sendInputEvent(Hotkey.Redo);
               getFocusedWebContents()?.redo();
             },
           },
@@ -196,9 +196,9 @@ export const Menu: FC<LayoutProps> = () => {
             id: "menu.edit.copy",
             label: t("copy"),
             enabled: enabled,
-            accelerator: Hotkey.Copy,
+            accelerator: Hotkey.Copy.replaceAll(".", "+"),
             click: () => {
-              sendInputEvent(Hotkey.Copy);
+              // sendInputEvent(Hotkey.Copy);
               getFocusedWebContents()?.copy();
             },
           },
@@ -206,9 +206,9 @@ export const Menu: FC<LayoutProps> = () => {
             id: "menu.edit.paste",
             label: t("paste"),
             enabled: enabled,
-            accelerator: Hotkey.Paste,
+            accelerator: Hotkey.Paste.replaceAll(".", "+"),
             click: () => {
-              sendInputEvent(Hotkey.Paste);
+              // sendInputEvent(Hotkey.Paste);
               getFocusedWebContents()?.paste();
             },
           },
@@ -216,7 +216,7 @@ export const Menu: FC<LayoutProps> = () => {
             id: "menu.edit.cut",
             label: t("cut"),
             enabled: enabled,
-            accelerator: Hotkey.Cut,
+            accelerator: Hotkey.Cut.replaceAll(".", "+"),
             click: () => {
               getFocusedWebContents()?.cut();
             },
@@ -225,7 +225,7 @@ export const Menu: FC<LayoutProps> = () => {
             id: "menu.edit.selectAll",
             label: t("selectAll"),
             enabled: enabled,
-            accelerator: Hotkey.SelectAll,
+            accelerator: Hotkey.SelectAll.replaceAll(".", "+"),
             click: () => {
               getFocusedWebContents()?.selectAll();
             },
@@ -235,16 +235,18 @@ export const Menu: FC<LayoutProps> = () => {
             id: "menu.edit.insertNode",
             label: t("insertNode"),
             enabled: enabled,
+            accelerator: Hotkey.Enter.replaceAll(".", "+"),
             click: () => {
-              workspace.editing?.dispatch("insert");
+              // workspace.editing?.dispatch("insert");
             },
           },
           {
             id: "menu.edit.deleteNode",
             label: t("deleteNode"),
             enabled: enabled,
+            accelerator: Hotkey.Backspace.replaceAll(".", "+"),
             click: () => {
-              workspace.editing?.dispatch("delete");
+              // workspace.editing?.dispatch("delete");
             },
           },
         ],

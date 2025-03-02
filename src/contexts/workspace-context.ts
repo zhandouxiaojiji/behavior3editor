@@ -155,7 +155,7 @@ export type WorkspaceStore = {
   loadTrees: () => void;
 
   loadNodeDefs: () => void;
-  nodeDefs: Map<string, NodeDef>;
+  nodeDefs: b3util.NodeDefs;
 
   // edit node
   editingNode?: EditNode | null;
@@ -609,11 +609,11 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     }
   },
 
-  nodeDefs: new Map(),
+  nodeDefs: new b3util.NodeDefs(),
   loadNodeDefs: () => {
     const workspace = get();
     b3util.initWorkdir(workspace.workdir, message.error.bind(message));
-    set({ nodeDefs: b3util.nodeDefs });
+    set({ nodeDefs: b3util.getNodeDefs() });
     workspace.editing?.dispatch("refresh");
   },
 

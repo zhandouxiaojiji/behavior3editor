@@ -1,6 +1,7 @@
 import G6 from "@antv/g6";
+import { useWorkspace } from "../contexts/workspace-context";
 import { TreeGraphData, getNodeType } from "../misc/b3type";
-import { checkTreeData, nodeDefs, workdir } from "../misc/b3util";
+import { checkTreeData, getNodeDefs } from "../misc/b3util";
 import i18n from "../misc/i18n";
 import { isMacos } from "../misc/keys";
 
@@ -141,6 +142,7 @@ G6.registerNode(
     },
     draw(cfg, group) {
       const data = cfg as TreeGraphData;
+      const nodeDefs = getNodeDefs();
       const nodeDef = nodeDefs.get(data.name);
       let classify = getNodeType(nodeDef);
       let color = nodeDef.color || NODE_COLORS[classify] || NODE_COLORS["Other"];
@@ -257,7 +259,9 @@ G6.registerNode(
       });
 
       // icon
-      const img = nodeDef.icon ? `file:///${workdir}/${nodeDef.icon}` : `./icons/${classify}.svg`;
+      const img = nodeDef.icon
+        ? `file:///${useWorkspace.getState().workdir}/${nodeDef.icon}`
+        : `./icons/${classify}.svg`;
       addShape("image", {
         attrs: {
           x: 5,

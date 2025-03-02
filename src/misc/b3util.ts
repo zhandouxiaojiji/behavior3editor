@@ -16,8 +16,15 @@ import {
 import Path from "./path";
 import { readJson } from "./util";
 
-export let workdir: string = "";
+export class NodeDefs extends Map<string, NodeDef> {
+  get(key: string): NodeDef {
+    return super.get(key) ?? unknownNodeDef;
+  }
+}
+
+let workdir: string = "";
 let alertError: (msg: string, duration?: number) => void = () => {};
+let nodeDefs: NodeDefs = new NodeDefs();
 
 const unknownNodeDef: NodeDef = {
   name: "unknown",
@@ -25,16 +32,15 @@ const unknownNodeDef: NodeDef = {
   type: "Action",
 };
 
-export const nodeDefs = new (class extends Map<string, NodeDef> {
-  get(key: string): NodeDef {
-    return super.get(key) ?? unknownNodeDef;
-  }
-})();
+export const getNodeDefs = () => {
+  return nodeDefs;
+};
 
 export const initWorkdir = (path: string, handler: typeof alertError) => {
   workdir = path;
   alertError = handler;
   const nodeDefData = readJson(`${workdir}/node-config.b3-setting`) as NodeDef[];
+  nodeDefs = new NodeDefs();
   for (const v of nodeDefData) {
     nodeDefs.set(v.name, v);
   }
