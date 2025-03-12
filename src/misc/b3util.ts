@@ -626,9 +626,10 @@ export const createTreeData = (
 export const createBuildData = (path: string) => {
   try {
     const str = fs.readFileSync(path, "utf8");
-    const treeModel = JSON.parse(str);
+    const treeModel: TreeModel = JSON.parse(str);
     const data = createTreeData(treeModel.root);
-    refreshTreeDataId(data);
+    refreshTreeDataId(data, treeModel.firstid ?? 1);
+    treeModel.name = Path.basenameWithoutExt(path);
     treeModel.root = createFileData(data, true);
     return treeModel as TreeModel;
   } catch (e) {

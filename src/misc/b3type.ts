@@ -29,6 +29,7 @@ export interface TreeModel {
   name: string;
   desc?: string;
   export?: boolean;
+  firstid?: number;
   root: NodeModel;
 }
 

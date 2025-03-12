@@ -20,5 +20,5 @@ else
   exit 1
 fi
 `;
-fs.writeFileSync(".git/hooks/pre-commit", hooks);
+fs.writeFileSync(".git/hooks/pre-commit", hooks.replace(/^[\n\r]+/, ""));
 fs.chmodSync(".git/hooks/pre-commit", 0o755);

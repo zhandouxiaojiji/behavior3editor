@@ -76,6 +76,7 @@
   "tree.name": "Tree name",
   "tree.desc": "Tree desc",
   "tree.export": "Export",
+  "tree.firstid": "First id",
 
   "regnode.input": "Input: ",
   "regnode.output": "Output: ",

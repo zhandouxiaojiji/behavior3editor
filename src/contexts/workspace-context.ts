@@ -47,6 +47,7 @@ export class EditorStore {
   desc: string;
   export: boolean;
   name: string;
+  firstid: number;
 
   autoId: number = 1;
   dragSrcId?: string;
@@ -76,7 +77,8 @@ export class EditorStore {
     this.desc = file.desc ?? "";
     this.export = file.export !== false;
     this.name = file.name || path.slice(0, -5);
-    this.autoId = b3util.refreshTreeDataId(this.data);
+    this.firstid = file.firstid ?? 1;
+    this.autoId = b3util.refreshTreeDataId(this.data, this.firstid);
     this.historyStack.push(b3util.createNode(this.data));
     this.historyIndex = 0;
   }
@@ -492,6 +494,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           data: {
             name: editting.name,
             desc: editting.desc,
+            firstid: editting.firstid,
             root: null!,
           },
         },
@@ -646,6 +649,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           name: editor.name,
           desc: editor.desc,
           export: editor.export,
+          firstid: editor.firstid,
           root: null!,
         },
       },

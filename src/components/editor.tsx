@@ -192,7 +192,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const onSearchChange = (option: FilterOption) => {
     option.results.length = 0;
-    filterNodes(option, findDataById("1"));
+    filterNodes(option, editor.data);
     setFilterOption({
       ...option,
     });
@@ -210,7 +210,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   const updateSearchState = () => {
     const option = { ...filterOption };
     option.results.length = 0;
-    filterNodes(option, findDataById("1"));
+    filterNodes(option, editor.data);
     setFilterOption({
       ...option,
     });
@@ -268,7 +268,20 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const findDataById = (id: string) => {
-    return editor.graph.findDataById(id) as TreeGraphData;
+    const traverse = (node: TreeGraphData): TreeGraphData | undefined => {
+      if (node.id === id) {
+        return node;
+      }
+      if (node.children) {
+        for (const child of node.children) {
+          const result = traverse(child);
+          if (result) {
+            return result;
+          }
+        }
+      }
+    };
+    return traverse(editor.data) as TreeGraphData;
   };
 
   const includeString = (content: string | undefined, option: FilterOption) => {
@@ -363,11 +376,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const refresh = () => {
-    const rootData = findDataById("1");
-    const rootNode = b3util.createNode(rootData);
+    const rootNode = b3util.createNode(editor.data);
     editor.modifiedTime = fs.statSync(editor.path).mtimeMs;
     editor.data = createTreeData(rootNode);
-    editor.autoId = b3util.refreshTreeDataId(editor.data);
+    editor.autoId = b3util.refreshTreeDataId(editor.data, editor.firstid);
     editor.graph.changeData(editor.data);
     editor.graph.layout();
     restoreViewport();
@@ -376,7 +388,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   const reload = () => {
     const file = readJson(editor.path) as TreeModel;
     editor.data = createTreeData(file.root);
-    editor.autoId = b3util.refreshTreeDataId(editor.data);
+    editor.autoId = b3util.refreshTreeDataId(editor.data, editor.firstid);
     editor.unsave = false;
     updateState();
     if (editor.graph) {
@@ -388,8 +400,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const checkSubtree = () => {
     if (editor.graph) {
-      const data = findDataById("1");
-      if (isSubtreeUpdated(data)) {
+      if (isSubtreeUpdated(editor.data)) {
         refresh();
         pushHistory();
         onChange();
@@ -430,6 +441,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       return;
     }
     b3util.copyFromNode(data, newNode);
+    data.def = b3util.getNodeDefs().get(data.name)!;
     data.size = calcTreeDataSize(data);
     if (oldNode.path !== newNode.path) {
       refresh();
@@ -447,6 +459,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     if (editor.desc !== editTree.data.desc || editor.export !== editTree.data.export) {
       editor.desc = editTree.data.desc || "";
       editor.export = editTree.data.export !== false;
+      if (editor.data.firstid !== editTree.data.firstid) {
+        editor.firstid = editTree.data.firstid ?? 1;
+        refresh();
+      }
       onChange();
     }
   };
@@ -480,7 +496,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const pushHistory = () => {
     editor.historyStack.length = ++editor.historyIndex;
-    editor.historyStack.push(b3util.createNode(findDataById("1")));
+    editor.historyStack.push(b3util.createNode(editor.data));
   };
 
   const copyNode = () => {
@@ -552,7 +568,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         updateGrahp();
       } else {
         editor.data = createTreeData(JSON.parse(str), editor.selectedId);
-        editor.autoId = b3util.refreshTreeDataId(editor.data);
+        editor.autoId = b3util.refreshTreeDataId(editor.data, editor.firstid);
         editor.graph.changeData(editor.data);
         editor.graph.render();
         editor.graph.layout();
@@ -626,7 +642,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const useStackData = (data: NodeModel) => {
     editor.data = createTreeData(data);
-    editor.autoId = b3util.refreshTreeDataId(editor.data);
+    editor.autoId = b3util.refreshTreeDataId(editor.data, editor.firstid);
     editor.graph.changeData(editor.data);
     editor.graph.layout();
     restoreViewport();
@@ -663,12 +679,12 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   const save = () => {
     if (editor.unsave || !fs.existsSync(editor.path)) {
       const path = editor.path;
-      const data = findDataById("1");
-      editor.autoId = b3util.refreshTreeDataId(data);
-      const root = b3util.createFileData(data);
+      editor.autoId = b3util.refreshTreeDataId(editor.data, editor.firstid);
+      const root = b3util.createFileData(editor.data);
       const treeModel = {
         name: Path.basenameWithoutExt(path),
         root,
+        firstid: editor.firstid ?? 1,
         export: editor.export,
         desc: editor.desc,
       } as TreeModel;
@@ -676,8 +692,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       fs.writeFileSync(path, JSON.stringify(treeModel, null, 2));
       workspace.updateFileMeta(editor);
       editor.unsave = false;
-      editor.data = createTreeData(root);
-      editor.autoId = b3util.refreshTreeDataId(editor.data);
       editor.graph.changeData(editor.data);
       editor.graph.layout();
       restoreViewport();
@@ -823,7 +837,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         const data = findDataById(e.item.getID());
         data.output?.forEach((v) => v && highlight.push(v));
       }
-      const changed = findHightlight(findDataById("1"), highlight);
+      const changed = findHightlight(editor.data, highlight);
       changed.forEach((v) => {
         const item = editor.graph.findById(v.id);
         item.draw();
