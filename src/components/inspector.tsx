@@ -16,6 +16,7 @@ import { FC, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import { useDebounceCallback } from "usehooks-ts";
+import { useShallow } from "zustand/react/shallow";
 import { EditNode, EditTree, useWorkspace } from "../contexts/workspace-context";
 import {
   isBoolType,
@@ -44,10 +45,12 @@ interface OptionType extends DefaultOptionType {
 }
 
 const TreeInspector: FC = () => {
-  const workspace = {
-    editing: useWorkspace((state) => state.editing),
-    editingTree: useWorkspace((state) => state.editingTree)!,
-  };
+  const workspace = useWorkspace(
+    useShallow((state) => ({
+      editing: state.editing,
+      editingTree: state.editingTree!,
+    }))
+  );
   const { t } = useTranslation();
   const [form] = Form.useForm();
 
@@ -101,15 +104,18 @@ const TreeInspector: FC = () => {
 };
 
 const NodeInspector: FC = () => {
-  const workspace = {
-    editing: useWorkspace((state) => state.editing),
-    editingNode: useWorkspace((state) => state.editingNode)!,
-    nodeDefs: useWorkspace((state) => state.nodeDefs),
-    onEditingNode: useWorkspace((state) => state.onEditingNode),
-    allFiles: useWorkspace((state) => state.allFiles),
-    fileTree: useWorkspace((state) => state.fileTree),
-    relative: useWorkspace((state) => state.relative),
-  };
+  const workspace = useWorkspace(
+    useShallow((state) => ({
+      editing: state.editing,
+      editingNode: state.editingNode!,
+      nodeDefs: state.nodeDefs,
+      allFiles: state.allFiles,
+      fileTree: state.fileTree,
+      relative: state.relative,
+      onEditingNode: state.onEditingNode,
+    }))
+  );
+
   const { t } = useTranslation();
   const [form] = Form.useForm();
 
@@ -920,9 +926,11 @@ const NodeInspector: FC = () => {
 };
 
 const NodeDefInspector: FC = () => {
-  const workspace = {
-    editingNodeDef: useWorkspace((state) => state.editingNodeDef)!,
-  };
+  const workspace = useWorkspace(
+    useShallow((state) => ({
+      editingNodeDef: state.editingNodeDef!,
+    }))
+  );
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const def = workspace.editingNodeDef.data;

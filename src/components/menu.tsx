@@ -8,6 +8,7 @@ import * as fs from "fs";
 import { FC, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PiTreeStructureFill } from "react-icons/pi";
+import { useShallow } from "zustand/react/shallow";
 import { useSetting } from "../contexts/setting-context";
 import { useWorkspace } from "../contexts/workspace-context";
 import * as b3util from "../misc/b3util";
@@ -40,19 +41,21 @@ ipcRenderer.on("refresh-app-men", () => {
 export const Menu: FC<LayoutProps> = () => {
   const { t } = useTranslation();
   const [trigger, setTrigger] = useState<DropDownProps["trigger"]>(["click"]);
-  const workspace = {
-    batchProject: useWorkspace((state) => state.batchProject),
-    buildProject: useWorkspace((state) => state.buildProject),
-    createProject: useWorkspace((state) => state.createProject),
-    editing: useWorkspace((state) => state.editing),
-    init: useWorkspace((state) => state.init),
-    open: useWorkspace((state) => state.open),
-    openProject: useWorkspace((state) => state.openProject),
-    path: useWorkspace((state) => state.path),
-    save: useWorkspace((state) => state.save),
-    saveAll: useWorkspace((state) => state.saveAll),
-    workdir: useWorkspace((state) => state.workdir),
-  };
+  const workspace = useWorkspace(
+    useShallow((state) => ({
+      batchProject: state.batchProject,
+      buildProject: state.buildProject,
+      createProject: state.createProject,
+      editing: state.editing,
+      init: state.init,
+      open: state.open,
+      openProject: state.openProject,
+      path: state.path,
+      save: state.save,
+      saveAll: state.saveAll,
+      workdir: state.workdir,
+    }))
+  );
   const enabled = !!workspace.workdir;
   const homedir = app.getPath("home");
   const settings = {

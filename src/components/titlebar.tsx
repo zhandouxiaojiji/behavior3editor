@@ -1,6 +1,7 @@
 import { SearchOutlined } from "@ant-design/icons";
 import { Button, Flex, LayoutProps, Select } from "antd";
 import React, { FC, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { NodeDef } from "../behavior3/src/behavior3";
 import { useWorkspace } from "../contexts/workspace-context";
 import { Hotkey, isMacos } from "../misc/keys";
@@ -15,17 +16,19 @@ interface OptionType {
 }
 
 export const TitleBar: FC<LayoutProps> = () => {
-  const workspace = {
-    allFiles: useWorkspace((state) => state.allFiles),
-    fileTree: useWorkspace((state) => state.fileTree),
-    nodeDefs: useWorkspace((state) => state.nodeDefs),
-    isShowingSearch: useWorkspace((state) => state.isShowingSearch),
-    onShowingSearch: useWorkspace((state) => state.onShowingSearch),
-    onEditingNodeDef: useWorkspace((state) => state.onEditingNodeDef),
-    open: useWorkspace((state) => state.open),
-    name: useWorkspace((state) => state.path),
-    relative: useWorkspace((state) => state.relative),
-  };
+  const workspace = useWorkspace(
+    useShallow((state) => ({
+      allFiles: state.allFiles,
+      fileTree: state.fileTree,
+      nodeDefs: state.nodeDefs,
+      isShowingSearch: state.isShowingSearch,
+      onShowingSearch: state.onShowingSearch,
+      onEditingNodeDef: state.onEditingNodeDef,
+      open: state.open,
+      name: state.path,
+      relative: state.relative,
+    }))
+  );
   const searchOptions = useMemo(() => {
     const options: OptionType[] = [];
     workspace.allFiles.forEach((file) => {

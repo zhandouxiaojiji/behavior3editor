@@ -13,6 +13,7 @@ import { RiFocus3Line } from "react-icons/ri";
 import { VscCaseSensitive } from "react-icons/vsc";
 import { mergeRefs } from "react-merge-refs";
 import { useDebounceCallback } from "usehooks-ts";
+import { useShallow } from "zustand/react/shallow";
 import {
   EditEvent,
   EditNode,
@@ -161,15 +162,17 @@ const createMenu = () => {
 };
 
 export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, ...props }) => {
-  const workspace = {
-    editing: useWorkspace((state) => state.editing),
-    onEditingNode: useWorkspace((state) => state.onEditingNode),
-    onEditingTree: useWorkspace((state) => state.onEditingTree),
-    open: useWorkspace((state) => state.open),
-    workdir: useWorkspace((state) => state.workdir),
-    relative: useWorkspace((state) => state.relative),
-    updateFileMeta: useWorkspace((state) => state.updateFileMeta),
-  };
+  const workspace = useWorkspace(
+    useShallow((state) => ({
+      editing: state.editing,
+      onEditingNode: state.onEditingNode,
+      onEditingTree: state.onEditingTree,
+      open: state.open,
+      workdir: state.workdir,
+      relative: state.relative,
+      updateFileMeta: state.updateFileMeta,
+    }))
+  );
 
   const searchInputRef = useRef<InputRef>(null);
   const graphRef = useRef(null);

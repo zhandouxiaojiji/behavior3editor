@@ -10,6 +10,7 @@ import { FaExclamationTriangle, FaSwatchbook } from "react-icons/fa";
 import { FiCommand, FiDelete } from "react-icons/fi";
 import { IoMdReturnLeft } from "react-icons/io";
 import { PiTreeStructureFill } from "react-icons/pi";
+import { useShallow } from "zustand/react/shallow";
 import { NodeDef } from "../behavior3/src/behavior3";
 import { FileTreeType, useWorkspace } from "../contexts/workspace-context";
 import { getNodeType } from "../misc/b3type";
@@ -273,17 +274,19 @@ const createFolderContextMenu = (copiedPath: string) => {
 };
 
 export const Explorer: FC = () => {
-  const workspace = {
-    close: useWorkspace((state) => state.close),
-    editing: useWorkspace((state) => state.editing),
-    editingNodeDef: useWorkspace((state) => state.editingNodeDef),
-    editors: useWorkspace((state) => state.editors),
-    fileTree: useWorkspace((state) => state.fileTree),
-    nodeDefs: useWorkspace((state) => state.nodeDefs),
-    workdir: useWorkspace((state) => state.workdir),
-    onEditingNodeDef: useWorkspace((state) => state.onEditingNodeDef),
-    open: useWorkspace((state) => state.open),
-  };
+  const workspace = useWorkspace(
+    useShallow((state) => ({
+      close: state.close,
+      editing: state.editing,
+      editingNodeDef: state.editingNodeDef,
+      editors: state.editors,
+      fileTree: state.fileTree,
+      nodeDefs: state.nodeDefs,
+      workdir: state.workdir,
+      onEditingNodeDef: state.onEditingNodeDef,
+      open: state.open,
+    }))
+  );
   const { t } = useTranslation();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>(

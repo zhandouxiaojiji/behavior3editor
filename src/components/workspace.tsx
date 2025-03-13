@@ -8,6 +8,7 @@ import { PiTreeStructureFill } from "react-icons/pi";
 import { VscNewFolder, VscRepo } from "react-icons/vsc";
 import useForceUpdate from "use-force-update";
 import { useWindowSize } from "usehooks-ts";
+import { useShallow } from "zustand/react/shallow";
 import { useSetting } from "../contexts/setting-context";
 import { EditorStore, useWorkspace } from "../contexts/workspace-context";
 import { modal } from "../misc/hooks";
@@ -21,25 +22,24 @@ import { TitleBar } from "./titlebar";
 const { Header, Content, Sider } = Layout;
 
 export const Workspace: FC = () => {
-  const workspace = {
-    buildProject: useWorkspace((state) => state.buildProject),
-    close: useWorkspace((state) => state.close),
-    createProject: useWorkspace((state) => state.createProject),
-    edit: useWorkspace((state) => state.edit),
-    editing: useWorkspace((state) => state.editing),
-    editors: useWorkspace((state) => state.editors),
-    fileTree: useWorkspace((state) => state.fileTree),
-    find: useWorkspace((state) => state.find),
-    init: useWorkspace((state) => state.init),
-    modifiedTime: useWorkspace((state) => state.modifiedTime),
-    isShowingSearch: useWorkspace((state) => state.isShowingSearch),
-    onShowingSearch: useWorkspace((state) => state.onShowingSearch),
-    openProject: useWorkspace((state) => state.openProject),
-    save: useWorkspace((state) => state.save),
-  };
-  const settings = {
-    recent: useSetting((state) => state.recent),
-  };
+  const workspace = useWorkspace(
+    useShallow((state) => ({
+      save: state.save,
+      editors: state.editors,
+      modifiedTime: state.modifiedTime,
+      isShowingSearch: state.isShowingSearch,
+      onShowingSearch: state.onShowingSearch,
+      openProject: state.openProject,
+      buildProject: state.buildProject,
+      close: state.close,
+      createProject: state.createProject,
+      edit: state.edit,
+      editing: state.editing,
+      fileTree: state.fileTree,
+      find: state.find,
+    }))
+  );
+  const settings = useSetting(useShallow((state) => ({ recent: state.recent })));
   const [isShowingAlert, setShowingAlert] = useState(false);
   const { t } = useTranslation();
   const forceUpdate = useForceUpdate();
