@@ -71,7 +71,8 @@ export const isNodeEqual = (node1: NodeModel, node2: NodeModel) => {
     }
 
     if (def.input?.length) {
-      for (let i = 0; i < def.input.length; i++) {
+      const len = Math.max(node1.input?.length ?? 0, node2.input?.length ?? 0);
+      for (let i = 0; i < len; i++) {
         if (node1.input?.[i] !== node2.input?.[i]) {
           return false;
         }
@@ -79,7 +80,8 @@ export const isNodeEqual = (node1: NodeModel, node2: NodeModel) => {
     }
 
     if (def.output?.length) {
-      for (let i = 0; i < def.output.length; i++) {
+      const len = Math.max(node1.output?.length ?? 0, node2.output?.length ?? 0);
+      for (let i = 0; i < len; i++) {
         if (node1.output?.[i] !== node2.output?.[i]) {
           return false;
         }
@@ -510,16 +512,15 @@ export const checkChildrenLimit = (data: TreeGraphData) => {
   return true;
 };
 
-const isValidInputOrOutput = (
-  inputDef: string[],
-  inputData: string[] | undefined,
-  index: number
-) => {
-  return (
-    inputDef[index].includes("?") ||
-    inputData?.[index] ||
-    (index === inputDef.length - 1 && inputDef[index].endsWith("..."))
-  );
+export const isVariadic = (def: string[], i: number) => {
+  if (i === -1) {
+    i = def.length - 1;
+  }
+  return def[i].endsWith("...") && i === def.length - 1;
+};
+
+const isValidInputOrOutput = (def: string[], data: string[] | undefined, index: number) => {
+  return def[index].includes("?") || data?.[index] || (isVariadic(def, index) && data?.[index]);
 };
 
 export const checkTreeData = (data: TreeGraphData) => {

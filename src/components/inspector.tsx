@@ -36,6 +36,7 @@ import {
   isNodeArgArray,
   isNodeArgOptional,
   isValidVariableName,
+  isVariadic,
 } from "../misc/b3util";
 import { Hotkey, isMacos } from "../misc/keys";
 import { mergeClassNames } from "../misc/util";
@@ -119,10 +120,6 @@ const NodeInspector: FC = () => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
 
-  const isVariadic = (arr: string[], i: number) => {
-    return arr[i].endsWith("...") && i === arr.length - 1;
-  };
-
   const validateFieldsLater = useDebounceCallback(
     () => form.validateFields({ recursive: true }),
     100
@@ -203,7 +200,7 @@ const NodeInspector: FC = () => {
         node.input?.forEach((v, i) => {
           let desc: string;
           const inputDef = node.def.input;
-          if (inputDef && i >= inputDef.length && isVariadic(inputDef, inputDef.length - 1)) {
+          if (inputDef && i >= inputDef.length && isVariadic(inputDef, -1)) {
             desc = inputDef[inputDef.length - 1];
           } else {
             desc = inputDef?.[i] ?? "<unknown>";
@@ -215,7 +212,7 @@ const NodeInspector: FC = () => {
         node.output?.forEach((v, i) => {
           let desc: string;
           const outputDef = node.def.output;
-          if (outputDef && i >= outputDef.length && isVariadic(outputDef, outputDef.length - 1)) {
+          if (outputDef && i >= outputDef.length && isVariadic(outputDef, -1)) {
             desc = outputDef[outputDef.length - 1];
           } else {
             desc = outputDef?.[i] ?? "<unknown>";

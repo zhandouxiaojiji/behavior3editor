@@ -5,7 +5,7 @@ import * as fs from "fs";
 import React from "react";
 import { create } from "zustand";
 import { NodeDef } from "../behavior3/src/behavior3";
-import { NodeModel, TreeGraphData, TreeModel } from "../misc/b3type";
+import { NodeModel, TreeGraphData, TreeModel, VarDef } from "../misc/b3type";
 import * as b3util from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
@@ -49,6 +49,14 @@ export class EditorStore {
   name: string;
   firstid: number;
 
+  declare: {
+    imports: {
+      path: string;
+      vars: VarDef[];
+    }[];
+    vars: VarDef[];
+  };
+
   autoId: number = 1;
   dragSrcId?: string;
   dragDstId?: string;
@@ -78,6 +86,14 @@ export class EditorStore {
     this.export = file.export !== false;
     this.name = file.name || path.slice(0, -5);
     this.firstid = file.firstid ?? 1;
+    this.declare = {
+      vars: file.declare?.vars ?? [],
+      imports:
+        file.declare?.imports?.map((v) => ({
+          path: v,
+          vars: [],
+        })) ?? [],
+    };
     this.autoId = b3util.refreshTreeDataId(this.data, this.firstid);
     this.historyStack.push(b3util.createNode(this.data));
     this.historyIndex = 0;

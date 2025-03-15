@@ -25,12 +25,21 @@ export interface NodeModel {
   path?: string;
 }
 
+export interface VarDef {
+  name: string;
+  desc: string;
+}
+
 export interface TreeModel {
   name: string;
   desc?: string;
   export?: boolean;
   firstid?: number;
   root: NodeModel;
+  declare?: {
+    imports?: string[];
+    vars?: VarDef[];
+  };
 }
 
 export interface TreeGraphData extends G6TreeGraphData {

@@ -686,10 +686,14 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       const root = b3util.createFileData(editor.data);
       const treeModel = {
         name: Path.basenameWithoutExt(path),
-        root,
+        desc: editor.desc,
         firstid: editor.firstid ?? 1,
         export: editor.export,
-        desc: editor.desc,
+        declare: {
+          imports: editor.declare.imports.map((v) => v.path).sort(),
+          vars: editor.declare.vars.sort((a, b) => a.name.localeCompare(b.name)),
+        },
+        root,
       } as TreeModel;
       editor.modifiedTime = Date.now();
       fs.writeFileSync(path, JSON.stringify(treeModel, null, 2));
