@@ -1,0 +1,51 @@
+{
+  "name": "test-vars",
+  "desc": "",
+  "firstid": 1,
+  "export": true,
+  "declare": {
+    "imports": [
+      "vars/declare-core.json",
+      "vars/declare-vars.json"
+    ],
+    "vars": [
+      {
+        "name": "target",
+        "desc": "目标"
+      }
+    ]
+  },
+  "root": {
+    "id": 1,
+    "name": "Sequence",
+    "children": [
+      {
+        "id": 2,
+        "name": "Sequence",
+        "path": "vars/test-subtree.json"
+      },
+      {
+        "id": 4,
+        "name": "FindEnemy",
+        "args": {},
+        "output": [
+          "target"
+        ]
+      },
+      {
+        "id": 5,
+        "name": "Attack",
+        "input": [
+          "target"
+        ]
+      },
+      {
+        "id": 6,
+        "name": "Check",
+        "args": {
+          "value": "target.x > 0"
+        }
+      }
+    ]
+  }
+}

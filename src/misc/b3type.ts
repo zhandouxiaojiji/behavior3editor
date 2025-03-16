@@ -30,6 +30,12 @@ export interface VarDef {
   desc: string;
 }
 
+export interface ImportDef {
+  path: string;
+  date?: number;
+  vars: VarDef[];
+}
+
 export interface TreeModel {
   name: string;
   desc?: string;

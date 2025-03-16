@@ -1,0 +1,23 @@
+{
+  "name": "test-subtree",
+  "desc": "",
+  "firstid": 1,
+  "export": true,
+  "declare": {
+    "imports": [],
+    "vars": []
+  },
+  "root": {
+    "id": 1,
+    "name": "Sequence",
+    "children": [
+      {
+        "id": 2,
+        "name": "Log",
+        "args": {
+          "message": "hello"
+        }
+      }
+    ]
+  }
+}

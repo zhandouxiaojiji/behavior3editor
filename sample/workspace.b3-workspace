@@ -1,6 +1,22 @@
 {
   "files": [
     {
+      "path": "vars/declare-core.json",
+      "desc": ""
+    },
+    {
+      "path": "vars/declare-vars.json",
+      "desc": ""
+    },
+    {
+      "path": "vars/test-subtree.json",
+      "desc": ""
+    },
+    {
+      "path": "vars/test-vars.json",
+      "desc": ""
+    },
+    {
       "path": "workdir/hero.json",
       "desc": "英雄测试AI"
     },

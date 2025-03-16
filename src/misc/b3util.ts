@@ -1,6 +1,7 @@
 import * as fs from "fs";
-import { NodeDef } from "../behavior3/src/behavior3";
+import { type NodeDef } from "../behavior3/src/behavior3";
 import {
+  ImportDef,
   isBoolType,
   isEnumType,
   isExprType,
@@ -12,9 +13,10 @@ import {
   NodeModel,
   TreeGraphData,
   TreeModel,
+  VarDef,
 } from "./b3type";
 import Path from "./path";
-import { readJson } from "./util";
+import { readJson, readTree } from "./util";
 
 export class NodeDefs extends Map<string, NodeDef> {
   get(key: string): NodeDef {
@@ -603,8 +605,7 @@ export const createTreeData = (
     parsingStack.push(node.path);
     try {
       const subtreePath = workdir + "/" + node.path;
-      const str = fs.readFileSync(subtreePath, "utf8");
-      treeData = createTreeData(JSON.parse(str).root, treeData.id, calcSize);
+      treeData = createTreeData(readTree(subtreePath).root, treeData.id, calcSize);
       treeData.lastModified = fs.statSync(subtreePath).mtimeMs;
       treeData.path = node.path;
       treeData.debug = node.debug;
@@ -684,4 +685,37 @@ export const createNewTree = (path: string) => {
 
 export const isTreeFile = (path: string) => {
   return path.toLocaleLowerCase().endsWith(".json");
+};
+
+export const loadImportedVars = (imports: ImportDef[]) => {
+  for (const importDef of imports) {
+    // TODO: check file date
+    // TODO: use cache
+    if (importDef.vars.length) {
+      continue;
+    }
+    const filter: Map<string, boolean> = new Map();
+    const vars: VarDef[] = [];
+    const load = (path: string) => {
+      if (filter.has(path)) {
+        return;
+      }
+      filter.set(path, true);
+      const model: TreeModel = readTree(`${workdir}/${path}`);
+      model.declare?.vars?.forEach((v) => vars.push(v));
+      model.declare?.imports?.forEach((v) => load(v));
+      console.log("load imported vars:", path);
+    };
+    load(importDef.path);
+    filter.clear();
+    importDef.vars = vars
+      .filter((v) => {
+        if (!filter.has(v.name)) {
+          filter.set(v.name, true);
+          return true;
+        }
+        return false;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
 };

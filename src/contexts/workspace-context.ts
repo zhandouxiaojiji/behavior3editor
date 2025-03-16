@@ -5,7 +5,7 @@ import * as fs from "fs";
 import React from "react";
 import { create } from "zustand";
 import { NodeDef } from "../behavior3/src/behavior3";
-import { NodeModel, TreeGraphData, TreeModel, VarDef } from "../misc/b3type";
+import { ImportDef, NodeModel, TreeGraphData, TreeModel, VarDef } from "../misc/b3type";
 import * as b3util from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
@@ -50,10 +50,7 @@ export class EditorStore {
   firstid: number;
 
   declare: {
-    imports: {
-      path: string;
-      vars: VarDef[];
-    }[];
+    imports: ImportDef[];
     vars: VarDef[];
   };
 
@@ -122,7 +119,16 @@ export type EditNodeDef = {
 };
 
 export type EditTree = {
-  data: TreeModel;
+  data: {
+    name: string;
+    desc?: string;
+    export?: boolean;
+    firstid?: number;
+    declare: {
+      imports: ImportDef[];
+      vars: VarDef[];
+    };
+  };
 };
 
 export type FileMeta = {
@@ -511,7 +517,10 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
             name: editting.name,
             desc: editting.desc,
             firstid: editting.firstid,
-            root: null!,
+            declare: {
+              vars: editting.declare.vars,
+              imports: editting.declare.imports,
+            },
           },
         },
       });
@@ -666,7 +675,10 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           desc: editor.desc,
           export: editor.export,
           firstid: editor.firstid,
-          root: null!,
+          declare: {
+            imports: editor.declare.imports,
+            vars: editor.declare.vars,
+          },
         },
       },
       editingNodeDef: null,

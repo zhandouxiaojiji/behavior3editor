@@ -1,4 +1,4 @@
-import { EditOutlined, MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { AimOutlined, EditOutlined, MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import {
   AutoComplete,
   Button,
@@ -8,6 +8,7 @@ import {
   Input,
   InputNumber,
   Select,
+  Space,
   Switch,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
@@ -19,6 +20,7 @@ import { useDebounceCallback } from "usehooks-ts";
 import { useShallow } from "zustand/react/shallow";
 import { EditNode, EditTree, useWorkspace } from "../contexts/workspace-context";
 import {
+  ImportDef,
   isBoolType,
   isEnumType,
   isExprType,
@@ -28,6 +30,7 @@ import {
   isStringType,
   NodeModel,
   TreeGraphData,
+  VarDef,
 } from "../misc/b3type";
 import {
   checkNodeArgValue,
@@ -37,6 +40,7 @@ import {
   isNodeArgOptional,
   isValidVariableName,
   isVariadic,
+  loadImportedVars,
 } from "../misc/b3util";
 import { Hotkey, isMacos } from "../misc/keys";
 import { mergeClassNames } from "../misc/util";
@@ -50,6 +54,9 @@ const TreeInspector: FC = () => {
     useShallow((state) => ({
       editing: state.editing,
       editingTree: state.editingTree!,
+      allFiles: state.allFiles,
+      relative: state.relative,
+      fileTree: state.fileTree,
     }))
   );
   const { t } = useTranslation();
@@ -58,12 +65,30 @@ const TreeInspector: FC = () => {
   // set form values
   useEffect(() => {
     const data = workspace.editingTree.data;
+    loadImportedVars(data.declare.imports);
     form.resetFields();
     form.setFieldValue("name", data.name);
     form.setFieldValue("desc", data.desc);
     form.setFieldValue("export", data.export !== false);
     form.setFieldValue("firstid", data.firstid);
+    form.setFieldValue("declare.vars", data.declare?.vars);
+    form.setFieldValue("declare.imports", data.declare?.imports);
   }, [workspace.editingTree]);
+
+  // auto complete for subtree
+  const subtreeOptions = useMemo(() => {
+    const options: OptionType[] = [];
+    workspace.allFiles.forEach((file) => {
+      const value = workspace.relative(file.path);
+      const desc = ""; //fileNode.desc ? `(${fileNode.desc})` : "";
+      options.push({
+        label: `${value}${desc}`,
+        value: value,
+      });
+    });
+    options.sort((a, b) => a.value.localeCompare(b.value));
+    return options;
+  }, [workspace.allFiles, workspace.fileTree]);
 
   const finish = (values: any) => {
     workspace.editing?.dispatch("updateTree", {
@@ -72,6 +97,18 @@ const TreeInspector: FC = () => {
         desc: values.desc || undefined,
         export: values.export,
         firstid: Number(values.firstid),
+        declare: {
+          vars: (values["declare.vars"] as VarDef[])
+            .filter((v) => v && v.name)
+            .sort((a, b) => a.name.localeCompare(b.name)),
+          imports: (values["declare.imports"] as ImportDef[])
+            .filter((v) => v && v.path)
+            .sort((a, b) => a.path.localeCompare(b.path))
+            .map((v) => ({
+              path: v.path,
+              vars: v.vars ?? [],
+            })),
+        },
       },
     } as EditTree);
   };
@@ -85,19 +122,238 @@ const TreeInspector: FC = () => {
         className={mergeClassNames("b3-inspector-content", isMacos ? "" : "b3-overflow")}
         style={{ overflow: "auto", height: "100%" }}
       >
-        <Form form={form} labelCol={{ span: 8 }} onFinish={finish}>
-          <Form.Item name="name" label={t("tree.name")}>
-            <Input disabled={true} />
-          </Form.Item>
-          <Form.Item name="desc" label={t("tree.desc")}>
-            <TextArea autoSize onBlur={form.submit} />
-          </Form.Item>
-          <Form.Item name="firstid" label={t("tree.firstid")}>
-            <InputNumber min={1} onBlur={form.submit} />
-          </Form.Item>
-          <Form.Item name="export" label={t("tree.export")} valuePropName="checked">
-            <Switch onChange={() => form.submit()} />
-          </Form.Item>
+        <Form
+          form={form}
+          wrapperCol={{ span: "auto" }}
+          labelCol={{ span: "auto" }}
+          onFinish={finish}
+        >
+          <>
+            <Form.Item name="name" label={t("tree.name")}>
+              <Input disabled={true} />
+            </Form.Item>
+            <Form.Item name="desc" label={t("tree.desc")}>
+              <TextArea autoSize onBlur={form.submit} />
+            </Form.Item>
+            <Form.Item name="firstid" label={t("tree.firstid")}>
+              <InputNumber min={1} onBlur={form.submit} />
+            </Form.Item>
+            <Form.Item name="export" label={t("tree.export")} valuePropName="checked">
+              <Switch onChange={() => form.submit()} />
+            </Form.Item>
+          </>
+          <>
+            <Divider orientation="left">
+              <h4>{t("tree.vars")}</h4>
+            </Divider>
+            <Form.List name="declare.vars">
+              {(items, { add, remove }, { errors }) => (
+                <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
+                  {items.map((item) => (
+                    <Flex key={item.key} gap={4}>
+                      <Space.Compact
+                        className="b3-inspector-vars-item"
+                        style={{ width: "100%", marginBottom: 2 }}
+                      >
+                        <Form.Item
+                          noStyle
+                          name={[item.name, "name"]}
+                          validateTrigger={["onChange", "onBlur"]}
+                          rules={[
+                            {
+                              validator(_, value) {
+                                if (value && /^[_\w]+\w*$/.test(value)) {
+                                  return Promise.resolve();
+                                }
+                                return Promise.reject(new Error(t("tree.vars.invalidName")));
+                              },
+                            },
+                          ]}
+                        >
+                          <Input
+                            addonBefore={
+                              <div style={{ display: "flex", alignItems: "center", width: "45px" }}>
+                                <AimOutlined />
+                                <span style={{ marginLeft: 4 }}>0</span>
+                              </div>
+                            }
+                            placeholder={t("tree.vars.name")}
+                            onBlur={form.submit}
+                          />
+                        </Form.Item>
+                        <Form.Item
+                          noStyle
+                          name={[item.name, "desc"]}
+                          validateTrigger={["onChange", "onBlur"]}
+                          rules={[
+                            {
+                              required: true,
+                              message: t("fieldRequired", { field: t("tree.vars.desc") }),
+                            },
+                          ]}
+                        >
+                          <Input
+                            style={{ width: "75%" }}
+                            placeholder={t("tree.vars.desc")}
+                            onBlur={form.submit}
+                          />
+                        </Form.Item>
+                      </Space.Compact>
+                      <MinusCircleOutlined
+                        style={{ marginBottom: "6px" }}
+                        onClick={() => {
+                          remove(item.name);
+                          form.submit();
+                        }}
+                      />
+                    </Flex>
+                  ))}
+                  <Form.Item
+                    style={{
+                      marginRight: items.length === 0 ? undefined : "18px",
+                      marginTop: 4,
+                      alignItems: "end",
+                    }}
+                  >
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({});
+                      }}
+                      style={{ width: "100%" }}
+                      icon={<PlusOutlined />}
+                    >
+                      {t("add")}
+                    </Button>
+                    <Form.ErrorList errors={errors} />
+                  </Form.Item>
+                </div>
+              )}
+            </Form.List>
+          </>
+          <>
+            <Divider orientation="left">
+              <h4>{t("tree.vars.imports")}</h4>
+            </Divider>
+            <Form.List name="declare.imports">
+              {(items, { add, remove }, { errors }) => (
+                <div style={{ display: "flex", flexDirection: "column", rowGap: 4 }}>
+                  {items.map((item) => (
+                    <Space.Compact
+                      key={item.key}
+                      className="b3-inspector-import-item"
+                      direction="vertical"
+                      style={{ marginBottom: 5 }}
+                    >
+                      <Flex gap={4} style={{ width: "100%" }}>
+                        <Form.Item
+                          name={[item.name, "path"]}
+                          style={{ width: "100%", marginBottom: 2 }}
+                        >
+                          <Select
+                            showSearch
+                            options={subtreeOptions}
+                            onBlur={form.submit}
+                            onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
+                            filterOption={(value, option) => {
+                              const label = option!.label as string;
+                              return label.toUpperCase().includes(value.toUpperCase());
+                            }}
+                          />
+                        </Form.Item>
+                        <MinusCircleOutlined
+                          style={{ marginBottom: "6px" }}
+                          onClick={() => {
+                            remove(item.name);
+                            form.submit();
+                          }}
+                        />
+                      </Flex>
+                      <Form.List name={[item.name, "vars"]}>
+                        {(vars) => (
+                          <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
+                            {vars.map((v, idx, arr) => (
+                              <Flex key={v.key} gap={4}>
+                                <Space.Compact
+                                  className="b3-inspector-vars-item"
+                                  style={{ width: "100%", marginBottom: 0, paddingRight: 18 }}
+                                >
+                                  <Form.Item noStyle name={[v.name, "id"]}>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        paddingLeft: "8px",
+                                        paddingRight: "8px",
+                                        maxWidth: "60px",
+                                        minWidth: "60px",
+                                        borderTopLeftRadius: idx === 0 ? "4px" : 0,
+                                        borderBottomLeftRadius: idx === arr.length - 1 ? "4px" : 0,
+                                        borderLeft: "1px solid #3d506c",
+                                        borderTop: "1px solid #3d506c",
+                                        borderBottom:
+                                          idx === arr.length - 1 ? "1px solid #3d506c" : "none",
+                                      }}
+                                    >
+                                      <AimOutlined />
+                                      <span style={{ marginLeft: 4 }}>0</span>
+                                    </div>
+                                  </Form.Item>
+                                  <Form.Item noStyle name={[v.name, "name"]}>
+                                    <Input
+                                      disabled={true}
+                                      placeholder={t("tree.vars.name")}
+                                      style={{
+                                        borderRadius: "0",
+                                        borderTop: "1px solid #3d506c",
+                                        borderBottom:
+                                          idx === arr.length - 1 ? "1px solid #3d506c" : "none",
+                                      }}
+                                    />
+                                  </Form.Item>
+                                  <Form.Item noStyle name={[v.name, "desc"]}>
+                                    <Input
+                                      disabled={true}
+                                      placeholder={t("tree.vars.desc")}
+                                      style={{
+                                        borderTopRightRadius: idx === 0 ? "4px" : 0,
+                                        borderBottomRightRadius: idx === arr.length - 1 ? "4px" : 0,
+                                        borderTop: "1px solid #3d506c",
+                                        borderBottom:
+                                          idx === arr.length - 1 ? "1px solid #3d506c" : "none",
+                                      }}
+                                    />
+                                  </Form.Item>
+                                </Space.Compact>
+                              </Flex>
+                            ))}
+                          </div>
+                        )}
+                      </Form.List>
+                    </Space.Compact>
+                  ))}
+                  <Form.Item
+                    style={{
+                      marginRight: items.length === 0 ? undefined : "18px",
+                      alignItems: "end",
+                    }}
+                  >
+                    <Button
+                      type="dashed"
+                      onClick={() => {
+                        add({});
+                      }}
+                      style={{ width: "100%" }}
+                      icon={<PlusOutlined />}
+                    >
+                      {t("add")}
+                    </Button>
+                    <Form.ErrorList errors={errors} />
+                  </Form.Item>
+                </div>
+              )}
+            </Form.List>
+          </>
         </Form>
       </div>
     </>
@@ -490,7 +746,7 @@ const NodeInspector: FC = () => {
                                 style={{ width: fields.length === 0 ? "100%" : "200px" }}
                                 icon={<PlusOutlined />}
                               >
-                                {t("node.input.add")}
+                                {t("add")}
                               </Button>
                               <Form.ErrorList errors={errors} />
                             </Form.Item>
@@ -506,7 +762,7 @@ const NodeInspector: FC = () => {
                       name={`input.${i}`}
                       key={`input.${i}`}
                       rules={[
-                        { required, message: t("node.fileRequired", { field: desc }) },
+                        { required, message: t("fieldRequired", { field: desc }) },
                         ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                           validator(_, value) {
                             if (value && !isValidVariableName(value)) {
@@ -548,7 +804,7 @@ const NodeInspector: FC = () => {
                         onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
                         filterOption={(inputValue: string, option?: OptionType) => {
                           const label = option!.label as string;
-                          return label.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1;
+                          return label.toUpperCase().includes(inputValue.toUpperCase());
                         }}
                       />
                     </Form.Item>
@@ -585,7 +841,7 @@ const NodeInspector: FC = () => {
                                   rules={[
                                     {
                                       required,
-                                      message: t("node.fileRequired", { field: arg.desc }),
+                                      message: t("fieldRequired", { field: arg.desc }),
                                     },
                                     () => ({
                                       validator(_, value) {
@@ -681,7 +937,7 @@ const NodeInspector: FC = () => {
                                 icon={<PlusOutlined />}
                                 danger={items.length === 0 && !isNodeArgOptional(arg)}
                               >
-                                {t("node.args.add")}
+                                {t("add")}
                               </Button>
                               <Form.ErrorList errors={errors} />
                             </Form.Item>
@@ -699,7 +955,7 @@ const NodeInspector: FC = () => {
                       initialValue={isBoolType(type) ? arg.default ?? false : arg.default}
                       valuePropName={isBoolType(type) ? "checked" : undefined}
                       rules={[
-                        { required, message: t("node.fileRequired", { field: arg.desc }) },
+                        { required, message: t("fieldRequired", { field: arg.desc }) },
                         ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                           validator(_, value) {
                             if (value && isJsonType(type)) {
@@ -861,7 +1117,7 @@ const NodeInspector: FC = () => {
                                 style={{ width: fields.length === 0 ? "100%" : "200px" }}
                                 icon={<PlusOutlined />}
                               >
-                                {t("node.output.add")}
+                                {t("add")}
                               </Button>
                               <Form.ErrorList errors={errors} />
                             </Form.Item>
@@ -877,7 +1133,7 @@ const NodeInspector: FC = () => {
                       name={`output.${i}`}
                       key={`output.${i}`}
                       rules={[
-                        { required, message: t("node.fileRequired", { field: desc }) },
+                        { required, message: t("fieldRequired", { field: desc }) },
                         {
                           validator(_, value) {
                             if (value && !isValidVariableName(value)) {

@@ -464,6 +464,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       editor.export = editTree.data.export !== false;
       if (editor.data.firstid !== editTree.data.firstid) {
         editor.firstid = editTree.data.firstid ?? 1;
+        editor.declare.vars = editTree.data.declare.vars || [];
+        editor.declare.imports = editTree.data.declare.imports || [];
         refresh();
       }
       onChange();
@@ -1042,7 +1044,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   useKeyDown(Hotkey.Undo, keysRef, () => undo());
   useKeyDown(Hotkey.Redo, keysRef, () => redo());
   useKeyDown([Hotkey.Insert, Hotkey.Enter], keysRef, () => createNode());
-  useKeyDown([Hotkey.Delete, Hotkey.Backspace], keysRef, () => deleteNode());
+  useKeyDown([Hotkey.Delete, Hotkey.Backspace], keysRef, () => {
+    console.log("delete");
+    deleteNode();
+  });
 
   editor.dispatch = (event: EditEvent, data: unknown) => {
     switch (event) {
@@ -1055,6 +1060,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         break;
       }
       case "delete": {
+        console.log("delete1");
         deleteNode();
         break;
       }
@@ -1217,6 +1223,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyG") {
       searchByType("id");
     }
+    console.log(e.code);
+    e.stopPropagation();
   };
 
   const recursiveOpenCollapsed = (id: string) => {
@@ -1281,7 +1289,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
               }
               onFocus={() => setFilterOption({ ...filterOption, isFocused: true })}
               onBlur={() => setFilterOption({ ...filterOption, isFocused: false })}
-              onKeyDown={handleKeyDown}
+              onKeyDownCapture={handleKeyDown}
               suffix={
                 <Flex gap="2px" style={{ alignItems: "center" }}>
                   {filterOption.filterType !== "id" && (
