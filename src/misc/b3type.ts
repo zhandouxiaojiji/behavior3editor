@@ -65,6 +65,7 @@ export interface TreeGraphData extends G6TreeGraphData {
   size?: number[];
   highlightInput?: boolean;
   highlightOutput?: boolean;
+  highlightArgs?: boolean;
   highlightGray?: boolean;
   status?: number;
 }

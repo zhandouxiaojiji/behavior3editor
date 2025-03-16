@@ -351,6 +351,19 @@ G6.registerNode(
       const args: any = data.args;
       if (nodeDef.args && args && Object.keys(args).length > 0) {
         const { str, line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 200);
+        if (data.highlightArgs) {
+          addShape("rect", {
+            attrs: {
+              x: x - 2,
+              y: y + 17,
+              width: w - 6,
+              height: 18,
+              fill: "#0d1117",
+              radius: [r, r, r, r],
+            },
+            name: "args-text-bg",
+          });
+        }
         addShape("text", {
           attrs: {
             textBaseline: "top",
@@ -359,7 +372,8 @@ G6.registerNode(
             w,
             lineHeight: 20,
             text: str,
-            fill: textColor,
+            fill: data.highlightArgs ? "white" : textColor,
+            fontWeight: data.highlightArgs ? "bolder" : undefined,
           },
           name: "args-text",
         });

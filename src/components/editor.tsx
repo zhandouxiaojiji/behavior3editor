@@ -17,11 +17,11 @@ import { useShallow } from "zustand/react/shallow";
 import {
   EditEvent,
   EditNode,
-  EditTree,
   EditorStore,
+  EditTree,
   useWorkspace,
 } from "../contexts/workspace-context";
-import { NodeModel, TreeGraphData, TreeModel } from "../misc/b3type";
+import { isExprType, NodeModel, TreeGraphData, TreeModel } from "../misc/b3type";
 import * as b3util from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
@@ -195,6 +195,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const onSearchChange = (option: FilterOption) => {
     option.results.length = 0;
+    editor.searchingText = option.filterStr;
     filterNodes(option, editor.data);
     setFilterOption({
       ...option,
@@ -237,11 +238,16 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
   };
 
+  const parseExpr = (expr: string) => {
+    return expr.split(/[^a-zA-Z0-9_]/);
+  };
+
   const findHightlight = (node: TreeGraphData, highlight: string[], changed?: TreeGraphData[]) => {
     changed ||= [];
-    if (node.highlightInput || node.highlightOutput) {
+    if (node.highlightInput || node.highlightOutput || node.highlightArgs) {
       node.highlightInput = false;
       node.highlightOutput = false;
+      node.highlightArgs = false;
       changed.push(node);
     }
 
@@ -264,6 +270,31 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         }
       }
     }
+
+    node.def.args?.forEach((arg) => {
+      if (isExprType(arg.type)) {
+        const expr: string | string[] = node.args?.[arg.name];
+        if (typeof expr === "string") {
+          for (const v of parseExpr(expr)) {
+            if (highlight.includes(v)) {
+              node.highlightArgs = true;
+              changed.push(node);
+              break;
+            }
+          }
+        } else if (expr instanceof Array) {
+          loop: for (const str of expr) {
+            for (const v of parseExpr(str)) {
+              if (highlight.includes(v)) {
+                node.highlightArgs = true;
+                changed.push(node);
+                break loop;
+              }
+            }
+          }
+        }
+      }
+    });
 
     node.children?.forEach((child: TreeGraphData) => findHightlight(child, highlight, changed));
 
@@ -312,28 +343,32 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
             includeString(node.desc || node.def.desc, option)
           ) {
             found = true;
-          } else if (node.input) {
+          }
+          if (!found && node.input) {
             for (const str of node.input) {
               if (includeString(str, option)) {
                 found = true;
                 break;
               }
             }
-          } else if (node.args) {
+          }
+          if (!found && node.args) {
             for (const str in node.args) {
-              if (includeString(str, option)) {
+              if (includeString(str, option) || includeString(node.args[str], option)) {
                 found = true;
                 break;
               }
             }
-          } else if (node.output) {
+          }
+          if (!found && node.output) {
             for (const str of node.output) {
               if (includeString(str, option)) {
                 found = true;
                 break;
               }
             }
-          } else if (node.path) {
+          }
+          if (!found && node.path) {
             if (includeString(node.path, option)) {
               found = true;
             }
@@ -847,10 +882,32 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         data.output?.forEach((v) => v && highlight.push(v));
       }
       const changed = findHightlight(editor.data, highlight);
-      changed.forEach((v) => {
-        const item = editor.graph.findById(v.id);
-        item.draw();
-      });
+      if (changed.length > 0) {
+        const refreshHighlight = (node: TreeGraphData) => {
+          const item = editor.graph.findById(node.id);
+          if (highlight.length > 0) {
+            node.highlightGray = !(
+              node.highlightInput ||
+              node.highlightOutput ||
+              node.highlightArgs
+            );
+          } else {
+            node.highlightGray = false;
+          }
+          item.draw();
+          if (node.children) {
+            node.children.forEach(refreshHighlight);
+          }
+        };
+        refreshHighlight(editor.data);
+      }
+      if (highlight.length === 0 && editor.searchingText) {
+        onSearchChange({
+          ...filterOption,
+          filterType: "content",
+          filterStr: editor.searchingText,
+        });
+      }
     });
 
     editor.graph.on("node:contextmenu", (e: G6GraphEvent) => {
@@ -1044,10 +1101,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   useKeyDown(Hotkey.Undo, keysRef, () => undo());
   useKeyDown(Hotkey.Redo, keysRef, () => redo());
   useKeyDown([Hotkey.Insert, Hotkey.Enter], keysRef, () => createNode());
-  useKeyDown([Hotkey.Delete, Hotkey.Backspace], keysRef, () => {
-    console.log("delete");
-    deleteNode();
-  });
+  useKeyDown([Hotkey.Delete, Hotkey.Backspace], keysRef, () => deleteNode());
 
   editor.dispatch = (event: EditEvent, data: unknown) => {
     switch (event) {
@@ -1060,7 +1114,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         break;
       }
       case "delete": {
-        console.log("delete1");
         deleteNode();
         break;
       }
@@ -1223,7 +1276,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyG") {
       searchByType("id");
     }
-    console.log(e.code);
     e.stopPropagation();
   };
 

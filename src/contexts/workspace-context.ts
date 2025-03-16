@@ -60,6 +60,7 @@ export class EditorStore {
   unsave: boolean = false;
   modifiedTime: number = Date.now();
   alertReload: boolean = false;
+  searchingText?: string;
 
   historyStack: NodeModel[] = [];
   historyIndex: number = 0;
