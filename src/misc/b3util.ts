@@ -687,11 +687,11 @@ export const isTreeFile = (path: string) => {
   return path.toLocaleLowerCase().endsWith(".json");
 };
 
-export const loadImportedVars = (imports: ImportDef[]) => {
-  for (const importDef of imports) {
+export const loadVarDef = (list: ImportDef[]) => {
+  for (const entry of list) {
     // TODO: check file date
     // TODO: use cache
-    if (importDef.vars.length) {
+    if (entry.vars.length) {
       continue;
     }
     const filter: Map<string, boolean> = new Map();
@@ -701,14 +701,17 @@ export const loadImportedVars = (imports: ImportDef[]) => {
         return;
       }
       filter.set(path, true);
-      const model: TreeModel = readTree(`${workdir}/${path}`);
-      model.declare?.vars?.forEach((v) => vars.push(v));
-      model.declare?.imports?.forEach((v) => load(v));
-      console.log("load imported vars:", path);
+      try {
+        const model: TreeModel = readTree(`${workdir}/${path}`);
+        model.declare?.vars?.forEach((v) => vars.push(v));
+        model.declare?.imports?.forEach((v) => load(v));
+      } catch (e) {
+        alertError(`parsing error: ${path}`);
+      }
     };
-    load(importDef.path);
+    load(entry.path);
     filter.clear();
-    importDef.vars = vars
+    entry.vars = vars
       .filter((v) => {
         if (!filter.has(v.name)) {
           filter.set(v.name, true);
@@ -718,4 +721,29 @@ export const loadImportedVars = (imports: ImportDef[]) => {
       })
       .sort((a, b) => a.name.localeCompare(b.name));
   }
+};
+
+export const loadSubtreeVarDef = (data: TreeGraphData) => {
+  const list: ImportDef[] = [];
+  const traverse = (v: TreeGraphData) => {
+    if (v.path) {
+      list.push({ path: v.path, vars: [] });
+    }
+    if (v.children) {
+      v.children.forEach(traverse);
+    }
+  };
+  traverse(data);
+  loadVarDef(list);
+  const filter: Map<string, boolean> = new Map();
+  const result: VarDef[] = [];
+  list.forEach((entry) => {
+    entry.vars.forEach((v) => {
+      if (!filter.has(v.name)) {
+        filter.set(v.name, true);
+        result.push(v);
+      }
+    });
+  });
+  return result;
 };

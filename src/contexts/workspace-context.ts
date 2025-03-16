@@ -7,6 +7,7 @@ import { create } from "zustand";
 import { NodeDef } from "../behavior3/src/behavior3";
 import { ImportDef, NodeModel, TreeGraphData, TreeModel, VarDef } from "../misc/b3type";
 import * as b3util from "../misc/b3util";
+import { loadSubtreeVarDef } from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
 import Path from "../misc/path";
@@ -128,6 +129,7 @@ export type EditTree = {
     declare: {
       imports: ImportDef[];
       vars: VarDef[];
+      subtree: VarDef[];
     };
   };
 };
@@ -521,6 +523,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
             declare: {
               vars: editting.declare.vars,
               imports: editting.declare.imports,
+              subtree: loadSubtreeVarDef(editting.data),
             },
           },
         },
@@ -679,6 +682,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           declare: {
             imports: editor.declare.imports,
             vars: editor.declare.vars,
+            subtree: loadSubtreeVarDef(editor.data),
           },
         },
       },

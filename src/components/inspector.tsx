@@ -40,7 +40,7 @@ import {
   isNodeArgOptional,
   isValidVariableName,
   isVariadic,
-  loadImportedVars,
+  loadVarDef,
 } from "../misc/b3util";
 import { Hotkey, isMacos } from "../misc/keys";
 import { mergeClassNames } from "../misc/util";
@@ -65,7 +65,7 @@ const TreeInspector: FC = () => {
   // set form values
   useEffect(() => {
     const data = workspace.editingTree.data;
-    loadImportedVars(data.declare.imports);
+    loadVarDef(data.declare.imports);
     form.resetFields();
     form.setFieldValue("name", data.name);
     form.setFieldValue("desc", data.desc);
@@ -73,6 +73,7 @@ const TreeInspector: FC = () => {
     form.setFieldValue("firstid", data.firstid);
     form.setFieldValue("declare.vars", data.declare?.vars);
     form.setFieldValue("declare.imports", data.declare?.imports);
+    form.setFieldValue("declare.subtree", data.declare?.subtree);
   }, [workspace.editingTree]);
 
   // auto complete for subtree
@@ -231,6 +232,71 @@ const TreeInspector: FC = () => {
               )}
             </Form.List>
           </>
+          {workspace.editingTree.data.declare.subtree.length > 0 && (
+            <>
+              <Divider orientation="left">
+                <h4>{t("tree.vars.subtree")}</h4>
+              </Divider>
+              <Form.List name="declare.subtree">
+                {(vars) => (
+                  <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
+                    {vars.map((v, idx, arr) => (
+                      <Flex key={v.key} gap={4}>
+                        <Space.Compact
+                          className="b3-inspector-vars-item"
+                          style={{ width: "100%", marginBottom: 0, paddingRight: 18 }}
+                        >
+                          <Form.Item noStyle name={[v.name, "id"]}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                paddingLeft: "8px",
+                                paddingRight: "8px",
+                                maxWidth: "60px",
+                                minWidth: "60px",
+                                borderTopLeftRadius: idx === 0 ? "4px" : 0,
+                                borderBottomLeftRadius: idx === arr.length - 1 ? "4px" : 0,
+                                borderLeft: "1px solid #3d506c",
+                                borderTop: "1px solid #3d506c",
+                                borderBottom: idx === arr.length - 1 ? "1px solid #3d506c" : "none",
+                              }}
+                            >
+                              <AimOutlined />
+                              <span style={{ marginLeft: 4 }}>0</span>
+                            </div>
+                          </Form.Item>
+                          <Form.Item noStyle name={[v.name, "name"]}>
+                            <Input
+                              disabled={true}
+                              placeholder={t("tree.vars.name")}
+                              style={{
+                                borderRadius: "0",
+                                borderTop: "1px solid #3d506c",
+                                borderBottom: idx === arr.length - 1 ? "1px solid #3d506c" : "none",
+                              }}
+                            />
+                          </Form.Item>
+                          <Form.Item noStyle name={[v.name, "desc"]}>
+                            <Input
+                              disabled={true}
+                              placeholder={t("tree.vars.desc")}
+                              style={{
+                                borderTopRightRadius: idx === 0 ? "4px" : 0,
+                                borderBottomRightRadius: idx === arr.length - 1 ? "4px" : 0,
+                                borderTop: "1px solid #3d506c",
+                                borderBottom: idx === arr.length - 1 ? "1px solid #3d506c" : "none",
+                              }}
+                            />
+                          </Form.Item>
+                        </Space.Compact>
+                      </Flex>
+                    ))}
+                  </div>
+                )}
+              </Form.List>
+            </>
+          )}
           <>
             <Divider orientation="left">
               <h4>{t("tree.vars.imports")}</h4>
