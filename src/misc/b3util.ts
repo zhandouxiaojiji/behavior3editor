@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { type NodeDef } from "../behavior3/src/behavior3";
+import { NodeDef } from "../behavior3/src/behavior3";
 import {
   ImportDef,
   isBoolType,
@@ -54,6 +54,7 @@ export const initWorkdir = (path: string, handler: typeof alertError) => {
 
     const group = v.type.match(/\((\w+)\)/)?.[1];
     if (group) {
+      v.group = group;
       groups.add(group);
     }
   }
@@ -534,7 +535,7 @@ export const isVariadic = (def: string[], i: number) => {
 };
 
 const isValidInputOrOutput = (def: string[], data: string[] | undefined, index: number) => {
-  return def[index].includes("?") || data?.[index] || (isVariadic(def, index) && data?.[index]);
+  return def[index].includes("?") || data?.[index] || isVariadic(def, index);
 };
 
 export const checkTreeData = (data: TreeGraphData) => {
@@ -758,4 +759,9 @@ export const loadSubtreeVarDef = (data: TreeGraphData) => {
     });
   });
   return result;
+};
+
+export const parseExpr = (expr: string) => {
+  const result = expr.split(/[^a-zA-Z0-9_.]/);
+  return result.map((v) => v.split(".")[0]).filter((v) => v);
 };

@@ -172,6 +172,7 @@ const TreeInspector: FC = () => {
                       flexDirection: "row",
                       gap: 8,
                       rowGap: 0,
+                      marginLeft: 16,
                       flexWrap: "wrap",
                     }}
                   >

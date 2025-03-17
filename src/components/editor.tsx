@@ -239,10 +239,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
   };
 
-  const parseExpr = (expr: string) => {
-    return expr.split(/[^a-zA-Z0-9_]/);
-  };
-
   const findHightlight = (node: TreeGraphData, highlight: string[], changed?: TreeGraphData[]) => {
     changed ||= [];
     if (node.highlightInput || node.highlightOutput || node.highlightArgs) {
@@ -276,7 +272,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       if (isExprType(arg.type)) {
         const expr: string | string[] = node.args?.[arg.name];
         if (typeof expr === "string") {
-          for (const v of parseExpr(expr)) {
+          for (const v of b3util.parseExpr(expr)) {
             if (highlight.includes(v)) {
               node.highlightArgs = true;
               changed.push(node);
@@ -285,7 +281,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
           }
         } else if (expr instanceof Array) {
           loop: for (const str of expr) {
-            for (const v of parseExpr(str)) {
+            for (const v of b3util.parseExpr(str)) {
               if (highlight.includes(v)) {
                 node.highlightArgs = true;
                 changed.push(node);
