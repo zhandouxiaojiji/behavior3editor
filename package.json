@@ -14,7 +14,7 @@
   },
   "scripts": {
     "tsc-check": "tsc --noEmit",
-    "postinstall": "tsx pre-commit.ts",
+    "postinstall": "git submodule update --init --recursive && tsx pre-commit.ts",
     "dev": "vite",
     "build": "tsc && vite build && electron-builder",
     "preview": "vite preview",

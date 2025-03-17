@@ -1,4 +1,4 @@
-import * as fs from "node:fs";
+import * as fs from "fs";
 
 const hooks = `
 #!/bin/sh
