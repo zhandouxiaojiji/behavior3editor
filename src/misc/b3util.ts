@@ -24,23 +24,19 @@ export class NodeDefs extends Map<string, NodeDef> {
   }
 }
 
+export let nodeDefs: NodeDefs = new NodeDefs();
+export let groupDefs: string[] = [];
+
+export let usingGroups: Record<string, boolean> = {};
+export let usingVars: Record<string, boolean> = {};
+
 let workdir: string = "";
 let alertError: (msg: string, duration?: number) => void = () => {};
-let nodeDefs: NodeDefs = new NodeDefs();
-let groupDefs: string[] = [];
 
 const unknownNodeDef: NodeDef = {
   name: "unknown",
   desc: "",
   type: "Action",
-};
-
-export const getNodeDefs = () => {
-  return nodeDefs;
-};
-
-export const getGroupDefs = () => {
-  return groupDefs;
 };
 
 export const initWorkdir = (path: string, handler: typeof alertError) => {
@@ -59,6 +55,20 @@ export const initWorkdir = (path: string, handler: typeof alertError) => {
     }
   }
   groupDefs = Array.from(groups);
+};
+
+export const updateUsingGroups = (group: string[]) => {
+  usingGroups = {};
+  for (const g of group) {
+    usingGroups[g] = true;
+  }
+};
+
+export const updateUsingVars = (vars: VarDef[]) => {
+  usingVars = {};
+  for (const v of vars) {
+    usingVars[v.name] = true;
+  }
 };
 
 export const isValidVariableName = (name: string) => {

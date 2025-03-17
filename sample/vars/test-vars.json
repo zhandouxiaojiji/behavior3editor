@@ -48,6 +48,13 @@
         "args": {
           "value": "target.x > 0"
         }
+      },
+      {
+        "id": 7,
+        "name": "MoveToTarget",
+        "input": [
+          "target"
+        ]
       }
     ]
   }

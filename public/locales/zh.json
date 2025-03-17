@@ -103,6 +103,7 @@
   "node.editSubtreeDenied": "不能编辑子树节点",
   "node.id": "节点标识",
   "node.inputVariable": "输入变量",
+  "node.invalidGroup": "节点分组 “{{group}}” 未启用",
   "node.invalidValue": "无效的值",
   "node.invalidVariableName": "变量名必须以字母或下划线开头",
   "node.name": "节点名称",

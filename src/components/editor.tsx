@@ -495,6 +495,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       editor.desc = editTree.data.desc || "";
       editor.export = editTree.data.export !== false;
       editor.group = editTree.data.group || [];
+      b3util.updateUsingGroups(editor.group);
       if (editor.data.firstid !== editTree.data.firstid) {
         editor.firstid = editTree.data.firstid ?? 1;
         editor.declare.vars = editTree.data.declare.vars || [];
@@ -1205,6 +1206,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   useEffect(() => {
     if (workspace.editing === editor) {
       checkSubtree();
+      b3util.updateUsingGroups(editor.group);
     }
   }, [workspace.editing]);
 

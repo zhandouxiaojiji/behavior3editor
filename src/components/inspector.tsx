@@ -43,6 +43,7 @@ import {
   isValidVariableName,
   isVariadic,
   loadVarDef,
+  usingGroups,
 } from "../misc/b3util";
 import { Hotkey, isMacos } from "../misc/keys";
 import { mergeClassNames } from "../misc/util";
@@ -746,7 +747,20 @@ const NodeInspector: FC = () => {
           <Form.Item name="id" label={t("node.id")}>
             <Input disabled={true} />
           </Form.Item>
-          <Form.Item name="type" label={t("node.type")}>
+          <Form.Item
+            name="type"
+            label={t("node.type")}
+            rules={[
+              {
+                validator() {
+                  if (def.group && !usingGroups[def.group]) {
+                    return Promise.reject(new Error(t("node.invalidGroup", { group: def.group })));
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
             <Input disabled={true} />
           </Form.Item>
           <Form.Item name="children" label={t("node.children")}>

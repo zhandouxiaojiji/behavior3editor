@@ -651,7 +651,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   loadNodeDefs: () => {
     const workspace = get();
     b3util.initWorkdir(workspace.workdir, message.error.bind(message));
-    set({ nodeDefs: b3util.getNodeDefs(), groupDefs: b3util.getGroupDefs() });
+    set({ nodeDefs: b3util.nodeDefs, groupDefs: b3util.groupDefs });
     workspace.editing?.dispatch("refresh");
   },
 
