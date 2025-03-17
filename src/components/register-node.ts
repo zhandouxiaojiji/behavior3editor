@@ -1,7 +1,7 @@
 import G6 from "@antv/g6";
 import { useWorkspace } from "../contexts/workspace-context";
-import { TreeGraphData, getNodeType } from "../misc/b3type";
-import { checkTreeData, nodeDefs, usingGroups } from "../misc/b3util";
+import { TreeGraphData, getNodeType, isExprType } from "../misc/b3type";
+import { checkTreeData, nodeDefs, parseExpr, usingGroups, usingVars } from "../misc/b3util";
 import i18n from "../misc/i18n";
 import { isMacos } from "../misc/keys";
 
@@ -145,11 +145,20 @@ G6.registerNode(
       const nodeDef = nodeDefs.get(data.name);
       let classify = getNodeType(nodeDef);
       let color = nodeDef.color || NODE_COLORS[classify] || NODE_COLORS["Other"];
+
       if (
         !nodeDefs.has(data.name) ||
         (data.path && !data.children?.length) ||
         !checkTreeData(data) ||
-        (nodeDef.group && !usingGroups[nodeDef.group])
+        (nodeDef.group && usingGroups && !usingGroups[nodeDef.group]) ||
+        (usingVars && data.input?.some((v) => !usingVars![v])) ||
+        (usingVars && data.output?.some((v) => !usingVars![v])) ||
+        (usingVars &&
+          nodeDef.args?.some(
+            (v) =>
+              isExprType(v.type) &&
+              parseExpr(data.args?.[v.name] ?? "").some((vv) => !usingVars![vv])
+          ))
       ) {
         classify = "Error";
         color = NODE_COLORS[classify];

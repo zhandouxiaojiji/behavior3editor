@@ -26,10 +26,10 @@ export class NodeDefs extends Map<string, NodeDef> {
 
 export let nodeDefs: NodeDefs = new NodeDefs();
 export let groupDefs: string[] = [];
+export let usingGroups: Record<string, boolean> | null = null;
+export let usingVars: Record<string, VarDef> | null = null;
 
-export let usingGroups: Record<string, boolean> = {};
-export let usingVars: Record<string, boolean> = {};
-
+const parsedExprs: Record<string, string[]> = {};
 let workdir: string = "";
 let alertError: (msg: string, duration?: number) => void = () => {};
 
@@ -58,16 +58,18 @@ export const initWorkdir = (path: string, handler: typeof alertError) => {
 };
 
 export const updateUsingGroups = (group: string[]) => {
-  usingGroups = {};
+  usingGroups = null;
   for (const g of group) {
+    usingGroups ??= {};
     usingGroups[g] = true;
   }
 };
 
 export const updateUsingVars = (vars: VarDef[]) => {
-  usingVars = {};
+  usingVars = null;
   for (const v of vars) {
-    usingVars[v.name] = true;
+    usingVars ??= {};
+    usingVars[v.name] = v;
   }
 };
 
@@ -711,6 +713,7 @@ export const isTreeFile = (path: string) => {
 };
 
 export const loadVarDef = (list: ImportDef[]) => {
+  const all: Set<VarDef> = new Set();
   for (const entry of list) {
     // TODO: check file date
     // TODO: use cache
@@ -743,7 +746,9 @@ export const loadVarDef = (list: ImportDef[]) => {
         return false;
       })
       .sort((a, b) => a.name.localeCompare(b.name));
+    entry.vars.forEach((v) => all.add(v));
   }
+  return Array.from(all);
 };
 
 export const loadSubtreeVarDef = (data: TreeGraphData) => {
@@ -757,21 +762,17 @@ export const loadSubtreeVarDef = (data: TreeGraphData) => {
     }
   };
   traverse(data);
-  loadVarDef(list);
-  const filter: Map<string, boolean> = new Map();
-  const result: VarDef[] = [];
-  list.forEach((entry) => {
-    entry.vars.forEach((v) => {
-      if (!filter.has(v.name)) {
-        filter.set(v.name, true);
-        result.push(v);
-      }
-    });
-  });
-  return result;
+  return loadVarDef(list);
 };
 
 export const parseExpr = (expr: string) => {
-  const result = expr.split(/[^a-zA-Z0-9_.]/);
-  return result.map((v) => v.split(".")[0]).filter((v) => v);
+  if (parsedExprs[expr]) {
+    return parsedExprs[expr];
+  }
+  const result = expr
+    .split(/[^a-zA-Z0-9_.]/)
+    .map((v) => v.split(".")[0])
+    .filter((v) => isValidVariableName(v));
+  parsedExprs[expr] = result;
+  return result;
 };

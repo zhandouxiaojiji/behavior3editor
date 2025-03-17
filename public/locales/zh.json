@@ -116,6 +116,7 @@
   "node.subtree": "子树",
   "node.subtreePathError": "子树必须保存在当前工作区的目录内",
   "node.type": "节点类型",
+  "node.undefinedVariable": "变量 “{{variable}}” 未定义",
 
   "node.unknown.desc": "新建节点"
 }

@@ -21,8 +21,9 @@ import {
   EditTree,
   useWorkspace,
 } from "../contexts/workspace-context";
-import { isExprType, NodeModel, TreeGraphData, TreeModel } from "../misc/b3type";
+import { ImportDef, isExprType, NodeModel, TreeGraphData, TreeModel, VarDef } from "../misc/b3type";
 import * as b3util from "../misc/b3util";
+import { loadSubtreeVarDef, loadVarDef } from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
 import { Hotkey, isMacos, useKeyDown } from "../misc/keys";
@@ -47,6 +48,13 @@ interface FilterOption {
   isFocused: boolean;
 }
 
+const collectVarDefs = (editor: EditorStore) => {
+  const vars: VarDef[] = editor.declare.vars.slice();
+  loadVarDef(editor.declare.imports).forEach((v) => vars.push(v));
+  loadSubtreeVarDef(editor.data).forEach((v) => vars.push(v));
+  return vars;
+};
+
 const createTreeData = (node: NodeModel, parent?: string) => {
   return b3util.createTreeData(node, parent, calcTreeDataSize);
 };
@@ -58,6 +66,42 @@ const refreshTreeData = (data: TreeGraphData) => {
       refreshTreeData(child);
     }
   }
+};
+
+const isTreeUpdated = (editor: EditorStore, editTree: EditTree) => {
+  const data = editTree.data;
+  if (
+    editor.firstid !== data.firstid ||
+    editor.export !== data.export ||
+    editor.name !== data.name ||
+    editor.desc !== data.desc
+  ) {
+    return true;
+  }
+
+  for (let i = 0; i < Math.max(editor.declare.vars.length, data.declare.vars.length); i++) {
+    const v1: VarDef | undefined = editor.declare.vars[i];
+    const v2: VarDef | undefined = data.declare.vars[i];
+    if (v1?.name !== v2?.name || v1?.desc !== v2?.desc) {
+      return true;
+    }
+  }
+
+  for (let i = 0; i < Math.max(editor.group.length, data.group.length); i++) {
+    if (editor.group[i] !== data.group[i]) {
+      return true;
+    }
+  }
+
+  for (let i = 0; i < Math.max(editor.declare.imports.length, data.declare.imports.length); i++) {
+    const v1: ImportDef | undefined = editor.declare.imports[i];
+    const v2: ImportDef | undefined = data.declare.imports[i];
+    if (v1?.path !== v2?.path) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
 const isSubtreeUpdated = (data: TreeGraphData) => {
@@ -491,17 +535,16 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const updateTree = (editTree: EditTree) => {
-    if (editor.desc !== editTree.data.desc || editor.export !== editTree.data.export) {
+    if (isTreeUpdated(editor, editTree)) {
       editor.desc = editTree.data.desc || "";
       editor.export = editTree.data.export !== false;
       editor.group = editTree.data.group || [];
+      editor.firstid = editTree.data.firstid ?? 1;
+      editor.declare.vars = editTree.data.declare.vars || [];
+      editor.declare.imports = editTree.data.declare.imports || [];
       b3util.updateUsingGroups(editor.group);
-      if (editor.data.firstid !== editTree.data.firstid) {
-        editor.firstid = editTree.data.firstid ?? 1;
-        editor.declare.vars = editTree.data.declare.vars || [];
-        editor.declare.imports = editTree.data.declare.imports || [];
-        refresh();
-      }
+      b3util.updateUsingVars(collectVarDefs(editor));
+      refresh();
       onChange();
     }
   };
@@ -1207,6 +1250,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     if (workspace.editing === editor) {
       checkSubtree();
       b3util.updateUsingGroups(editor.group);
+      b3util.updateUsingVars(collectVarDefs(editor));
     }
   }, [workspace.editing]);
 

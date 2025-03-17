@@ -43,7 +43,9 @@ import {
   isValidVariableName,
   isVariadic,
   loadVarDef,
+  parseExpr,
   usingGroups,
+  usingVars,
 } from "../misc/b3util";
 import { Hotkey, isMacos } from "../misc/keys";
 import { mergeClassNames } from "../misc/util";
@@ -108,7 +110,7 @@ const TreeInspector: FC = () => {
     workspace.editing?.dispatch("updateTree", {
       data: {
         name: values.name,
-        desc: values.desc || undefined,
+        desc: values.desc,
         export: values.export,
         firstid: Number(values.firstid),
         group: (values.group as GroupDef[])
@@ -568,6 +570,7 @@ const NodeInspector: FC = () => {
   // auto complete for input and output
   const inoutVarOptions = useMemo(() => {
     const options: OptionType[] = [];
+    const filter: Record<string, boolean> = {};
     const collect = (node?: TreeGraphData) => {
       if (node) {
         node.input?.forEach((v, i) => {
@@ -578,8 +581,9 @@ const NodeInspector: FC = () => {
           } else {
             desc = inputDef?.[i] ?? "<unknown>";
           }
-          if (v && !options.find((option) => option.value === v)) {
+          if (!filter[v]) {
             options.push({ label: `${v}(${desc})`, value: v });
+            filter[v] = true;
           }
         });
         node.output?.forEach((v, i) => {
@@ -590,16 +594,26 @@ const NodeInspector: FC = () => {
           } else {
             desc = outputDef?.[i] ?? "<unknown>";
           }
-          if (v && !options.find((option) => option.value === v)) {
+          if (!filter[v]) {
             options.push({ label: `${v}(${desc})`, value: v });
+            filter[v] = true;
           }
         });
         node.children?.forEach((child) => collect(child));
       }
     };
-    collect(workspace.editing?.data);
+    if (usingVars) {
+      Object.values(usingVars ?? {}).forEach((v) => {
+        if (!filter[v.name]) {
+          options.push({ label: `${v.name}(${v.desc})`, value: v.name });
+          filter[v.name] = true;
+        }
+      });
+    } else {
+      collect(workspace.editing?.data);
+    }
     return options;
-  }, [workspace.editing]);
+  }, [workspace.editing, usingVars]);
 
   // auto complete for subtree
   const subtreeOptions = useMemo(() => {
@@ -753,7 +767,7 @@ const NodeInspector: FC = () => {
             rules={[
               {
                 validator() {
-                  if (def.group && !usingGroups[def.group]) {
+                  if (def.group && usingGroups && !usingGroups[def.group]) {
                     return Promise.reject(new Error(t("node.invalidGroup", { group: def.group })));
                   }
                   return Promise.resolve();
@@ -833,6 +847,13 @@ const NodeInspector: FC = () => {
                                   rules={[
                                     {
                                       validator(_, value) {
+                                        if (value && usingVars && !usingVars[value]) {
+                                          return Promise.reject(
+                                            new Error(
+                                              t("node.undefinedVariable", { variable: value })
+                                            )
+                                          );
+                                        }
                                         if (value && !isValidVariableName(value)) {
                                           return Promise.reject(
                                             new Error(t("node.invalidVariableName"))
@@ -895,6 +916,11 @@ const NodeInspector: FC = () => {
                         { required, message: t("fieldRequired", { field: desc }) },
                         ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                           validator(_, value) {
+                            if (value && usingVars && !usingVars[value]) {
+                              return Promise.reject(
+                                new Error(t("node.undefinedVariable", { variable: value }))
+                              );
+                            }
                             if (value && !isValidVariableName(value)) {
                               return Promise.reject(new Error(t("node.invalidVariableName")));
                             }
@@ -975,6 +1001,17 @@ const NodeInspector: FC = () => {
                                     },
                                     () => ({
                                       validator(_, value) {
+                                        if (usingVars && isExprType(type) && value) {
+                                          for (const v of parseExpr(value)) {
+                                            if (!usingVars![v]) {
+                                              return Promise.reject(
+                                                new Error(
+                                                  t("node.undefinedVariable", { variable: v })
+                                                )
+                                              );
+                                            }
+                                          }
+                                        }
                                         if (isJsonType(type)) {
                                           try {
                                             if (value !== "null") {
@@ -1088,6 +1125,15 @@ const NodeInspector: FC = () => {
                         { required, message: t("fieldRequired", { field: arg.desc }) },
                         ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                           validator(_, value) {
+                            if (usingVars && isExprType(type) && value) {
+                              for (const v of parseExpr(value)) {
+                                if (!usingVars![v]) {
+                                  return Promise.reject(
+                                    new Error(t("node.undefinedVariable", { variable: v }))
+                                  );
+                                }
+                              }
+                            }
                             if (value && isJsonType(type)) {
                               try {
                                 if (value !== "null") {
@@ -1204,6 +1250,13 @@ const NodeInspector: FC = () => {
                                   rules={[
                                     {
                                       validator(_, value) {
+                                        if (value && usingVars && !usingVars[value]) {
+                                          return Promise.reject(
+                                            new Error(
+                                              t("node.undefinedVariable", { variable: value })
+                                            )
+                                          );
+                                        }
                                         if (value && !isValidVariableName(value)) {
                                           return Promise.reject(
                                             new Error(t("node.invalidVariableName"))
@@ -1266,6 +1319,11 @@ const NodeInspector: FC = () => {
                         { required, message: t("fieldRequired", { field: desc }) },
                         {
                           validator(_, value) {
+                            if (value && usingVars && !usingVars[value]) {
+                              return Promise.reject(
+                                new Error(t("node.undefinedVariable", { variable: value }))
+                              );
+                            }
                             if (value && !isValidVariableName(value)) {
                               return Promise.reject(new Error(t("node.invalidVariableName")));
                             }

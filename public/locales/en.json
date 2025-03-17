@@ -116,6 +116,7 @@
   "node.subtree": "Subtree",
   "node.subtreePathError": "You should save the subtree inside the current workspace",
   "node.type": "Node type",
+  "node.undefinedVariable": "Variable '{{variable}}' is not defined",
 
   "node.unknown.desc": "New node"
 }

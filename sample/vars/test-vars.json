@@ -15,6 +15,14 @@
       {
         "name": "target",
         "desc": "目标"
+      },
+      {
+        "name": "target1",
+        "desc": "其它目标"
+      },
+      {
+        "name": "test",
+        "desc": "测试"
       }
     ]
   },
@@ -32,21 +40,21 @@
         "name": "FindEnemy",
         "args": {},
         "output": [
-          "target"
+          "target1"
         ]
       },
       {
         "id": 5,
         "name": "Attack",
         "input": [
-          "target"
+          "target1"
         ]
       },
       {
         "id": 6,
         "name": "Check",
         "args": {
-          "value": "target.x > 0"
+          "value": "target1.x > 0"
         }
       },
       {
