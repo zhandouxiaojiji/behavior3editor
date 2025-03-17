@@ -27,6 +27,7 @@ export class NodeDefs extends Map<string, NodeDef> {
 let workdir: string = "";
 let alertError: (msg: string, duration?: number) => void = () => {};
 let nodeDefs: NodeDefs = new NodeDefs();
+let groupDefs: string[] = [];
 
 const unknownNodeDef: NodeDef = {
   name: "unknown",
@@ -38,14 +39,25 @@ export const getNodeDefs = () => {
   return nodeDefs;
 };
 
+export const getGroupDefs = () => {
+  return groupDefs;
+};
+
 export const initWorkdir = (path: string, handler: typeof alertError) => {
   workdir = path;
   alertError = handler;
   const nodeDefData = readJson(`${workdir}/node-config.b3-setting`) as NodeDef[];
+  const groups: Set<string> = new Set();
   nodeDefs = new NodeDefs();
   for (const v of nodeDefData) {
     nodeDefs.set(v.name, v);
+
+    const group = v.type.match(/\((\w+)\)/)?.[1];
+    if (group) {
+      groups.add(group);
+    }
   }
+  groupDefs = Array.from(groups);
 };
 
 export const isValidVariableName = (name: string) => {

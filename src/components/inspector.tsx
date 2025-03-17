@@ -2,6 +2,7 @@ import { AimOutlined, EditOutlined, MinusCircleOutlined, PlusOutlined } from "@a
 import {
   AutoComplete,
   Button,
+  Checkbox,
   Divider,
   Flex,
   Form,
@@ -20,6 +21,7 @@ import { useDebounceCallback } from "usehooks-ts";
 import { useShallow } from "zustand/react/shallow";
 import { EditNode, EditTree, useWorkspace } from "../contexts/workspace-context";
 import {
+  GroupDef,
   ImportDef,
   isBoolType,
   isEnumType,
@@ -57,24 +59,19 @@ const TreeInspector: FC = () => {
       allFiles: state.allFiles,
       relative: state.relative,
       fileTree: state.fileTree,
+      groupDefs: state.groupDefs,
     }))
   );
   const { t } = useTranslation();
   const [form] = Form.useForm();
 
-  // set form values
-  useEffect(() => {
-    const data = workspace.editingTree.data;
-    loadVarDef(data.declare.imports);
-    form.resetFields();
-    form.setFieldValue("name", data.name);
-    form.setFieldValue("desc", data.desc);
-    form.setFieldValue("export", data.export !== false);
-    form.setFieldValue("firstid", data.firstid);
-    form.setFieldValue("declare.vars", data.declare?.vars);
-    form.setFieldValue("declare.imports", data.declare?.imports);
-    form.setFieldValue("declare.subtree", data.declare?.subtree);
-  }, [workspace.editingTree]);
+  // group defs
+  const groupDefs: GroupDef[] = useMemo(() => {
+    return workspace.groupDefs.map((v) => ({
+      name: v,
+      value: workspace.editingTree.data.group.includes(v),
+    }));
+  }, [workspace.groupDefs, workspace.editingTree]);
 
   // auto complete for subtree
   const subtreeOptions = useMemo(() => {
@@ -91,6 +88,21 @@ const TreeInspector: FC = () => {
     return options;
   }, [workspace.allFiles, workspace.fileTree]);
 
+  // set form values
+  useEffect(() => {
+    const data = workspace.editingTree.data;
+    loadVarDef(data.declare.imports);
+    form.resetFields();
+    form.setFieldValue("name", data.name);
+    form.setFieldValue("desc", data.desc);
+    form.setFieldValue("export", data.export !== false);
+    form.setFieldValue("firstid", data.firstid);
+    form.setFieldValue("group", groupDefs);
+    form.setFieldValue("declare.vars", data.declare?.vars);
+    form.setFieldValue("declare.imports", data.declare?.imports);
+    form.setFieldValue("declare.subtree", data.declare?.subtree);
+  }, [workspace.editingTree, groupDefs]);
+
   const finish = (values: any) => {
     workspace.editing?.dispatch("updateTree", {
       data: {
@@ -98,6 +110,10 @@ const TreeInspector: FC = () => {
         desc: values.desc || undefined,
         export: values.export,
         firstid: Number(values.firstid),
+        group: (values.group as GroupDef[])
+          .map((v) => (v.value ? v.name : undefined))
+          .filter((v) => v)
+          .sort(),
         declare: {
           vars: (values["declare.vars"] as VarDef[])
             .filter((v) => v && v.name)
@@ -143,6 +159,39 @@ const TreeInspector: FC = () => {
               <Switch onChange={() => form.submit()} />
             </Form.Item>
           </>
+          {groupDefs.length > 0 && (
+            <>
+              <Divider orientation="left">
+                <h4>{t("tree.group")}</h4>
+              </Divider>
+              <Form.List name="group">
+                {(items) => (
+                  <Flex
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      gap: 8,
+                      rowGap: 0,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {items
+                      .filter((v) => groupDefs[v.name])
+                      .map((item, idx) => (
+                        <Form.Item
+                          key={item.key}
+                          name={[item.name, "value"]}
+                          valuePropName="checked"
+                          style={{ marginBottom: 0 }}
+                        >
+                          <Checkbox onChange={form.submit}>{groupDefs[idx].name}</Checkbox>
+                        </Form.Item>
+                      ))}
+                  </Flex>
+                )}
+              </Form.List>
+            </>
+          )}
           <>
             <Divider orientation="left">
               <h4>{t("tree.vars")}</h4>

@@ -49,6 +49,7 @@ export class EditorStore {
   export: boolean;
   name: string;
   firstid: number;
+  group: string[];
 
   declare: {
     imports: ImportDef[];
@@ -85,6 +86,7 @@ export class EditorStore {
     this.export = file.export !== false;
     this.name = file.name || path.slice(0, -5);
     this.firstid = file.firstid ?? 1;
+    this.group = file.group ?? [];
     this.declare = {
       vars: file.declare?.vars ?? [],
       imports:
@@ -126,6 +128,7 @@ export type EditTree = {
     desc?: string;
     export?: boolean;
     firstid?: number;
+    group: string[];
     declare: {
       imports: ImportDef[];
       vars: VarDef[];
@@ -183,6 +186,7 @@ export type WorkspaceStore = {
 
   loadNodeDefs: () => void;
   nodeDefs: b3util.NodeDefs;
+  groupDefs: string[];
 
   // edit node
   editingNode?: EditNode | null;
@@ -520,6 +524,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
             name: editting.name,
             desc: editting.desc,
             firstid: editting.firstid,
+            group: editting.group,
             declare: {
               vars: editting.declare.vars,
               imports: editting.declare.imports,
@@ -642,10 +647,11 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   },
 
   nodeDefs: new b3util.NodeDefs(),
+  groupDefs: [],
   loadNodeDefs: () => {
     const workspace = get();
     b3util.initWorkdir(workspace.workdir, message.error.bind(message));
-    set({ nodeDefs: b3util.getNodeDefs() });
+    set({ nodeDefs: b3util.getNodeDefs(), groupDefs: b3util.getGroupDefs() });
     workspace.editing?.dispatch("refresh");
   },
 
@@ -679,6 +685,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           desc: editor.desc,
           export: editor.export,
           firstid: editor.firstid,
+          group: editor.group,
           declare: {
             imports: editor.declare.imports,
             vars: editor.declare.vars,

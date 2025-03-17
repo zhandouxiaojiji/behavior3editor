@@ -30,6 +30,11 @@ export interface VarDef {
   desc: string;
 }
 
+export interface GroupDef {
+  name: string;
+  value: boolean;
+}
+
 export interface ImportDef {
   path: string;
   date?: number;
@@ -41,11 +46,12 @@ export interface TreeModel {
   desc?: string;
   export?: boolean;
   firstid?: number;
-  root: NodeModel;
+  group?: string[];
   declare?: {
     imports?: string[];
     vars?: VarDef[];
   };
+  root: NodeModel;
 }
 
 export interface TreeGraphData extends G6TreeGraphData {

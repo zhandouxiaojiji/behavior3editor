@@ -3,6 +3,9 @@
   "desc": "",
   "firstid": 1,
   "export": true,
+  "group": [
+    "Client"
+  ],
   "declare": {
     "imports": [
       "vars/declare-core.json",

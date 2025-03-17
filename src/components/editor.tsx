@@ -171,6 +171,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       workdir: state.workdir,
       relative: state.relative,
       updateFileMeta: state.updateFileMeta,
+      nodeDefs: state.nodeDefs,
     }))
   );
 
@@ -479,7 +480,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       return;
     }
     b3util.copyFromNode(data, newNode);
-    data.def = b3util.getNodeDefs().get(data.name)!;
+    data.def = workspace.nodeDefs.get(data.name)!;
     data.size = calcTreeDataSize(data);
     if (oldNode.path !== newNode.path) {
       refresh();
@@ -497,6 +498,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     if (editor.desc !== editTree.data.desc || editor.export !== editTree.data.export) {
       editor.desc = editTree.data.desc || "";
       editor.export = editTree.data.export !== false;
+      editor.group = editTree.data.group || [];
       if (editor.data.firstid !== editTree.data.firstid) {
         editor.firstid = editTree.data.firstid ?? 1;
         editor.declare.vars = editTree.data.declare.vars || [];
@@ -726,6 +728,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         desc: editor.desc,
         firstid: editor.firstid ?? 1,
         export: editor.export,
+        group: editor.group ?? [],
         declare: {
           imports: editor.declare.imports.map((v) => v.path).sort(),
           vars: editor.declare.vars.sort((a, b) => a.name.localeCompare(b.name)),

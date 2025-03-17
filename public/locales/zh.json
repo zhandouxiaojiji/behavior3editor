@@ -79,6 +79,7 @@
   "tree.desc": "说明",
   "tree.export": "导出",
   "tree.firstid": "起始标识",
+  "tree.group": "可用分组",
   "tree.vars": "定义变量",
   "tree.vars.name": "变量名",
   "tree.vars.invalidName": "变量名不合法",
