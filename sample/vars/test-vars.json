@@ -6,26 +6,24 @@
   "group": [
     "Client"
   ],
-  "declare": {
-    "imports": [
-      "vars/declare-core.json",
-      "vars/declare-vars.json"
-    ],
-    "vars": [
-      {
-        "name": "target",
-        "desc": "目标"
-      },
-      {
-        "name": "target1",
-        "desc": "其它目标"
-      },
-      {
-        "name": "test",
-        "desc": "测试"
-      }
-    ]
-  },
+  "import": [
+    "vars/declare-core.json",
+    "vars/declare-vars.json"
+  ],
+  "declvar": [
+    {
+      "name": "target",
+      "desc": "目标"
+    },
+    {
+      "name": "target1",
+      "desc": "其它目标"
+    },
+    {
+      "name": "test",
+      "desc": "测试"
+    }
+  ],
   "root": {
     "id": 1,
     "name": "Sequence",

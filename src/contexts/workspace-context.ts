@@ -12,7 +12,7 @@ import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
 import Path from "../misc/path";
 import { zhNodeDef } from "../misc/template";
-import { readJson, writeJson } from "../misc/util";
+import { readJson, readTree, writeJson } from "../misc/util";
 import { useSetting } from "./setting-context";
 
 let buildDir: string | undefined;
@@ -44,17 +44,11 @@ export type EditEvent =
 
 export class EditorStore {
   path: string;
-  data: TreeGraphData;
-  desc: string;
-  export: boolean;
-  name: string;
-  firstid: number;
-  group: string[];
+  data: TreeModel;
 
-  declare: {
-    imports: ImportDef[];
-    vars: VarDef[];
-  };
+  root: TreeGraphData;
+  import: ImportDef[];
+  declvar: VarDef[];
 
   autoId: number = 1;
   dragSrcId?: string;
@@ -78,25 +72,18 @@ export class EditorStore {
 
   constructor(path: string) {
     this.path = path;
-
-    const file = readJson(path) as TreeModel;
-    this.data = b3util.createTreeData(file.root);
+    this.data = readTree(path);
+    this.data.name = Path.basenameWithoutExt(path);
+    this.data.firstid = this.data.firstid ?? 1;
+    this.data.group = this.data.group ?? [];
+    this.data.import = this.data.import ?? [];
+    this.data.declvar = this.data.declvar ?? [];
+    this.root = b3util.createTreeData(this.data.root);
     this.modifiedTime = fs.statSync(path).mtimeMs;
-    this.desc = file.desc ?? "";
-    this.export = file.export !== false;
-    this.name = file.name || path.slice(0, -5);
-    this.firstid = file.firstid ?? 1;
-    this.group = file.group ?? [];
-    this.declare = {
-      vars: file.declare?.vars ?? [],
-      imports:
-        file.declare?.imports?.map((v) => ({
-          path: v,
-          vars: [],
-        })) ?? [],
-    };
-    this.autoId = b3util.refreshTreeDataId(this.data, this.firstid);
-    this.historyStack.push(b3util.createNode(this.data));
+    this.import = this.data.import.map((v) => ({ path: v, vars: [] }));
+    this.declvar = this.data.declvar.map((v) => ({ ...v }));
+    this.autoId = b3util.refreshTreeDataId(this.root, this.data.firstid);
+    this.historyStack.push(b3util.createNode(this.root));
     this.historyIndex = 0;
   }
 }
@@ -129,11 +116,9 @@ export type EditTree = {
     export?: boolean;
     firstid?: number;
     group: string[];
-    declare: {
-      imports: ImportDef[];
-      vars: VarDef[];
-      subtree: VarDef[];
-    };
+    import: ImportDef[];
+    declvar: VarDef[];
+    subtree: VarDef[];
   };
 };
 
@@ -459,8 +444,8 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const workspace = get();
     const path = workspace.relative(editor.path);
     const file = workspace.allFiles.get(path);
-    if (file && file.desc !== editor.desc) {
-      file.desc = editor.desc;
+    if (file && file.desc !== editor.data.desc) {
+      file.desc = editor.data.desc;
       set({ allFiles: new Map(workspace.allFiles) });
       workspace.saveWorkspace();
     }
@@ -518,21 +503,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     let editting = workspace.editing;
     if (editors.length && path === editting?.path) {
       editting = editors[idx === editors.length ? idx - 1 : idx];
-      set({
-        editingTree: {
-          data: {
-            name: editting.name,
-            desc: editting.desc,
-            firstid: editting.firstid,
-            group: editting.group,
-            declare: {
-              vars: editting.declare.vars,
-              imports: editting.declare.imports,
-              subtree: loadSubtreeVarDef(editting.data),
-            },
-          },
-        },
-      });
+      workspace.onEditingTree(editting);
     }
     if (editors.length === 0) {
       editting = undefined;
@@ -681,16 +652,10 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     set({
       editingTree: {
         data: {
-          name: editor.name,
-          desc: editor.desc,
-          export: editor.export,
-          firstid: editor.firstid,
-          group: editor.group,
-          declare: {
-            imports: editor.declare.imports,
-            vars: editor.declare.vars,
-            subtree: loadSubtreeVarDef(editor.data),
-          },
+          ...editor.data,
+          import: editor.import,
+          declvar: editor.declvar,
+          subtree: loadSubtreeVarDef(editor.root),
         },
       },
       editingNodeDef: null,

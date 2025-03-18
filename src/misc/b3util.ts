@@ -700,6 +700,10 @@ export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) =>
 export const createNewTree = (path: string) => {
   const tree: TreeModel = {
     name: Path.basenameWithoutExt(path),
+    firstid: 1,
+    group: [],
+    import: [],
+    declvar: [],
     root: {
       id: 1,
       name: "Sequence",
@@ -729,8 +733,8 @@ export const loadVarDef = (list: ImportDef[]) => {
       filter.set(path, true);
       try {
         const model: TreeModel = readTree(`${workdir}/${path}`);
-        model.declare?.vars?.forEach((v) => vars.push(v));
-        model.declare?.imports?.forEach((v) => load(v));
+        model.declvar.forEach((v) => vars.push(v));
+        model.import.forEach((v) => load(v));
       } catch (e) {
         alertError(`parsing error: ${path}`);
       }

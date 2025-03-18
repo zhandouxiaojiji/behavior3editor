@@ -51,12 +51,10 @@ export interface TreeModel {
   name: string;
   desc?: string;
   export?: boolean;
-  firstid?: number;
-  group?: string[];
-  declare?: {
-    imports?: string[];
-    vars?: VarDef[];
-  };
+  firstid: number;
+  group: string[];
+  import: string[];
+  declvar: VarDef[];
   root: NodeModel;
 }
 

@@ -3,21 +3,17 @@
   "desc": "",
   "firstid": 1,
   "export": true,
-  "declare": {
-    "imports": [
-      "vars/declare-core.json"
-    ],
-    "vars": [
-      {
-        "name": "owner",
-        "desc": "所有者"
-      },
-      {
-        "name": "skill",
-        "desc": "技能"
-      }
-    ]
-  },
+  "import": ["vars/declare-core.json"],
+  "declvar": [
+    {
+      "name": "owner",
+      "desc": "所有者"
+    },
+    {
+      "name": "skill",
+      "desc": "技能"
+    }
+  ],
   "root": {
     "id": 1,
     "name": "Sequence"

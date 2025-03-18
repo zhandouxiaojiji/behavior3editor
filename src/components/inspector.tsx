@@ -94,16 +94,16 @@ const TreeInspector: FC = () => {
   // set form values
   useEffect(() => {
     const data = workspace.editingTree.data;
-    loadVarDef(data.declare.imports);
+    loadVarDef(data.import);
     form.resetFields();
     form.setFieldValue("name", data.name);
     form.setFieldValue("desc", data.desc);
     form.setFieldValue("export", data.export !== false);
     form.setFieldValue("firstid", data.firstid);
     form.setFieldValue("group", groupDefs);
-    form.setFieldValue("declare.vars", data.declare?.vars);
-    form.setFieldValue("declare.imports", data.declare?.imports);
-    form.setFieldValue("declare.subtree", data.declare?.subtree);
+    form.setFieldValue("declvar", data.declvar);
+    form.setFieldValue("import", data.import);
+    form.setFieldValue("subtree", data.subtree);
   }, [workspace.editingTree, groupDefs]);
 
   const finish = (values: any) => {
@@ -117,18 +117,16 @@ const TreeInspector: FC = () => {
           .map((v) => (v.value ? v.name : undefined))
           .filter((v) => v)
           .sort(),
-        declare: {
-          vars: (values["declare.vars"] as VarDef[])
-            .filter((v) => v && v.name)
-            .sort((a, b) => a.name.localeCompare(b.name)),
-          imports: (values["declare.imports"] as ImportDef[])
-            .filter((v) => v && v.path)
-            .sort((a, b) => a.path.localeCompare(b.path))
-            .map((v) => ({
-              path: v.path,
-              vars: v.vars ?? [],
-            })),
-        },
+        declvar: (values["declvar"] as VarDef[])
+          .filter((v) => v && v.name)
+          .sort((a, b) => a.name.localeCompare(b.name)),
+        import: (values["import"] as ImportDef[])
+          .filter((v) => v && v.path)
+          .sort((a, b) => a.path.localeCompare(b.path))
+          .map((v) => ({
+            path: v.path,
+            vars: v.vars ?? [],
+          })),
       },
     } as EditTree);
   };
@@ -200,7 +198,7 @@ const TreeInspector: FC = () => {
             <Divider orientation="left">
               <h4>{t("tree.vars")}</h4>
             </Divider>
-            <Form.List name="declare.vars">
+            <Form.List name="declvar">
               {(items, { add, remove }, { errors }) => (
                 <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
                   {items.map((item) => (
@@ -285,12 +283,12 @@ const TreeInspector: FC = () => {
               )}
             </Form.List>
           </>
-          {workspace.editingTree.data.declare.subtree.length > 0 && (
+          {workspace.editingTree.data.subtree.length > 0 && (
             <>
               <Divider orientation="left">
                 <h4>{t("tree.vars.subtree")}</h4>
               </Divider>
-              <Form.List name="declare.subtree">
+              <Form.List name="subtree">
                 {(vars) => (
                   <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
                     {vars.map((v, idx, arr) => (
@@ -354,7 +352,7 @@ const TreeInspector: FC = () => {
             <Divider orientation="left">
               <h4>{t("tree.vars.imports")}</h4>
             </Divider>
-            <Form.List name="declare.imports">
+            <Form.List name="import">
               {(items, { add, remove }, { errors }) => (
                 <div style={{ display: "flex", flexDirection: "column", rowGap: 4 }}>
                   {items.map((item) => (
@@ -610,7 +608,7 @@ const NodeInspector: FC = () => {
         }
       });
     } else {
-      collect(workspace.editing?.data);
+      collect(workspace.editing?.root);
     }
     return options;
   }, [workspace.editing, usingVars]);

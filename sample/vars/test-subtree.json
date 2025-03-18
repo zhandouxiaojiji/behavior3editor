@@ -3,17 +3,13 @@
   "desc": "",
   "firstid": 1,
   "export": true,
-  "declare": {
-    "imports": [
-      "vars/declare-core.json"
-    ],
-    "vars": [
-      {
-        "name": "test",
-        "desc": "测试"
-      }
-    ]
-  },
+  "import": ["vars/declare-core.json"],
+  "declvar": [
+    {
+      "name": "test",
+      "desc": "测试"
+    }
+  ],
   "root": {
     "id": 1,
     "name": "Sequence",

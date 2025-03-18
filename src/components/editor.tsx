@@ -49,9 +49,9 @@ interface FilterOption {
 }
 
 const collectVarDefs = (editor: EditorStore) => {
-  const vars: VarDef[] = editor.declare.vars.slice();
-  loadVarDef(editor.declare.imports).forEach((v) => vars.push(v));
-  loadSubtreeVarDef(editor.data).forEach((v) => vars.push(v));
+  const vars: VarDef[] = editor.declvar.slice();
+  loadVarDef(editor.import).forEach((v) => vars.push(v));
+  loadSubtreeVarDef(editor.root).forEach((v) => vars.push(v));
   return vars;
 };
 
@@ -69,33 +69,35 @@ const refreshTreeData = (data: TreeGraphData) => {
 };
 
 const isTreeUpdated = (editor: EditorStore, editTree: EditTree) => {
-  const data = editTree.data;
   if (
-    editor.firstid !== data.firstid ||
-    editor.export !== data.export ||
-    editor.name !== data.name ||
-    editor.desc !== data.desc
+    editor.data.firstid !== editTree.data.firstid ||
+    editor.data.export !== editTree.data.export ||
+    editor.data.name !== editTree.data.name ||
+    editor.data.desc !== editTree.data.desc
   ) {
     return true;
   }
 
-  for (let i = 0; i < Math.max(editor.declare.vars.length, data.declare.vars.length); i++) {
-    const v1: VarDef | undefined = editor.declare.vars[i];
-    const v2: VarDef | undefined = data.declare.vars[i];
+  let max = Math.max(editor.declvar.length, editTree.data.declvar.length);
+  for (let i = 0; i < max; i++) {
+    const v1: VarDef | undefined = editor.declvar[i];
+    const v2: VarDef | undefined = editTree.data.declvar[i];
     if (v1?.name !== v2?.name || v1?.desc !== v2?.desc) {
       return true;
     }
   }
 
-  for (let i = 0; i < Math.max(editor.group.length, data.group.length); i++) {
-    if (editor.group[i] !== data.group[i]) {
+  max = Math.max(editor.data.group.length, editTree.data.group.length);
+  for (let i = 0; i < max; i++) {
+    if (editor.data.group[i] !== editTree.data.group[i]) {
       return true;
     }
   }
 
-  for (let i = 0; i < Math.max(editor.declare.imports.length, data.declare.imports.length); i++) {
-    const v1: ImportDef | undefined = editor.declare.imports[i];
-    const v2: ImportDef | undefined = data.declare.imports[i];
+  max = Math.max(editor.import.length, editTree.data.import.length);
+  for (let i = 0; i < max; i++) {
+    const v1: ImportDef | undefined = editor.import[i];
+    const v2: ImportDef | undefined = editTree.data.import[i];
     if (v1?.path !== v2?.path) {
       return true;
     }
@@ -241,7 +243,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   const onSearchChange = (option: FilterOption) => {
     option.results.length = 0;
     editor.searchingText = option.filterStr;
-    filterNodes(option, editor.data);
+    filterNodes(option, editor.root);
     setFilterOption({
       ...option,
     });
@@ -259,7 +261,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   const updateSearchState = () => {
     const option = { ...filterOption };
     option.results.length = 0;
-    filterNodes(option, editor.data);
+    filterNodes(option, editor.root);
     setFilterOption({
       ...option,
     });
@@ -356,7 +358,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         }
       }
     };
-    return traverse(editor.data) as TreeGraphData;
+    return traverse(editor.root) as TreeGraphData;
   };
 
   const includeString = (content: string | undefined, option: FilterOption) => {
@@ -455,23 +457,23 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const refresh = () => {
-    const rootNode = b3util.createNode(editor.data);
+    const rootNode = b3util.createNode(editor.root);
     editor.modifiedTime = fs.statSync(editor.path).mtimeMs;
-    editor.data = createTreeData(rootNode);
-    editor.autoId = b3util.refreshTreeDataId(editor.data, editor.firstid);
-    editor.graph.changeData(editor.data);
+    editor.root = createTreeData(rootNode);
+    editor.autoId = b3util.refreshTreeDataId(editor.root, editor.data.firstid);
+    editor.graph.changeData(editor.root);
     editor.graph.layout();
     restoreViewport();
   };
 
   const reload = () => {
     const file = readJson(editor.path) as TreeModel;
-    editor.data = createTreeData(file.root);
-    editor.autoId = b3util.refreshTreeDataId(editor.data, editor.firstid);
+    editor.root = createTreeData(file.root);
+    editor.autoId = b3util.refreshTreeDataId(editor.root, editor.data.firstid);
     editor.unsave = false;
     updateState();
     if (editor.graph) {
-      editor.graph.changeData(editor.data);
+      editor.graph.changeData(editor.root);
       editor.graph.layout();
       restoreViewport();
     }
@@ -479,7 +481,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const checkSubtree = () => {
     if (editor.graph) {
-      if (isSubtreeUpdated(editor.data)) {
+      if (isSubtreeUpdated(editor.root)) {
         refresh();
         pushHistory();
         onChange();
@@ -536,13 +538,17 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const updateTree = (editTree: EditTree) => {
     if (isTreeUpdated(editor, editTree)) {
-      editor.desc = editTree.data.desc || "";
-      editor.export = editTree.data.export !== false;
-      editor.group = editTree.data.group || [];
-      editor.firstid = editTree.data.firstid ?? 1;
-      editor.declare.vars = editTree.data.declare.vars || [];
-      editor.declare.imports = editTree.data.declare.imports || [];
-      b3util.updateUsingGroups(editor.group);
+      editor.data.desc = editTree.data.desc || "";
+      editor.data.export = editTree.data.export !== false;
+      editor.data.group = editTree.data.group || [];
+      editor.data.firstid = editTree.data.firstid ?? 1;
+      editor.declvar = editTree.data.declvar || [];
+      editor.import = editTree.data.import || [];
+      editor.data.import = editor.import.map((v) => v.path).sort();
+      editor.data.declvar = editor.declvar
+        .map((v) => ({ ...v }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      b3util.updateUsingGroups(editor.data.group);
       b3util.updateUsingVars(collectVarDefs(editor));
       refresh();
       onChange();
@@ -578,7 +584,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const pushHistory = () => {
     editor.historyStack.length = ++editor.historyIndex;
-    editor.historyStack.push(b3util.createNode(editor.data));
+    editor.historyStack.push(b3util.createNode(editor.root));
   };
 
   const copyNode = () => {
@@ -649,9 +655,9 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         refreshItem(parentData);
         updateGrahp();
       } else {
-        editor.data = createTreeData(JSON.parse(str), editor.selectedId);
-        editor.autoId = b3util.refreshTreeDataId(editor.data, editor.firstid);
-        editor.graph.changeData(editor.data);
+        editor.root = createTreeData(JSON.parse(str), editor.selectedId);
+        editor.autoId = b3util.refreshTreeDataId(editor.root, editor.data.firstid);
+        editor.graph.changeData(editor.root);
         editor.graph.render();
         editor.graph.layout();
       }
@@ -723,9 +729,9 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const useStackData = (data: NodeModel) => {
-    editor.data = createTreeData(data);
-    editor.autoId = b3util.refreshTreeDataId(editor.data, editor.firstid);
-    editor.graph.changeData(editor.data);
+    editor.root = createTreeData(data);
+    editor.autoId = b3util.refreshTreeDataId(editor.root, editor.data.firstid);
+    editor.graph.changeData(editor.root);
     editor.graph.layout();
     restoreViewport();
     onChange();
@@ -761,25 +767,13 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   const save = () => {
     if (editor.unsave || !fs.existsSync(editor.path)) {
       const path = editor.path;
-      editor.autoId = b3util.refreshTreeDataId(editor.data, editor.firstid);
-      const root = b3util.createFileData(editor.data);
-      const treeModel = {
-        name: Path.basenameWithoutExt(path),
-        desc: editor.desc,
-        firstid: editor.firstid ?? 1,
-        export: editor.export,
-        group: editor.group ?? [],
-        declare: {
-          imports: editor.declare.imports.map((v) => v.path).sort(),
-          vars: editor.declare.vars.sort((a, b) => a.name.localeCompare(b.name)),
-        },
-        root,
-      } as TreeModel;
+      editor.autoId = b3util.refreshTreeDataId(editor.root, editor.data.firstid);
+      editor.data.root = b3util.createFileData(editor.root);
       editor.modifiedTime = Date.now();
-      fs.writeFileSync(path, JSON.stringify(treeModel, null, 2));
+      fs.writeFileSync(path, JSON.stringify(editor.data, null, 2));
       workspace.updateFileMeta(editor);
       editor.unsave = false;
-      editor.graph.changeData(editor.data);
+      editor.graph.changeData(editor.root);
       editor.graph.layout();
       restoreViewport();
       updateSearchState();
@@ -924,7 +918,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         const data = findDataById(e.item.getID());
         data.output?.forEach((v) => v && highlight.push(v));
       }
-      const changed = findHightlight(editor.data, highlight);
+      const changed = findHightlight(editor.root, highlight);
       if (changed.length > 0) {
         const refreshHighlight = (node: TreeGraphData) => {
           const item = editor.graph.findById(node.id);
@@ -942,7 +936,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
             node.children.forEach(refreshHighlight);
           }
         };
-        refreshHighlight(editor.data);
+        refreshHighlight(editor.root);
       }
       if (highlight.length === 0 && editor.searchingText) {
         onSearchChange({
@@ -1126,8 +1120,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       onChange();
     });
 
-    refreshTreeData(editor.data);
-    editor.graph.data(editor.data);
+    refreshTreeData(editor.root);
+    editor.graph.data(editor.root);
     editor.graph.render();
     if (editor.graphMatrix) {
       restoreViewport();
@@ -1249,7 +1243,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   useEffect(() => {
     if (workspace.editing === editor) {
       checkSubtree();
-      b3util.updateUsingGroups(editor.group);
+      b3util.updateUsingGroups(editor.data.group);
       b3util.updateUsingVars(collectVarDefs(editor));
     }
   }, [workspace.editing]);
@@ -1257,7 +1251,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   // check should repaint node
   useEffect(() => {
     if (editor.graph) {
-      editor.graph.changeData(editor.data);
+      editor.graph.changeData(editor.root);
       editor.graph.layout();
       restoreViewport();
     }

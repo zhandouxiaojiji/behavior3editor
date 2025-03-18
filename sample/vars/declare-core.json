@@ -3,19 +3,17 @@
   "desc": "",
   "firstid": 1,
   "export": true,
-  "declare": {
-    "imports": [],
-    "vars": [
-      {
-        "name": "context",
-        "desc": "上下文"
-      },
-      {
-        "name": "version",
-        "desc": "版本"
-      }
-    ]
-  },
+  "import": [],
+  "declvar": [
+    {
+      "name": "context",
+      "desc": "上下文"
+    },
+    {
+      "name": "version",
+      "desc": "版本"
+    }
+  ],
   "root": {
     "id": 1,
     "name": "Sequence"
