@@ -26,7 +26,7 @@ export class NodeDefs extends Map<string, NodeDef> {
 
 export let nodeDefs: NodeDefs = new NodeDefs();
 export let groupDefs: string[] = [];
-export let usingGroups: Record<string, boolean> | null = null;
+export let usingGroups: Record<string, boolean> = {};
 export let usingVars: Record<string, VarDef> | null = null;
 
 const parsedExprs: Record<string, string[]> = {};
@@ -58,7 +58,7 @@ export const initWorkdir = (path: string, handler: typeof alertError) => {
 };
 
 export const updateUsingGroups = (group: string[]) => {
-  usingGroups = null;
+  usingGroups = {};
   for (const g of group) {
     usingGroups ??= {};
     usingGroups[g] = true;
