@@ -3,7 +3,9 @@
   "desc": "",
   "firstid": 1,
   "export": true,
-  "import": ["vars/declare-core.json"],
+  "import": [
+    "vars/declare-core.json"
+  ],
   "declvar": [
     {
       "name": "owner",
@@ -17,5 +19,6 @@
   "root": {
     "id": 1,
     "name": "Sequence"
-  }
+  },
+  "group": []
 }

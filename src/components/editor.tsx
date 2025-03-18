@@ -218,6 +218,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       relative: state.relative,
       updateFileMeta: state.updateFileMeta,
       nodeDefs: state.nodeDefs,
+      editingTree: state.editingTree,
+      editingNode: state.editingNode,
     }))
   );
 
@@ -550,6 +552,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         .sort((a, b) => a.name.localeCompare(b.name));
       b3util.updateUsingGroups(editor.data.group);
       b3util.updateUsingVars(collectVarDefs(editor));
+      pushHistory();
       refresh();
       onChange();
     }
@@ -584,7 +587,16 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const pushHistory = () => {
     editor.historyStack.length = ++editor.historyIndex;
-    editor.historyStack.push(b3util.createNode(editor.root));
+    editor.historyStack.push(
+      JSON.stringify(
+        {
+          ...editor.data,
+          root: b3util.createNode(editor.root),
+        },
+        null,
+        2
+      )
+    );
   };
 
   const copyNode = () => {
@@ -728,13 +740,23 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     editor.graph.findById(data.id)?.draw();
   };
 
-  const useStackData = (data: NodeModel) => {
-    editor.root = createTreeData(data);
+  const useStackData = (str: string) => {
+    const data = JSON.parse(str) as TreeModel;
+    editor.data = data;
+    editor.root = createTreeData(data.root);
+    editor.import = data.import.map((v) => ({ path: v, vars: [] }));
+    editor.declvar = data.declvar.map((v) => ({ ...v }));
     editor.autoId = b3util.refreshTreeDataId(editor.root, editor.data.firstid);
     editor.graph.changeData(editor.root);
     editor.graph.layout();
     restoreViewport();
     onChange();
+
+    if (workspace.editingTree) {
+      workspace.onEditingTree(editor);
+    } else if (workspace.editingNode) {
+      selectNode(workspace.editingNode.data.id.toString());
+    }
   };
 
   const updateGrahp = () => {
@@ -744,16 +766,14 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const undo = () => {
     if (editor.historyIndex > 0) {
-      const data = editor.historyStack[--editor.historyIndex];
-      useStackData(data);
+      useStackData(editor.historyStack[--editor.historyIndex]);
       updateSearchState();
     }
   };
 
   const redo = () => {
     if (editor.historyIndex < editor.historyStack.length - 1) {
-      const data = editor.historyStack[++editor.historyIndex];
-      useStackData(data);
+      useStackData(editor.historyStack[++editor.historyIndex]);
       updateSearchState();
     }
   };

@@ -721,6 +721,7 @@ export const loadVarDef = (list: ImportDef[]) => {
     // TODO: check file date
     // TODO: use cache
     if (entry.vars.length) {
+      entry.vars.forEach((v) => all.add(v));
       continue;
     }
     const filter: Map<string, boolean> = new Map();

@@ -18,10 +18,6 @@
     {
       "name": "target1",
       "desc": "其它目标"
-    },
-    {
-      "name": "test",
-      "desc": "测试"
     }
   ],
   "root": {

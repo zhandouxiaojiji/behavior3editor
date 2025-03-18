@@ -58,7 +58,7 @@ export class EditorStore {
   alertReload: boolean = false;
   searchingText?: string;
 
-  historyStack: NodeModel[] = [];
+  historyStack: string[] = [];
   historyIndex: number = 0;
   selectedId?: string | null;
 
@@ -79,7 +79,16 @@ export class EditorStore {
     this.import = this.data.import.map((v) => ({ path: v, vars: [] }));
     this.declvar = this.data.declvar.map((v) => ({ ...v }));
     this.autoId = b3util.refreshTreeDataId(this.root, this.data.firstid);
-    this.historyStack.push(b3util.createNode(this.root));
+    this.historyStack.push(
+      JSON.stringify(
+        {
+          ...this.data,
+          root: b3util.createNode(this.root),
+        },
+        null,
+        2
+      )
+    );
     this.historyIndex = 0;
   }
 }
