@@ -8,7 +8,12 @@ export const readJson = (path: string) => {
 
 export const readTree = (path: string) => {
   const str = fs.readFileSync(path, "utf-8");
-  return JSON.parse(str) as TreeModel;
+  const data = JSON.parse(str) as TreeModel;
+  data.firstid = data.firstid ?? 1;
+  data.group = data.group || [];
+  data.import = data.import || [];
+  data.declvar = data.declvar || [];
+  return data;
 };
 
 export const writeJson = (path: string, data: any) => {

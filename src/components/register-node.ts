@@ -151,14 +151,14 @@ G6.registerNode(
         (data.path && !data.children?.length) ||
         !checkTreeData(data) ||
         (nodeDef.group && !usingGroups[nodeDef.group]) ||
-        (usingVars && data.input?.some((v) => !usingVars![v])) ||
-        (usingVars && data.output?.some((v) => !usingVars![v])) ||
         (usingVars &&
-          nodeDef.args?.some(
-            (v) =>
-              isExprType(v.type) &&
-              parseExpr(data.args?.[v.name] ?? "").some((vv) => !usingVars![vv])
-          ))
+          (data.input?.some((v) => usingVars?.[v] === undefined) ||
+            data.output?.some((v) => usingVars?.[v] === undefined) ||
+            nodeDef.args?.some(
+              (v) =>
+                isExprType(v.type) &&
+                parseExpr(data.args?.[v.name] ?? "").some((vv) => usingVars?.[vv] === undefined)
+            )))
       ) {
         classify = "Error";
         color = NODE_COLORS[classify];

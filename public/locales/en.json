@@ -103,6 +103,7 @@
   "node.editSubtreeDenied": "Unable to edit the subtree node",
   "node.id": "Node id",
   "node.inputVariable": "Input variables",
+  "node.invalidChildren": "Invalid number of children",
   "node.invalidGroup": "Node group '{{group}}' is not enabled",
   "node.invalidValue": "Invalid value",
   "node.invalidVariableName": "Invalid variable name, should start with a letter or underscore",

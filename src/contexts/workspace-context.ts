@@ -74,10 +74,6 @@ export class EditorStore {
     this.path = path;
     this.data = readTree(path);
     this.data.name = Path.basenameWithoutExt(path);
-    this.data.firstid = this.data.firstid ?? 1;
-    this.data.group = this.data.group ?? [];
-    this.data.import = this.data.import ?? [];
-    this.data.declvar = this.data.declvar ?? [];
     this.root = b3util.createTreeData(this.data.root);
     this.modifiedTime = fs.statSync(path).mtimeMs;
     this.import = this.data.import.map((v) => ({ path: v, vars: [] }));
@@ -102,7 +98,7 @@ export type FileTreeType = {
 export type EditNode = {
   data: NodeModel;
   editable: boolean;
-  limit_error?: boolean;
+  limitError?: boolean;
 };
 
 export type EditNodeDef = {
@@ -380,8 +376,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         const str = fs.readFileSync(scriptPath, "utf8");
         const batch = eval(str) as BatchScript;
         workspace.allFiles.forEach((file) => {
-          const treeStr = fs.readFileSync(file.path, "utf8");
-          let tree: TreeModel | undefined = JSON.parse(treeStr);
+          let tree: TreeModel | undefined = readTree(file.path);
           if (batch.processTree && tree) {
             tree = batch.processTree(tree, file.path);
           }

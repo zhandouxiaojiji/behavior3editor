@@ -28,6 +28,7 @@
     "name": "Clear",
     "type": "Action",
     "desc": "清除变量",
+    "children": 0,
     "output": [
       "清除的变量名"
     ]

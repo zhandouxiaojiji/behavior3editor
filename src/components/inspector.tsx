@@ -775,11 +775,21 @@ const NodeInspector: FC = () => {
           >
             <Input disabled={true} />
           </Form.Item>
-          <Form.Item name="children" label={t("node.children")}>
-            <Input
-              style={{ borderColor: editingNode.limit_error ? "red" : undefined }}
-              disabled={true}
-            />
+          <Form.Item
+            name="children"
+            label={t("node.children")}
+            rules={[
+              {
+                validator() {
+                  if (editingNode.limitError) {
+                    return Promise.reject(new Error(t("node.invalidChildren")));
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <Input disabled={true} />
           </Form.Item>
           <Form.Item label={t("node.name")} name="name">
             <AutoComplete

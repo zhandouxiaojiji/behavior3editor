@@ -61,6 +61,19 @@
         "input": [
           "target"
         ]
+      },
+      {
+        "id": 8,
+        "name": "Clear",
+        "output": [
+          "test"
+        ],
+        "children": [
+          {
+            "id": 9,
+            "name": "Idle"
+          }
+        ]
       }
     ]
   }

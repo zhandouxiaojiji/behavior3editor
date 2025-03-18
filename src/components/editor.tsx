@@ -568,7 +568,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       workspace.onEditingNode({
         data: b3util.createNode(data, false),
         editable: !isSubtreeNode(data),
-        limit_error: !b3util.checkChildrenLimit(data),
+        limitError: !b3util.checkChildrenLimit(data),
       });
       setItemState(editor.selectedId, "selected", true);
     } else {

@@ -4,18 +4,15 @@
     "id": 1,
     "name": "Sequence",
     "desc": "怪物测试AI",
-    "args": {},
     "children": [
       {
         "id": 2,
         "name": "Sequence",
         "desc": "攻击",
-        "args": {},
         "children": [
           {
             "id": 3,
             "name": "GetHp",
-            "args": {},
             "output": [
               "hp"
             ],
@@ -60,10 +57,14 @@
         "name": "Log",
         "desc": "逃跑",
         "args": {
-          "str": "Run!"
+          "message": "Run!"
         }
       }
     ]
   },
-  "desc": "怪物测试AI"
+  "desc": "怪物测试AI",
+  "firstid": 1,
+  "group": [],
+  "import": [],
+  "declvar": []
 }
