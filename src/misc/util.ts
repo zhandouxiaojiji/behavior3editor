@@ -17,7 +17,7 @@ export const readTree = (path: string) => {
   return data;
 };
 
-export const writeJson = (path: string, data: any) => {
+export const writeJson = (path: string, data: unknown) => {
   const str = JSON.stringify(data, undefined, 2);
   fs.writeFileSync(path, str, "utf-8");
 };

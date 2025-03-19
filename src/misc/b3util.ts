@@ -687,12 +687,7 @@ export const createTreeData = (
     parsingStack.length = 0;
   }
 
-  if (node.children) {
-    treeData.children = [];
-    node.children.forEach((child) => {
-      treeData.children!.push(createTreeData(child, treeData.id, calcSize));
-    });
-  } else if (node.path) {
+  if (node.path) {
     if (parsingStack.indexOf(node.path) >= 0) {
       treeData.path = node.path;
       if (calcSize) {
@@ -719,6 +714,11 @@ export const createTreeData = (
       console.log("parse subtree:", e);
     }
     parsingStack.pop();
+  } else if (node.children?.length) {
+    treeData.children = [];
+    node.children.forEach((child) => {
+      treeData.children!.push(createTreeData(child, treeData.id, calcSize));
+    });
   }
 
   return treeData;
@@ -873,6 +873,7 @@ const findSubtrees = (data: NodeModel) => {
 
 export const refreshDeclare = (tree: TreeModel, declare: FileVarDecl) => {
   const vars: Set<VarDef> = new Set(declare.declvar.slice());
+  parsingStack.length = 0;
   declare.subtree = findSubtrees(tree.root).map((v) => ({
     path: v,
     vars: [],

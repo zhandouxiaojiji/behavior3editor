@@ -553,7 +553,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     if (isTreeUpdated(editor, editTree)) {
       editor.data.desc = editTree.data.desc || "";
       editor.data.export = editTree.data.export !== false;
-      editor.data.group = editTree.data.group || [];
+      editor.data.group = editTree.data.group;
       editor.data.firstid = editTree.data.firstid ?? 1;
       editor.declare.declvar = editTree.data.declvar || [];
       editor.declare.import = editTree.data.import || [];

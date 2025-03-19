@@ -115,9 +115,9 @@ const TreeInspector: FC = () => {
         export: values.export,
         firstid: Number(values.firstid),
         group: (values.group as GroupDef[])
-          .map((v) => (v.value ? v.name : undefined))
+          .map((v) => (v.value ? v.name : ""))
           .filter((v) => v)
-          .sort(),
+          .sort((a, b) => a.localeCompare(b)),
         declvar: (values.declvar as VarDef[])
           .filter((v) => v && v.name)
           .sort((a, b) => a.name.localeCompare(b.name)),
@@ -246,7 +246,7 @@ const TreeInspector: FC = () => {
                           ]}
                         >
                           <Input
-                            style={{ width: "75%" }}
+                            style={{ width: "60%" }}
                             placeholder={t("tree.vars.desc")}
                             onBlur={form.submit}
                           />
