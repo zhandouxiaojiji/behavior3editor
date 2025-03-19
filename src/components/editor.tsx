@@ -365,7 +365,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const includeString = (content: string | undefined, option: FilterOption) => {
-    if (!content) {
+    if (!content || typeof content !== "string") {
       return false;
     } else if (option.filterCase) {
       return content.includes(option.filterStr);
