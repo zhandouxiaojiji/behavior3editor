@@ -241,7 +241,7 @@ const TreeInspector: FC = () => {
               {(fields, { add, remove }, { errors }) => (
                 <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
                   {fields.map((item) => {
-                    const vardef = workspace.editingTree.declvar[item.name];
+                    const vardef = workspace.editingTree.declvar[item.name] as VarDef | undefined;
                     return (
                       <Flex key={item.key} gap={4}>
                         <Space.Compact
@@ -270,15 +270,15 @@ const TreeInspector: FC = () => {
                                     display: "flex",
                                     cursor: "pointer",
                                     alignItems: "center",
-                                    width: "45px",
+                                    width: "33px",
                                   }}
                                   onClick={() =>
-                                    workspace.editing?.dispatch("clickVar", vardef.name)
+                                    vardef && workspace.editing?.dispatch("clickVar", vardef.name)
                                   }
                                 >
                                   <AimOutlined />
                                   <span style={{ marginLeft: 4 }}>
-                                    {usingCount[vardef.name] ?? 0}
+                                    {usingCount[vardef?.name ?? ""] ?? 0}
                                   </span>
                                 </div>
                               }
@@ -346,7 +346,7 @@ const TreeInspector: FC = () => {
                 {(fields) => (
                   <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
                     {fields.map((item, idx) => {
-                      const vardef = workspace.editingTree.subtree[item.name];
+                      const vardef = workspace.editingTree.subtree[item.name] as VarDef | undefined;
                       return (
                         <Flex key={item.key} gap={4}>
                           <Space.Compact
@@ -360,8 +360,8 @@ const TreeInspector: FC = () => {
                                   alignItems: "center",
                                   paddingLeft: "8px",
                                   paddingRight: "8px",
-                                  maxWidth: "60px",
-                                  minWidth: "60px",
+                                  maxWidth: "52px",
+                                  minWidth: "52px",
                                   borderTopLeftRadius: idx === 0 ? "4px" : 0,
                                   borderBottomLeftRadius: idx === fields.length - 1 ? "4px" : 0,
                                   borderLeft: "1px solid #3d506c",
@@ -370,11 +370,13 @@ const TreeInspector: FC = () => {
                                   borderBottom:
                                     idx === fields.length - 1 ? "1px solid #3d506c" : "none",
                                 }}
-                                onClick={() => workspace.editing?.dispatch("clickVar", vardef.name)}
+                                onClick={() =>
+                                  vardef && workspace.editing?.dispatch("clickVar", vardef.name)
+                                }
                               >
                                 <AimOutlined />
                                 <span style={{ marginLeft: 4 }}>
-                                  {usingCount[vardef.name] ?? 0}
+                                  {usingCount[vardef?.name ?? ""] ?? 0}
                                 </span>
                               </div>
                             </Form.Item>
@@ -395,6 +397,7 @@ const TreeInspector: FC = () => {
                                 disabled={true}
                                 placeholder={t("tree.vars.desc")}
                                 style={{
+                                  width: "90%",
                                   borderTopRightRadius: idx === 0 ? "4px" : 0,
                                   borderBottomRightRadius: idx === fields.length - 1 ? "4px" : 0,
                                   borderTop: "1px solid #3d506c",
@@ -454,7 +457,10 @@ const TreeInspector: FC = () => {
                         {(vars) => (
                           <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
                             {vars.map((v, idx) => {
-                              const vardef = workspace.editingTree.import[item.name].vars[v.name];
+                              const entry = workspace.editingTree.import[item.name] as
+                                | ImportDef
+                                | undefined;
+                              const vardef = entry?.vars[v.name] as VarDef | undefined;
                               return (
                                 <Flex key={v.key} gap={4}>
                                   <Space.Compact
@@ -468,8 +474,8 @@ const TreeInspector: FC = () => {
                                           alignItems: "center",
                                           paddingLeft: "8px",
                                           paddingRight: "8px",
-                                          maxWidth: "60px",
-                                          minWidth: "60px",
+                                          maxWidth: "52px",
+                                          minWidth: "52px",
                                           borderTopLeftRadius: idx === 0 ? "4px" : 0,
                                           borderBottomLeftRadius:
                                             idx === vars.length - 1 ? "4px" : 0,
@@ -480,12 +486,13 @@ const TreeInspector: FC = () => {
                                           cursor: "pointer",
                                         }}
                                         onClick={() =>
+                                          vardef &&
                                           workspace.editing?.dispatch("clickVar", vardef.name)
                                         }
                                       >
                                         <AimOutlined />
                                         <span style={{ marginLeft: 4 }}>
-                                          {usingCount[vardef.name] ?? 0}
+                                          {usingCount[vardef?.name ?? ""] ?? 0}
                                         </span>
                                       </div>
                                     </Form.Item>
@@ -506,6 +513,7 @@ const TreeInspector: FC = () => {
                                         disabled={true}
                                         placeholder={t("tree.vars.desc")}
                                         style={{
+                                          width: "90%",
                                           borderTopRightRadius: idx === 0 ? "4px" : 0,
                                           borderBottomRightRadius:
                                             idx === vars.length - 1 ? "4px" : 0,
