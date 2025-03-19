@@ -2,6 +2,7 @@
   "about": "About Behavior3",
   "add": "Add",
   "actuaSize": "Actual Size",
+  "alertNewVersion": "This file is created by a newer version of Behavior3({{version}}), please upgrade to the latest version.",
   "build": "Build",
   "batch": "Batch Script",
   "batchCompleted": "Batch completed",

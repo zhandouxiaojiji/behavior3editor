@@ -5,7 +5,14 @@ import * as fs from "fs";
 import React from "react";
 import { create } from "zustand";
 import { NodeDef } from "../behavior3/src/behavior3";
-import { ImportDef, NodeModel, TreeGraphData, TreeModel, VarDef } from "../misc/b3type";
+import {
+  FileVarDecl,
+  ImportDef,
+  NodeModel,
+  TreeGraphData,
+  TreeModel,
+  VarDef,
+} from "../misc/b3type";
 import * as b3util from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
@@ -46,11 +53,7 @@ export class EditorStore {
   data: TreeModel;
 
   root: TreeGraphData;
-  declare: {
-    import: ImportDef[];
-    subtree: ImportDef[];
-    declvar: VarDef[];
-  };
+  declare: FileVarDecl;
 
   autoId: number = 1;
   dragSrcId?: string;
@@ -354,11 +357,20 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         workspace.allFiles.forEach((file) => {
           const buildpath = buildDir + "/" + workspace.relative(file.path);
           const treeModel = b3util.createBuildData(file.path);
-          if (treeModel && treeModel.export === false) {
+          if (!treeModel) {
+            return;
+          }
+          if (treeModel.export === false) {
             console.log("skip:", buildpath);
             return;
           }
           console.log("build:", buildpath);
+          const declare: FileVarDecl = {
+            import: treeModel.import.map((v) => ({ path: v, vars: [], depends: [] })),
+            declvar: treeModel.declvar.map((v) => ({ name: v.name, desc: v.desc })),
+            subtree: [],
+          };
+          b3util.refreshDeclare(treeModel, declare);
           if (!b3util.checkNodeData(treeModel?.root)) {
             hasError = true;
           }
@@ -479,6 +491,10 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         set({ editors: workspace.editors });
         workspace.updateFileMeta(editor);
         workspace.edit(editor.path, selectedNode);
+
+        if (b3util.isNewVersion(editor.data.version)) {
+          message.warning(i18n.t("alertNewVersion", { version: editor.data.version }));
+        }
       } catch (error) {
         console.error(error);
         message.error(`invalid file: ${path}`);
@@ -538,18 +554,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     if (!editor) {
       return;
     }
-    const vars: Set<VarDef> = new Set(editor.declare.declvar.slice());
-    editor.declare.subtree = b3util.findSubtrees(editor.root).map((v) => ({
-      path: v,
-      vars: [],
-      depends: [],
-    }));
-    b3util.loadVarDef(editor.declare.import).forEach((v) => vars.add(v));
-    b3util.loadVarDef(editor.declare.subtree).forEach((v) => {
-      vars.add(v);
-    });
-    b3util.updateUsingGroups(editor.data.group);
-    b3util.updateUsingVars(Array.from(vars));
+    b3util.refreshDeclare(editor.data, editor.declare);
   },
 
   save: () => {

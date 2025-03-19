@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import { NodeDef } from "../behavior3/src/behavior3";
 import {
+  FileVarDecl,
   ImportDef,
   isBoolType,
   isEnumType,
@@ -14,6 +15,7 @@ import {
   TreeGraphData,
   TreeModel,
   VarDef,
+  VERSION,
 } from "./b3type";
 import Path from "./path";
 import { readJson, readTree } from "./util";
@@ -85,6 +87,16 @@ export const parseExpr = (expr: string) => {
     .filter((v) => isValidVariableName(v));
   parsedExprs[expr] = result;
   return result;
+};
+
+export const isNewVersion = (version: string) => {
+  const [major, minor, patch] = version.split(".").map(Number);
+  const [major2, minor2, patch2] = VERSION.split(".").map(Number);
+  return (
+    major > major2 ||
+    (major === major2 && minor > minor2) ||
+    (major === major2 && minor === minor2 && patch > patch2)
+  );
 };
 
 export const isValidVariableName = (name: string) => {
@@ -285,6 +297,45 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   }
 
   let hasError = false;
+
+  if (conf.group) {
+    if (!usingGroups[conf.group]) {
+      error(data, `node group '${conf.group}' is not enabled`);
+      hasError = true;
+    }
+  }
+
+  if (usingVars) {
+    if (data.input) {
+      for (const v of data.input) {
+        if (v && !usingVars[v]) {
+          error(data, `input variable '${v}' is not defined`);
+          hasError = true;
+        }
+      }
+    }
+    if (data.output) {
+      for (const v of data.output) {
+        if (v && !usingVars[v]) {
+          error(data, `output variable '${v}' is not defined`);
+          hasError = true;
+        }
+      }
+    }
+
+    if (data.args && conf.args) {
+      for (const arg of conf.args) {
+        if (isExprType(arg.type)) {
+          for (const v of parseExpr(data.args[arg.name] ?? "")) {
+            if (v && !usingVars[v]) {
+              error(data, `expr variable '${arg.name}' is not defined`);
+              hasError = true;
+            }
+          }
+        }
+      }
+    }
+  }
 
   if (conf.children !== undefined && conf.children !== -1) {
     const count = data.children?.length || 0;
@@ -712,6 +763,7 @@ export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) =>
 
 export const createNewTree = (path: string) => {
   const tree: TreeModel = {
+    version: VERSION,
     name: Path.basenameWithoutExt(path),
     firstid: 1,
     group: [],
@@ -796,9 +848,9 @@ export const loadVarDef = (list: ImportDef[]) => {
   return Array.from(all);
 };
 
-export const findSubtrees = (data: TreeGraphData) => {
+const findSubtrees = (data: NodeModel) => {
   const list: string[] = [];
-  const traverse = (v: TreeGraphData) => {
+  const traverse = (v: NodeModel) => {
     if (v.path) {
       list.push(v.path);
     }
@@ -808,4 +860,19 @@ export const findSubtrees = (data: TreeGraphData) => {
   };
   traverse(data);
   return list;
+};
+
+export const refreshDeclare = (tree: TreeModel, declare: FileVarDecl) => {
+  const vars: Set<VarDef> = new Set(declare.declvar.slice());
+  declare.subtree = findSubtrees(tree.root).map((v) => ({
+    path: v,
+    vars: [],
+    depends: [],
+  }));
+  loadVarDef(declare.import).forEach((v) => vars.add(v));
+  loadVarDef(declare.subtree).forEach((v) => {
+    vars.add(v);
+  });
+  updateUsingGroups(tree.group);
+  updateUsingVars(Array.from(vars));
 };

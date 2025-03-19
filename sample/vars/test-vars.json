@@ -3,13 +3,8 @@
   "desc": "",
   "firstid": 1,
   "export": true,
-  "group": [
-    "Client"
-  ],
-  "import": [
-    "vars/declare-core.json",
-    "vars/declare-vars.json"
-  ],
+  "group": ["Client"],
+  "import": ["vars/declare-core.json", "vars/declare-vars.json"],
   "declvar": [
     {
       "name": "target",
@@ -33,16 +28,12 @@
         "id": 4,
         "name": "FindEnemy",
         "args": {},
-        "output": [
-          "target1"
-        ]
+        "output": ["target1"]
       },
       {
         "id": 5,
         "name": "Attack",
-        "input": [
-          "target1"
-        ]
+        "input": ["target1"]
       },
       {
         "id": 6,
@@ -54,16 +45,12 @@
       {
         "id": 7,
         "name": "MoveToTarget",
-        "input": [
-          "target"
-        ]
+        "input": ["target"]
       },
       {
         "id": 8,
         "name": "Clear",
-        "output": [
-          "test"
-        ],
+        "output": ["test"],
         "children": [
           {
             "id": 9,

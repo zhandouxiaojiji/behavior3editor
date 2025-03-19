@@ -7,6 +7,8 @@ declare module "../behavior3/src/behavior3" {
   }
 }
 
+export const VERSION = "1.8.0";
+
 export type NodeType = NodeDef["type"] | "Other" | "Error";
 export type NodeArg = Exclude<NodeDef["args"], undefined>[number];
 
@@ -51,7 +53,14 @@ export interface ImportDef {
   }[];
 }
 
+export interface FileVarDecl {
+  import: ImportDef[];
+  subtree: ImportDef[];
+  declvar: VarDef[];
+}
+
 export interface TreeModel {
+  version: string;
   name: string;
   desc?: string;
   export?: boolean;

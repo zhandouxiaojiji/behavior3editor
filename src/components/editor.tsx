@@ -21,7 +21,15 @@ import {
   EditTree,
   useWorkspace,
 } from "../contexts/workspace-context";
-import { ImportDef, isExprType, NodeModel, TreeGraphData, TreeModel, VarDef } from "../misc/b3type";
+import {
+  ImportDef,
+  isExprType,
+  NodeModel,
+  TreeGraphData,
+  TreeModel,
+  VarDef,
+  VERSION,
+} from "../misc/b3type";
 import * as b3util from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
@@ -777,20 +785,32 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const save = () => {
-    if (editor.unsave || !fs.existsSync(editor.path)) {
-      const path = editor.path;
-      editor.autoId = b3util.refreshTreeDataId(editor.root, editor.data.firstid);
-      editor.data.root = b3util.createFileData(editor.root);
-      editor.modifiedTime = Date.now();
-      fs.writeFileSync(path, JSON.stringify(editor.data, null, 2));
-      workspace.updateFileMeta(editor);
-      editor.unsave = false;
-      editor.graph.changeData(editor.root);
-      editor.graph.layout();
-      restoreViewport();
-      updateSearchState();
-      updateState();
+    if (b3util.isNewVersion(editor.data.version)) {
+      message.error(t("alertNewVersion", { version: editor.data.version }), 6);
+      return;
     }
+    const path = editor.path;
+    editor.autoId = b3util.refreshTreeDataId(editor.root, editor.data.firstid);
+    editor.data.root = b3util.createFileData(editor.root);
+    editor.modifiedTime = Date.now();
+    fs.writeFileSync(
+      path,
+      JSON.stringify(
+        {
+          ...editor.data,
+          version: VERSION,
+        },
+        null,
+        2
+      )
+    );
+    workspace.updateFileMeta(editor);
+    editor.unsave = false;
+    editor.graph.changeData(editor.root);
+    editor.graph.layout();
+    restoreViewport();
+    updateSearchState();
+    updateState();
   };
 
   const editSubtree = () => {

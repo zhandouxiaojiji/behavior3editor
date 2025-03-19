@@ -2,6 +2,7 @@
   "about": "关于 Behavior3",
   "add": "添加",
   "actualSize": "实际大小",
+  "alertNewVersion": "此文件由新版本 Behavior3({{version}}) 创建，请升级到最新版本。",
   "build": "构建",
   "batch": "批处理脚本",
   "batchCompleted": "批处理完成",

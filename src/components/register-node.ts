@@ -152,12 +152,14 @@ G6.registerNode(
         !checkTreeData(data) ||
         (nodeDef.group && !usingGroups[nodeDef.group]) ||
         (usingVars &&
-          (data.input?.some((v) => usingVars?.[v] === undefined) ||
-            data.output?.some((v) => usingVars?.[v] === undefined) ||
+          (data.input?.some((v) => v && usingVars?.[v] === undefined) ||
+            data.output?.some((v) => v && usingVars?.[v] === undefined) ||
             nodeDef.args?.some(
               (v) =>
                 isExprType(v.type) &&
-                parseExpr(data.args?.[v.name] ?? "").some((vv) => usingVars?.[vv] === undefined)
+                parseExpr(data.args?.[v.name] ?? "").some(
+                  (vv) => vv && usingVars?.[vv] === undefined
+                )
             )))
       ) {
         classify = "Error";

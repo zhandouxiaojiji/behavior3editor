@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import type { TreeModel } from "./b3type";
+import { VERSION, type TreeModel } from "./b3type";
 
 export const readJson = (path: string) => {
   const str = fs.readFileSync(path, "utf-8");
@@ -9,6 +9,7 @@ export const readJson = (path: string) => {
 export const readTree = (path: string) => {
   const str = fs.readFileSync(path, "utf-8");
   const data = JSON.parse(str) as TreeModel;
+  data.version = data.version ?? VERSION;
   data.firstid = data.firstid ?? 1;
   data.group = data.group || [];
   data.import = data.import || [];

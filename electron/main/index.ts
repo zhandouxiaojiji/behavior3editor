@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { argv } from "node:process";
 import { fileURLToPath } from "node:url";
+import { VERSION, type FileVarDecl } from "../../src/misc/b3type";
 import * as b3util from "../../src/misc/b3util";
 import Path from "../../src/misc/path";
 
@@ -30,7 +31,7 @@ for (let i = 0; i < argv.length; i++) {
 }
 
 const printHelp = () => {
-  console.log("Usage: Behavior3 Editor [options]");
+  console.log(`Usage: Behavior3 Editor ${VERSION} [options]`);
   console.log("Options:");
   console.log("  --project <path>  Set the project path");
   console.log("  --build <path>    Set the build output path");
@@ -64,11 +65,20 @@ if (buildOutput || buildProject || buildHelp) {
       if (path.endsWith(".json")) {
         const buildpath = buildDir + "/" + path.substring(workdir.length + 1);
         const treeModel = b3util.createBuildData(path);
-        if (treeModel && treeModel.export === false) {
+        if (!treeModel) {
+          continue;
+        }
+        if (treeModel.export === false) {
           console.log("skip:", buildpath);
           continue;
         }
         console.log("build:", buildpath);
+        const declare: FileVarDecl = {
+          import: treeModel.import.map((v) => ({ path: v, vars: [], depends: [] })),
+          declvar: treeModel.declvar.map((v) => ({ name: v.name, desc: v.desc })),
+          subtree: [],
+        };
+        b3util.refreshDeclare(treeModel, declare);
         if (!b3util.checkNodeData(treeModel?.root)) {
           hasError = true;
         }
