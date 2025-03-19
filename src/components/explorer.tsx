@@ -324,7 +324,7 @@ export const Explorer: FC = () => {
       },
     };
     workspace.nodeDefs.forEach((nodeDef) => {
-      (nodeDef.group || []).forEach((g, idx) => {
+      (nodeDef.group || [""]).forEach((g, idx) => {
         const typeGroup = !g ? nodeDef.type : nodeDef.type.replace(/\(([\w|]+)\)/, `(${g})`);
         let catalog = data.children?.find((nt) => nt.title === typeGroup);
         if (!catalog) {
