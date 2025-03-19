@@ -58,7 +58,7 @@ export const initWorkdir = (path: string, handler: typeof alertError) => {
       groups.add(group);
     }
   }
-  groupDefs = Array.from(groups);
+  groupDefs = Array.from(groups).sort();
 };
 
 export const updateUsingGroups = (group: string[]) => {
