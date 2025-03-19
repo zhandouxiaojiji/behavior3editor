@@ -1,9 +1,10 @@
 {
-  "name": "def-core",
+  "name": "declare-core",
   "desc": "",
   "firstid": 1,
   "export": true,
   "import": [],
+  "group": [],
   "declvar": [
     {
       "name": "context",

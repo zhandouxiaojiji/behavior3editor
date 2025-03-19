@@ -28,7 +28,9 @@ export let nodeDefs: NodeDefs = new NodeDefs();
 export let groupDefs: string[] = [];
 export let usingGroups: Record<string, boolean> = {};
 export let usingVars: Record<string, VarDef> | null = null;
+export const files: Record<string, number> = {};
 
+const parsedVarDefs: Record<string, ImportDef> = {};
 const parsedExprs: Record<string, string[]> = {};
 let workdir: string = "";
 let alertError: (msg: string, duration?: number) => void = () => {};
@@ -71,6 +73,18 @@ export const updateUsingVars = (vars: VarDef[]) => {
     usingVars ??= {};
     usingVars[v.name] = v;
   }
+};
+
+export const parseExpr = (expr: string) => {
+  if (parsedExprs[expr]) {
+    return parsedExprs[expr];
+  }
+  const result = expr
+    .split(/[^a-zA-Z0-9_.]/)
+    .map((v) => v.split(".")[0])
+    .filter((v) => isValidVariableName(v));
+  parsedExprs[expr] = result;
+  return result;
 };
 
 export const isValidVariableName = (name: string) => {
@@ -716,67 +730,82 @@ export const isTreeFile = (path: string) => {
 };
 
 export const loadVarDef = (list: ImportDef[]) => {
-  const all: Set<VarDef> = new Set();
   for (const entry of list) {
-    // TODO: check file date
-    // TODO: use cache
-    if (entry.vars.length) {
-      entry.vars.forEach((v) => all.add(v));
+    if (!files[entry.path]) {
+      console.warn(`file not found:${workdir}/${entry.path}`);
       continue;
     }
-    const filter: Map<string, boolean> = new Map();
-    const vars: VarDef[] = [];
+
+    let changed = false;
+    if (!entry.modified || files[entry.path] > entry.modified) {
+      changed = true;
+    }
+
+    if (!changed) {
+      changed = entry.depends.some((v) => files[v.path] && files[v.path] > v.modified);
+    }
+
+    if (!changed) {
+      continue;
+    }
+
+    entry.vars = [];
+    entry.depends = [];
+    entry.modified = files[entry.path];
+
+    const vars: Set<VarDef> = new Set();
+    const depends: Set<string> = new Set();
     const load = (path: string) => {
-      if (filter.has(path)) {
+      if (parsingStack.includes(path)) {
         return;
       }
-      filter.set(path, true);
+
+      const parsedEntry: ImportDef | undefined = parsedVarDefs[path];
+      if (parsedEntry && files[path] === parsedEntry.modified) {
+        parsedEntry.depends.forEach((v) => depends.add(v.path));
+        parsedEntry.vars.forEach((v) => vars.add(v));
+        return;
+      }
+
+      parsingStack.push(path);
       try {
         const model: TreeModel = readTree(`${workdir}/${path}`);
-        model.declvar.forEach((v) => vars.push(v));
-        model.import.forEach((v) => load(v));
+        model.declvar.forEach((v) => vars.add(v));
+        model.import.forEach((v) => {
+          load(v);
+          depends.add(v);
+        });
+        console.log(`load var: ${path}`);
       } catch (e) {
         alertError(`parsing error: ${path}`);
       }
+      parsingStack.pop();
     };
     load(entry.path);
-    filter.clear();
-    entry.vars = vars
-      .filter((v) => {
-        if (!filter.has(v.name)) {
-          filter.set(v.name, true);
-          return true;
-        }
-        return false;
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
-    entry.vars.forEach((v) => all.add(v));
+    entry.vars = Array.from(vars).sort((a, b) => a.name.localeCompare(b.name));
+    entry.depends = Array.from(depends).map((v) => ({ path: v, modified: files[v] }));
+    parsedVarDefs[entry.path] = {
+      path: entry.path,
+      vars: entry.vars.map((v) => ({ name: v.name, desc: v.desc })),
+      depends: entry.depends.slice(),
+      modified: entry.modified,
+    };
   }
+  const all: Set<VarDef> = new Set();
+  list.forEach((entry) => entry.vars.forEach((v) => all.add(v)));
   return Array.from(all);
 };
 
-export const loadSubtreeVarDef = (data: TreeGraphData) => {
-  const list: ImportDef[] = [];
+export const findSubtrees = (data: TreeGraphData) => {
+  const list: string[] = [];
   const traverse = (v: TreeGraphData) => {
     if (v.path) {
-      list.push({ path: v.path, vars: [] });
+      list.push(v.path);
     }
     if (v.children) {
-      v.children.forEach(traverse);
+      v.children.forEach((child) => traverse(child));
     }
   };
   traverse(data);
-  return loadVarDef(list);
-};
-
-export const parseExpr = (expr: string) => {
-  if (parsedExprs[expr]) {
-    return parsedExprs[expr];
-  }
-  const result = expr
-    .split(/[^a-zA-Z0-9_.]/)
-    .map((v) => v.split(".")[0])
-    .filter((v) => isValidVariableName(v));
-  parsedExprs[expr] = result;
-  return result;
+  return list;
 };

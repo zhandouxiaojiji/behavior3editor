@@ -7,7 +7,6 @@ import { create } from "zustand";
 import { NodeDef } from "../behavior3/src/behavior3";
 import { ImportDef, NodeModel, TreeGraphData, TreeModel, VarDef } from "../misc/b3type";
 import * as b3util from "../misc/b3util";
-import { loadSubtreeVarDef } from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
 import Path from "../misc/path";
@@ -47,8 +46,11 @@ export class EditorStore {
   data: TreeModel;
 
   root: TreeGraphData;
-  import: ImportDef[];
-  declvar: VarDef[];
+  declare: {
+    import: ImportDef[];
+    subtree: ImportDef[];
+    declvar: VarDef[];
+  };
 
   autoId: number = 1;
   dragSrcId?: string;
@@ -76,8 +78,11 @@ export class EditorStore {
     this.data.name = Path.basenameWithoutExt(path);
     this.root = b3util.createTreeData(this.data.root);
     this.modifiedTime = fs.statSync(path).mtimeMs;
-    this.import = this.data.import.map((v) => ({ path: v, vars: [] }));
-    this.declvar = this.data.declvar.map((v) => ({ ...v }));
+    this.declare = {
+      import: this.data.import.map((v) => ({ path: v, vars: [], depends: [] })),
+      subtree: [],
+      declvar: this.data.declvar.map((v) => ({ ...v })),
+    };
     this.autoId = b3util.refreshTreeDataId(this.root, this.data.firstid);
     this.historyStack.push(
       JSON.stringify(
@@ -166,6 +171,7 @@ export type WorkspaceStore = {
   close: (path: string) => void;
   find: (path: string) => EditorStore | undefined;
   relative: (path: string) => string;
+  refresh: (path: string) => void;
 
   save: () => void;
   saveAs: () => void;
@@ -526,6 +532,26 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     return Path.relative(workspace.workdir, path).replaceAll(Path.sep, "/");
   },
 
+  refresh: (path: string) => {
+    const workspace = get();
+    const editor = workspace.editors.find((v) => v.path === path);
+    if (!editor) {
+      return;
+    }
+    const vars: Set<VarDef> = new Set(editor.declare.declvar.slice());
+    editor.declare.subtree = b3util.findSubtrees(editor.root).map((v) => ({
+      path: v,
+      vars: [],
+      depends: [],
+    }));
+    b3util.loadVarDef(editor.declare.import).forEach((v) => vars.add(v));
+    b3util.loadVarDef(editor.declare.subtree).forEach((v) => {
+      vars.add(v);
+    });
+    b3util.updateUsingGroups(editor.data.group);
+    b3util.updateUsingVars(Array.from(vars));
+  },
+
   save: () => {
     const workspace = get();
     saveFile(workspace.editing);
@@ -560,7 +586,9 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           } else {
             const fullpath = Path.posixPath(`${workspace.workdir}/${filename}`);
             const editor = workspace.find(fullpath);
-            if (editor && editor.modifiedTime + 500 < fs.statSync(fullpath).mtimeMs) {
+            const modified = fs.statSync(fullpath).mtimeMs;
+            b3util.files[Path.posixPath(filename)] = modified;
+            if (editor && editor.modifiedTime + 500 < modified) {
               if (editor.unsave) {
                 editor.alertReload = true;
                 set({ modifiedTime: Date.now() });
@@ -595,7 +623,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         let fileMeta = allFiles.get(path);
         if (!fileMeta) {
           fileMeta = { path: fileNode.path };
-          allFiles.set(fileNode.path, fileMeta);
+          allFiles.set(path, fileMeta);
         } else {
           fileMeta.path = fileNode.path;
         }
@@ -610,8 +638,11 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     };
     collect(data);
     allFiles.forEach((file, key) => {
+      const modified = fs.statSync(file.path).mtimeMs;
+      b3util.files[key] = modified;
       if (!file.exists) {
         allFiles.delete(key);
+        delete b3util.files[key];
         updated = true;
       }
     });
@@ -653,13 +684,16 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     if (workspace.editing) {
       workspace.editing.editNode = null;
     }
+    workspace.refresh(editor.path);
     set({
       editingTree: {
         data: {
           ...editor.data,
-          import: editor.import,
-          declvar: editor.declvar,
-          subtree: loadSubtreeVarDef(editor.root),
+          import: editor.declare.import,
+          declvar: editor.declare.declvar,
+          subtree: editor.declare.subtree
+            .map((def) => def.vars)
+            .reduce((acc, v) => [...acc, ...v], []),
         },
       },
       editingNodeDef: null,

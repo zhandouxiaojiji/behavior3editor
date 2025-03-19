@@ -23,7 +23,6 @@ import {
 } from "../contexts/workspace-context";
 import { ImportDef, isExprType, NodeModel, TreeGraphData, TreeModel, VarDef } from "../misc/b3type";
 import * as b3util from "../misc/b3util";
-import { loadSubtreeVarDef, loadVarDef } from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
 import { Hotkey, isMacos, useKeyDown } from "../misc/keys";
@@ -48,13 +47,6 @@ interface FilterOption {
   isFocused: boolean;
 }
 
-const collectVarDefs = (editor: EditorStore) => {
-  const vars: VarDef[] = editor.declvar.slice();
-  loadVarDef(editor.import).forEach((v) => vars.push(v));
-  loadSubtreeVarDef(editor.root).forEach((v) => vars.push(v));
-  return vars;
-};
-
 const createTreeData = (node: NodeModel, parent?: string) => {
   return b3util.createTreeData(node, parent, calcTreeDataSize);
 };
@@ -78,9 +70,9 @@ const isTreeUpdated = (editor: EditorStore, editTree: EditTree) => {
     return true;
   }
 
-  let max = Math.max(editor.declvar.length, editTree.data.declvar.length);
+  let max = Math.max(editor.declare.declvar.length, editTree.data.declvar.length);
   for (let i = 0; i < max; i++) {
-    const v1: VarDef | undefined = editor.declvar[i];
+    const v1: VarDef | undefined = editor.declare.declvar[i];
     const v2: VarDef | undefined = editTree.data.declvar[i];
     if (v1?.name !== v2?.name || v1?.desc !== v2?.desc) {
       return true;
@@ -94,9 +86,9 @@ const isTreeUpdated = (editor: EditorStore, editTree: EditTree) => {
     }
   }
 
-  max = Math.max(editor.import.length, editTree.data.import.length);
+  max = Math.max(editor.declare.import.length, editTree.data.import.length);
   for (let i = 0; i < max; i++) {
-    const v1: ImportDef | undefined = editor.import[i];
+    const v1: ImportDef | undefined = editor.declare.import[i];
     const v2: ImportDef | undefined = editTree.data.import[i];
     if (v1?.path !== v2?.path) {
       return true;
@@ -210,16 +202,17 @@ const createMenu = () => {
 export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, ...props }) => {
   const workspace = useWorkspace(
     useShallow((state) => ({
+      refresh: state.refresh,
       editing: state.editing,
+      editingNode: state.editingNode,
+      editingTree: state.editingTree,
+      nodeDefs: state.nodeDefs,
       onEditingNode: state.onEditingNode,
       onEditingTree: state.onEditingTree,
       open: state.open,
-      workdir: state.workdir,
       relative: state.relative,
       updateFileMeta: state.updateFileMeta,
-      nodeDefs: state.nodeDefs,
-      editingTree: state.editingTree,
-      editingNode: state.editingNode,
+      workdir: state.workdir,
     }))
   );
 
@@ -544,14 +537,13 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       editor.data.export = editTree.data.export !== false;
       editor.data.group = editTree.data.group || [];
       editor.data.firstid = editTree.data.firstid ?? 1;
-      editor.declvar = editTree.data.declvar || [];
-      editor.import = editTree.data.import || [];
-      editor.data.import = editor.import.map((v) => v.path).sort();
-      editor.data.declvar = editor.declvar
+      editor.declare.declvar = editTree.data.declvar || [];
+      editor.declare.import = editTree.data.import || [];
+      editor.data.import = editor.declare.import.map((v) => v.path).sort();
+      editor.data.declvar = editor.declare.declvar
         .map((v) => ({ ...v }))
         .sort((a, b) => a.name.localeCompare(b.name));
-      b3util.updateUsingGroups(editor.data.group);
-      b3util.updateUsingVars(collectVarDefs(editor));
+      workspace.refresh(editor.path);
       pushHistory();
       refresh();
       onChange();
@@ -744,8 +736,8 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     const data = JSON.parse(str) as TreeModel;
     editor.data = data;
     editor.root = createTreeData(data.root);
-    editor.import = data.import.map((v) => ({ path: v, vars: [] }));
-    editor.declvar = data.declvar.map((v) => ({ ...v }));
+    editor.declare.import = data.import.map((v) => ({ path: v, vars: [], depends: [] }));
+    editor.declare.declvar = data.declvar.map((v) => ({ ...v }));
     editor.autoId = b3util.refreshTreeDataId(editor.root, editor.data.firstid);
     editor.graph.changeData(editor.root);
     editor.graph.layout();
@@ -1263,8 +1255,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   useEffect(() => {
     if (workspace.editing === editor) {
       checkSubtree();
-      b3util.updateUsingGroups(editor.data.group);
-      b3util.updateUsingVars(collectVarDefs(editor));
     }
   }, [workspace.editing]);
 

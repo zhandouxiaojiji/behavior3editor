@@ -43,8 +43,12 @@ export interface GroupDef {
 
 export interface ImportDef {
   path: string;
-  date?: number;
+  modified?: number;
   vars: VarDef[];
+  depends: {
+    path: string;
+    modified: number;
+  }[];
 }
 
 export interface TreeModel {
