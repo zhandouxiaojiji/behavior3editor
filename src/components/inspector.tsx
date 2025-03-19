@@ -765,7 +765,7 @@ const NodeInspector: FC = () => {
             rules={[
               {
                 validator() {
-                  if (def.group && !usingGroups[def.group]) {
+                  if (def.group && !def.group.some((g) => usingGroups[g])) {
                     return Promise.reject(new Error(t("node.invalidGroup", { group: def.group })));
                   }
                   return Promise.resolve();

@@ -150,7 +150,7 @@ G6.registerNode(
         !nodeDefs.has(data.name) ||
         (data.path && !data.children?.length) ||
         !checkTreeData(data) ||
-        (nodeDef.group && !usingGroups[nodeDef.group]) ||
+        (nodeDef.group && !nodeDef.group.some((g) => usingGroups[g])) ||
         (usingVars &&
           (data.input?.some((v) => v && usingVars?.[v] === undefined) ||
             data.output?.some((v) => v && usingVars?.[v] === undefined) ||

@@ -357,7 +357,7 @@
   },
   {
     "name": "TestB3",
-    "type": "Action",
+    "type": "Action (Client|Server|Test)",
     "args": [
       {
         "name": "time",

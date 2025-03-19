@@ -3,7 +3,7 @@ import { NodeDef } from "../behavior3/src/behavior3";
 
 declare module "../behavior3/src/behavior3" {
   interface NodeDef {
-    group?: string;
+    group?: string[];
   }
 }
 

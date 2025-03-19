@@ -324,44 +324,47 @@ export const Explorer: FC = () => {
       },
     };
     workspace.nodeDefs.forEach((nodeDef) => {
-      let catalog = data.children?.find((nt) => nt.title === nodeDef.type);
-      if (!catalog) {
-        const type = getNodeType(nodeDef);
-        catalog = {
-          title: nodeDef.type,
-          path: `nodeTree.catalog.${nodeDef.type}`,
-          children: [],
-          icon: (
+      (nodeDef.group || []).forEach((g, idx) => {
+        const typeGroup = !g ? nodeDef.type : nodeDef.type.replace(/\(([\w|]+)\)/, `(${g})`);
+        let catalog = data.children?.find((nt) => nt.title === typeGroup);
+        if (!catalog) {
+          const type = getNodeType(nodeDef);
+          catalog = {
+            title: typeGroup,
+            path: `nodeTree.catalog.${typeGroup}`,
+            children: [],
+            icon: (
+              <Flex justify="center" align="center" style={{ height: "100%" }}>
+                <img
+                  className="b3-node-icon"
+                  style={{ width: "13px", height: "13px", color: "white" }}
+                  src={`./icons/${type}.svg`}
+                />
+              </Flex>
+            ),
+          };
+          data.children?.push(catalog);
+        }
+        catalog.children?.push({
+          title: `${nodeDef.name}(${nodeDef.desc})`,
+          isLeaf: true,
+          def: nodeDef,
+          path: `${nodeDef.name} ${idx}`,
+          icon: nodeDef.icon ? (
             <Flex justify="center" align="center" style={{ height: "100%" }}>
               <img
                 className="b3-node-icon"
+                key={catalog.title}
                 style={{ width: "13px", height: "13px", color: "white" }}
-                src={`./icons/${type}.svg`}
+                src={`file:///${workspace.workdir}/${nodeDef.icon}`}
               />
             </Flex>
+          ) : (
+            <Flex justify="center" align="center" style={{ height: "100%" }}>
+              <BsBoxFill style={{ width: "12px", height: "12px", color: "white" }} />{" "}
+            </Flex>
           ),
-        };
-        data.children?.push(catalog);
-      }
-      catalog.children?.push({
-        title: `${nodeDef.name}(${nodeDef.desc})`,
-        isLeaf: true,
-        def: nodeDef,
-        path: `${nodeDef.name}`,
-        icon: nodeDef.icon ? (
-          <Flex justify="center" align="center" style={{ height: "100%" }}>
-            <img
-              className="b3-node-icon"
-              key={catalog.title}
-              style={{ width: "13px", height: "13px", color: "white" }}
-              src={`file:///${workspace.workdir}/${nodeDef.icon}`}
-            />
-          </Flex>
-        ) : (
-          <Flex justify="center" align="center" style={{ height: "100%" }}>
-            <BsBoxFill style={{ width: "12px", height: "12px", color: "white" }} />{" "}
-          </Flex>
-        ),
+        });
       });
     });
     data.children?.sort((a, b) => a.title.localeCompare(b.title));

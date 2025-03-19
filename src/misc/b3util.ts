@@ -52,10 +52,10 @@ export const initWorkdir = (path: string, handler: typeof alertError) => {
   for (const v of nodeDefData) {
     nodeDefs.set(v.name, v);
 
-    const group = v.type.match(/\((\w+)\)/)?.[1];
+    const group = v.type.match(/\(([\w|]+)\)/)?.[1];
     if (group) {
-      v.group = group;
-      groups.add(group);
+      v.group = group.split("|");
+      v.group.forEach((g) => groups.add(g));
     }
   }
   groupDefs = Array.from(groups).sort();
@@ -299,7 +299,7 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   let hasError = false;
 
   if (conf.group) {
-    if (!usingGroups[conf.group]) {
+    if (!conf.group.some((g) => usingGroups[g])) {
       error(data, `node group '${conf.group}' is not enabled`);
       hasError = true;
     }
