@@ -643,13 +643,13 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     };
     collect(data);
     allFiles.forEach((file, key) => {
-      const modified = fs.statSync(file.path).mtimeMs;
-      b3util.files[key] = modified;
       if (!file.exists) {
         allFiles.delete(key);
         delete b3util.files[key];
         updated = true;
       }
+      const modified = fs.statSync(file.path).mtimeMs;
+      b3util.files[key] = modified;
     });
     set({ allFiles });
     if (updated) {
