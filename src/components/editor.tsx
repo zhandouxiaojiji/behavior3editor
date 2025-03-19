@@ -1,5 +1,5 @@
 import { ArrowDownOutlined, ArrowUpOutlined, CloseOutlined } from "@ant-design/icons";
-import G6, { G6GraphEvent, Item, TreeGraph } from "@antv/g6";
+import G6, { G6GraphEvent, Item, Matrix, TreeGraph } from "@antv/g6";
 import { dialog } from "@electron/remote";
 import { useSize } from "ahooks";
 import { Button, Dropdown, Flex, FlexProps, Input, InputRef, MenuProps } from "antd";
@@ -319,7 +319,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
     node.def.args?.forEach((arg) => {
       if (isExprType(arg.type)) {
-        const expr: string | string[] = node.args?.[arg.name];
+        const expr = node.args?.[arg.name] as string | string[] | undefined;
         if (typeof expr === "string") {
           for (const v of b3util.parseExpr(expr)) {
             if (highlight.includes(v)) {
@@ -399,10 +399,20 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
             }
           }
           if (!found && node.args) {
-            for (const str in node.args) {
-              if (includeString(str, option) || includeString(node.args[str], option)) {
-                found = true;
-                break;
+            loop: for (const str in node.args) {
+              const value = node.args[str];
+              if (typeof value === "string") {
+                if (includeString(value, option)) {
+                  found = true;
+                  break loop;
+                }
+              } else if (value instanceof Array) {
+                for (const v of value) {
+                  if (includeString(v, option)) {
+                    found = true;
+                    break loop;
+                  }
+                }
               }
             }
           }
@@ -900,6 +910,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
               const icon = data.collapsed ? G6.Marker.expand : G6.Marker.collapse;
               const marker = item
                 .get("group")
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .find((ele: any) => ele.get("name") === "collapse-icon");
               editor.graph.refresh();
               marker.attr("symbol", icon);
@@ -935,9 +946,9 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       },
     });
 
-    editor.graph.on("viewportchange", (data: any) => {
+    editor.graph.on("viewportchange", (data) => {
       if (data.action === "translate" || data.action === "zoom") {
-        editor.graphMatrix = data.matrix;
+        editor.graphMatrix = data.matrix as Matrix;
       }
     });
 

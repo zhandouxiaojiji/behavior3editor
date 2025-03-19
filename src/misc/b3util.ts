@@ -325,8 +325,17 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
 
     if (data.args && conf.args) {
       for (const arg of conf.args) {
+        const value = data.args?.[arg.name] as string | string[] | undefined;
         if (isExprType(arg.type)) {
-          for (const v of parseExpr(data.args[arg.name] ?? "")) {
+          const vars: string[] = [];
+          if (typeof value === "string") {
+            vars.push(...parseExpr(value));
+          } else if (Array.isArray(value)) {
+            for (const v of value) {
+              vars.push(...parseExpr(v));
+            }
+          }
+          for (const v of vars) {
             if (v && !usingVars[v]) {
               error(data, `expr variable '${arg.name}' is not defined`);
               hasError = true;

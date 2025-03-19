@@ -24,7 +24,7 @@ export interface NodeModel {
   id: number;
   name: string;
   desc?: string;
-  args?: { [key: string]: any };
+  args?: { [key: string]: unknown };
   input?: string[];
   output?: string[];
   children?: NodeModel[];
@@ -74,7 +74,7 @@ export interface TreeModel {
 export interface TreeGraphData extends G6TreeGraphData {
   name: string;
   desc?: string;
-  args?: { [key: string]: any };
+  args?: { [key: string]: unknown };
   input?: string[];
   output?: string[];
   children?: TreeGraphData[];

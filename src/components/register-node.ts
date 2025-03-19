@@ -1,4 +1,5 @@
 import G6 from "@antv/g6";
+import { NodeDef } from "../behavior3/src/behavior3";
 import { useWorkspace } from "../contexts/workspace-context";
 import { TreeGraphData, getNodeType, isExprType } from "../misc/b3type";
 import { checkTreeData, nodeDefs, parseExpr, usingGroups, usingVars } from "../misc/b3util";
@@ -71,9 +72,43 @@ const toBreakWord = (str: string, maxWidth: number, fontSize?: string) => {
   };
 };
 
+const foundUndefined = (value?: string[]) => {
+  if (!value || !usingVars) {
+    return false;
+  }
+  return value.some((v) => v && usingVars?.[v] === undefined);
+};
+
+const foundUndefinedInArgs = (def: NodeDef, data: TreeGraphData) => {
+  if (!def.args || !data.args || !usingVars) {
+    return false;
+  }
+  for (const arg of def.args) {
+    if (!isExprType(arg.type)) {
+      continue;
+    }
+    const expr = data.args[arg.name] as string | string[] | undefined;
+    if (!expr) {
+      continue;
+    }
+    if (typeof expr === "string") {
+      if (foundUndefined(parseExpr(expr))) {
+        return true;
+      }
+    } else if (Array.isArray(expr)) {
+      for (const str of expr) {
+        if (foundUndefined(parseExpr(str))) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+};
+
 export const calcTreeDataSize = (data: TreeGraphData) => {
   let height = 50 + 2;
-  const updateHeight = (obj: any) => {
+  const updateHeight = (obj: unknown) => {
     if ((Array.isArray(obj) && obj.length) || (obj && Object.keys(obj).length > 0)) {
       const { line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(obj)}`, 200);
       height += 20 * line;
@@ -88,7 +123,7 @@ export const calcTreeDataSize = (data: TreeGraphData) => {
   return [220, height];
 };
 
-const NODE_COLORS: any = {
+const NODE_COLORS = {
   ["Composite"]: "#34d800",
   ["Decorator"]: "#ff6700",
   ["Condition"]: "#e4148b",
@@ -149,18 +184,11 @@ G6.registerNode(
       if (
         !nodeDefs.has(data.name) ||
         (data.path && !data.children?.length) ||
-        !checkTreeData(data) ||
         (nodeDef.group && !nodeDef.group.some((g) => usingGroups[g])) ||
-        (usingVars &&
-          (data.input?.some((v) => v && usingVars?.[v] === undefined) ||
-            data.output?.some((v) => v && usingVars?.[v] === undefined) ||
-            nodeDef.args?.some(
-              (v) =>
-                isExprType(v.type) &&
-                parseExpr(data.args?.[v.name] ?? "").some(
-                  (vv) => vv && usingVars?.[vv] === undefined
-                )
-            )))
+        !checkTreeData(data) ||
+        foundUndefined(data.input) ||
+        foundUndefined(data.output) ||
+        foundUndefinedInArgs(nodeDef, data)
       ) {
         classify = "Error";
         color = NODE_COLORS[classify];
@@ -359,7 +387,7 @@ G6.registerNode(
         });
       }
 
-      const args: any = data.args;
+      const args = data.args;
       if (nodeDef.args && args && Object.keys(args).length > 0) {
         const { str, line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 200);
         if (data.highlightArgs) {

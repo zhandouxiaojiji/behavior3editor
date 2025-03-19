@@ -106,6 +106,7 @@ const TreeInspector: FC = () => {
     form.setFieldValue("subtree", data.subtree);
   }, [workspace.editingTree, groupDefs]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finish = (values: any) => {
     workspace.editing?.dispatch("updateTree", {
       data: {
@@ -117,10 +118,10 @@ const TreeInspector: FC = () => {
           .map((v) => (v.value ? v.name : undefined))
           .filter((v) => v)
           .sort(),
-        declvar: (values["declvar"] as VarDef[])
+        declvar: (values.declvar as VarDef[])
           .filter((v) => v && v.name)
           .sort((a, b) => a.name.localeCompare(b.name)),
-        import: (values["import"] as ImportDef[])
+        import: (values.import as ImportDef[])
           .filter((v) => v && v.path)
           .sort((a, b) => a.path.localeCompare(b.path))
           .map((v) => ({
@@ -633,6 +634,7 @@ const NodeInspector: FC = () => {
   const disabled = !editingNode.editable;
 
   // update value
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finish = (values: any) => {
     const data = {} as NodeModel;
     data.id = editingNode.data.id;
