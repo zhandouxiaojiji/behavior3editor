@@ -46,7 +46,8 @@ export type EditEvent =
   | "updateNode"
   | "searchNode"
   | "editSubtree"
-  | "saveAsSubtree";
+  | "saveAsSubtree"
+  | "clickVar";
 
 export class EditorStore {
   path: string;
@@ -123,16 +124,15 @@ export type EditNodeDef = {
 };
 
 export type EditTree = {
-  data: {
-    name: string;
-    desc?: string;
-    export?: boolean;
-    firstid?: number;
-    group: string[];
-    import: ImportDef[];
-    declvar: VarDef[];
-    subtree: VarDef[];
-  };
+  name: string;
+  desc?: string;
+  export?: boolean;
+  firstid?: number;
+  group: string[];
+  import: ImportDef[];
+  declvar: VarDef[];
+  subtree: VarDef[];
+  root: TreeGraphData;
 };
 
 export type FileMeta = {
@@ -692,14 +692,13 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     workspace.refresh(editor.path);
     set({
       editingTree: {
-        data: {
-          ...editor.data,
-          import: editor.declare.import,
-          declvar: editor.declare.declvar,
-          subtree: editor.declare.subtree
-            .map((def) => def.vars)
-            .reduce((acc, v) => [...acc, ...v], []),
-        },
+        ...editor.data,
+        root: editor.root,
+        import: editor.declare.import,
+        declvar: editor.declare.declvar,
+        subtree: editor.declare.subtree
+          .map((def) => def.vars)
+          .reduce((acc, v) => [...acc, ...v], []),
       },
       editingNodeDef: null,
       editingNode: null,

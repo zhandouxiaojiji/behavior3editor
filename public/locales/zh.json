@@ -110,6 +110,7 @@
   "node.invalidVariableName": "变量名必须以字母或下划线开头",
   "node.name": "节点名称",
   "node.noNodeSelected": "未选择任务节点",
+  "node.notFound": "节点 “{{name}}” 不存在",
   "node.oneof.error": "输入项 “{{input}}” 和参数 “{{arg}}({{desc}})” 之中，只能选择设置其中之一",
   "node.oneof.inputNotfound": "输入项“{{input}}”不存在",
   "node.outputVariable": "输出变量",

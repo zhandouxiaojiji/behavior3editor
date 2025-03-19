@@ -110,6 +110,7 @@
   "node.invalidVariableName": "Invalid variable name, should start with a letter or underscore",
   "node.name": "Node name",
   "node.noNodeSelected": "No node selected",
+  "node.notFound": "Node '{{name}}' not found",
   "node.oneof.error": "Only one is allowed between input '{{input}}' and argument '{{arg}}({{desc}})'",
   "node.oneof.inputNotfound": "Input '{{input}}' not found",
   "node.outputVariable": "Output variables",

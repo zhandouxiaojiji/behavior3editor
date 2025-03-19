@@ -70,34 +70,34 @@ const refreshTreeData = (data: TreeGraphData) => {
 
 const isTreeUpdated = (editor: EditorStore, editTree: EditTree) => {
   if (
-    editor.data.firstid !== editTree.data.firstid ||
-    editor.data.export !== editTree.data.export ||
-    editor.data.name !== editTree.data.name ||
-    editor.data.desc !== editTree.data.desc
+    editor.data.firstid !== editTree.firstid ||
+    editor.data.export !== editTree.export ||
+    editor.data.name !== editTree.name ||
+    editor.data.desc !== editTree.desc
   ) {
     return true;
   }
 
-  let max = Math.max(editor.declare.declvar.length, editTree.data.declvar.length);
+  let max = Math.max(editor.declare.declvar.length, editTree.declvar.length);
   for (let i = 0; i < max; i++) {
     const v1: VarDef | undefined = editor.declare.declvar[i];
-    const v2: VarDef | undefined = editTree.data.declvar[i];
+    const v2: VarDef | undefined = editTree.declvar[i];
     if (v1?.name !== v2?.name || v1?.desc !== v2?.desc) {
       return true;
     }
   }
 
-  max = Math.max(editor.data.group.length, editTree.data.group.length);
+  max = Math.max(editor.data.group.length, editTree.group.length);
   for (let i = 0; i < max; i++) {
-    if (editor.data.group[i] !== editTree.data.group[i]) {
+    if (editor.data.group[i] !== editTree.group[i]) {
       return true;
     }
   }
 
-  max = Math.max(editor.declare.import.length, editTree.data.import.length);
+  max = Math.max(editor.declare.import.length, editTree.import.length);
   for (let i = 0; i < max; i++) {
     const v1: ImportDef | undefined = editor.declare.import[i];
-    const v2: ImportDef | undefined = editTree.data.import[i];
+    const v2: ImportDef | undefined = editTree.import[i];
     if (v1?.path !== v2?.path) {
       return true;
     }
@@ -551,12 +551,12 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const updateTree = (editTree: EditTree) => {
     if (isTreeUpdated(editor, editTree)) {
-      editor.data.desc = editTree.data.desc || "";
-      editor.data.export = editTree.data.export !== false;
-      editor.data.group = editTree.data.group;
-      editor.data.firstid = editTree.data.firstid ?? 1;
-      editor.declare.declvar = editTree.data.declvar || [];
-      editor.declare.import = editTree.data.import || [];
+      editor.data.desc = editTree.desc || "";
+      editor.data.export = editTree.export !== false;
+      editor.data.group = editTree.group;
+      editor.data.firstid = editTree.firstid ?? 1;
+      editor.declare.declvar = editTree.declvar || [];
+      editor.declare.import = editTree.import || [];
       editor.data.import = editor.declare.import.map((v) => v.path).sort();
       editor.data.declvar = editor.declare.declvar
         .map((v) => ({ ...v }))
@@ -565,6 +565,32 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       pushHistory();
       refresh();
       onChange();
+    }
+  };
+
+  const clickVar = (...names: string[]) => {
+    const changed = findHightlight(editor.root, names);
+    if (changed.length > 0) {
+      const refreshHighlight = (node: TreeGraphData) => {
+        const item = editor.graph.findById(node.id);
+        if (names.length > 0) {
+          node.highlightGray = !(node.highlightInput || node.highlightOutput || node.highlightArgs);
+        } else {
+          node.highlightGray = false;
+        }
+        item.draw();
+        if (node.children) {
+          node.children.forEach(refreshHighlight);
+        }
+      };
+      refreshHighlight(editor.root);
+    }
+    if (names.length === 0 && editor.searchingText) {
+      onSearchChange({
+        ...filterOption,
+        filterType: "content",
+        filterStr: editor.searchingText,
+      });
     }
   };
 
@@ -953,41 +979,15 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     });
 
     editor.graph.on("node:click", (e: G6GraphEvent) => {
-      const highlight: string[] = [];
+      const names: string[] = [];
       if (e.shape.cfg.name === "input-text") {
         const data = findDataById(e.item.getID());
-        data.input?.forEach((v) => v && highlight.push(v));
+        data.input?.forEach((v) => v && names.push(v));
       } else if (e.shape.cfg.name === "output-text") {
         const data = findDataById(e.item.getID());
-        data.output?.forEach((v) => v && highlight.push(v));
+        data.output?.forEach((v) => v && names.push(v));
       }
-      const changed = findHightlight(editor.root, highlight);
-      if (changed.length > 0) {
-        const refreshHighlight = (node: TreeGraphData) => {
-          const item = editor.graph.findById(node.id);
-          if (highlight.length > 0) {
-            node.highlightGray = !(
-              node.highlightInput ||
-              node.highlightOutput ||
-              node.highlightArgs
-            );
-          } else {
-            node.highlightGray = false;
-          }
-          item.draw();
-          if (node.children) {
-            node.children.forEach(refreshHighlight);
-          }
-        };
-        refreshHighlight(editor.root);
-      }
-      if (highlight.length === 0 && editor.searchingText) {
-        onSearchChange({
-          ...filterOption,
-          filterType: "content",
-          filterStr: editor.searchingText,
-        });
-      }
+      clickVar(...names);
     });
 
     editor.graph.on("node:contextmenu", (e: G6GraphEvent) => {
@@ -1251,6 +1251,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       }
       case "saveAsSubtree": {
         saveAsSubtree();
+        break;
+      }
+      case "clickVar": {
+        clickVar(data as string);
         break;
       }
     }

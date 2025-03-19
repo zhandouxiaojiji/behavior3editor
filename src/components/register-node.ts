@@ -370,7 +370,7 @@ G6.registerNode(
       let y = 32;
       // desc text
       let desc = (data.desc || nodeDef.desc) as string;
-      if (desc) {
+      if (desc || desc === "") {
         desc = i18n.t("regnode.mark") + desc;
         desc = cutWordTo(desc, w - 15);
         addShape("text", {
@@ -388,7 +388,7 @@ G6.registerNode(
       }
 
       const args = data.args;
-      if (nodeDef.args && args && Object.keys(args).length > 0) {
+      if (args && Object.keys(args).length > 0) {
         const { str, line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 200);
         if (data.highlightArgs) {
           addShape("rect", {
@@ -420,7 +420,7 @@ G6.registerNode(
       }
 
       const input = data.input ?? [];
-      if (nodeDef.input && input.length > 0) {
+      if (input.length > 0) {
         const { str, line } = toBreakWord(
           `${i18n.t("regnode.input")}${JSON.stringify(input)}`,
           200
@@ -458,7 +458,7 @@ G6.registerNode(
       }
 
       const output = data.output ?? [];
-      if (nodeDef.output && output.length > 0) {
+      if (output.length > 0) {
         const { str, line } = toBreakWord(
           `${i18n.t("regnode.output")}${JSON.stringify(output)}`,
           200
