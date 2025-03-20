@@ -372,7 +372,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
             declvar: treeModel.declvar.map((v) => ({ name: v.name, desc: v.desc })),
             subtree: [],
           };
-          b3util.refreshDeclare(treeModel, declare);
+          b3util.refreshDeclare(treeModel.root, treeModel.group, declare);
           if (!b3util.checkNodeData(treeModel?.root)) {
             hasError = true;
           }
@@ -557,7 +557,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     if (!editor) {
       return;
     }
-    b3util.refreshDeclare(editor.data, editor.declare);
+    b3util.refreshDeclare(editor.root, editor.data.group, editor.declare);
   },
 
   save: () => {

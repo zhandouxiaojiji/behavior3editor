@@ -857,24 +857,24 @@ export const loadVarDef = (list: ImportDef[]) => {
   return Array.from(all);
 };
 
-const findSubtrees = (data: NodeModel) => {
-  const list: string[] = [];
-  const traverse = (v: NodeModel) => {
-    if (v.path) {
-      list.push(v.path);
-    }
-    if (v.children) {
-      v.children.forEach((child) => traverse(child));
-    }
-  };
-  traverse(data);
+const collectSubtree = (data: TreeGraphData | NodeModel, list: string[] = []) => {
+  if (data.path) {
+    list.push(data.path);
+  }
+  if (data.children) {
+    data.children.forEach((child) => collectSubtree(child, list));
+  }
   return list;
 };
 
-export const refreshDeclare = (tree: TreeModel, declare: FileVarDecl) => {
+export const refreshDeclare = (
+  root: TreeGraphData | NodeModel,
+  group: string[],
+  declare: FileVarDecl
+) => {
   const vars: Set<VarDef> = new Set(declare.declvar.slice());
   parsingStack.length = 0;
-  declare.subtree = findSubtrees(tree.root).map((v) => ({
+  declare.subtree = collectSubtree(root).map((v) => ({
     path: v,
     vars: [],
     depends: [],
@@ -883,6 +883,6 @@ export const refreshDeclare = (tree: TreeModel, declare: FileVarDecl) => {
   loadVarDef(declare.subtree).forEach((v) => {
     vars.add(v);
   });
-  updateUsingGroups(tree.group);
+  updateUsingGroups(group);
   updateUsingVars(Array.from(vars));
 };

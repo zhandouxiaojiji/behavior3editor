@@ -78,7 +78,7 @@ if (buildOutput || buildProject || buildHelp) {
           declvar: treeModel.declvar.map((v) => ({ name: v.name, desc: v.desc })),
           subtree: [],
         };
-        b3util.refreshDeclare(treeModel, declare);
+        b3util.refreshDeclare(treeModel.root, treeModel.group, declare);
         if (!b3util.checkNodeData(treeModel?.root)) {
           hasError = true;
         }
