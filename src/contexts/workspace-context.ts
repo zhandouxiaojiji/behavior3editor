@@ -131,7 +131,7 @@ export type EditTree = {
   group: string[];
   import: ImportDef[];
   declvar: VarDef[];
-  subtree: VarDef[];
+  subtree: ImportDef[];
   root: TreeGraphData;
 };
 
@@ -699,9 +699,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         root: editor.root,
         import: editor.declare.import,
         declvar: editor.declare.declvar,
-        subtree: editor.declare.subtree
-          .map((def) => def.vars)
-          .reduce((acc, v) => [...acc, ...v], []),
+        subtree: editor.declare.subtree,
       },
       editingNodeDef: null,
       editingNode: null,

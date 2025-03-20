@@ -1,4 +1,10 @@
-import { AimOutlined, EditOutlined, MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  AimOutlined,
+  EditOutlined,
+  FormOutlined,
+  MinusCircleOutlined,
+  PlusOutlined,
+} from "@ant-design/icons";
 import {
   AutoComplete,
   Button,
@@ -144,6 +150,8 @@ const TreeInspector: FC = () => {
       groupDefs: state.groupDefs,
       nodeDefs: state.nodeDefs,
       relative: state.relative,
+      open: state.open,
+      workdir: state.workdir,
     }))
   );
   const { t } = useTranslation();
@@ -241,10 +249,12 @@ const TreeInspector: FC = () => {
     );
     form.setFieldValue(
       "subtree",
-      workspace.editingTree.subtree.map((v) => ({
-        name: v.name,
-        desc: v.desc,
-        count: usingCount[v.name] ?? 0,
+      workspace.editingTree.subtree.map((entry) => ({
+        path: entry.path,
+        vars: entry.vars.map((v) => ({
+          name: v.name,
+          count: usingCount[v.name] ?? 0,
+        })),
       }))
     );
   }, [workspace.editingTree, groupDefs, usingCount]);
@@ -402,12 +412,51 @@ const TreeInspector: FC = () => {
                 <h4>{t("tree.vars.subtree")}</h4>
               </Divider>
               <Form.List name="subtree">
-                {(fields) => (
-                  <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
-                    {fields.map((item) => (
-                      <Form.Item key={item.key} name={item.name} style={{ marginBottom: 2 }}>
-                        <VarDefItem name={item.name} disabled={true} />
-                      </Form.Item>
+                {(items) => (
+                  <div style={{ display: "flex", flexDirection: "column", rowGap: 4 }}>
+                    {items.map((item) => (
+                      <Space.Compact
+                        key={item.key}
+                        className="b3-inspector-import-item"
+                        direction="vertical"
+                        style={{ marginBottom: 5 }}
+                      >
+                        <Flex gap={4} style={{ width: "100%" }}>
+                          <Form.Item
+                            name={[item.name, "path"]}
+                            style={{ width: "100%", marginBottom: 2 }}
+                          >
+                            <Select
+                              disabled={true}
+                              showSearch
+                              options={subtreeOptions}
+                              onBlur={form.submit}
+                              onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
+                              filterOption={(value, option) => {
+                                const label = option!.label as string;
+                                return label.toUpperCase().includes(value.toUpperCase());
+                              }}
+                            />
+                          </Form.Item>
+                          <FormOutlined
+                            onClick={() => {
+                              const path = workspace.editingTree.subtree[item.name].path;
+                              workspace.open(`${workspace.workdir}/${path}`);
+                            }}
+                          />
+                        </Flex>
+                        <Form.List name={[item.name, "vars"]}>
+                          {(vars) => (
+                            <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
+                              {vars.map((v) => (
+                                <Form.Item key={v.key} name={v.name} style={{ marginBottom: 2 }}>
+                                  <VarDefItem name={v.name} disabled={true} />
+                                </Form.Item>
+                              ))}
+                            </div>
+                          )}
+                        </Form.List>
+                      </Space.Compact>
                     ))}
                   </div>
                 )}
