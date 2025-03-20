@@ -342,12 +342,14 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
 
   buildProject: () => {
     const workspace = get();
-    if (workspace.path)
+    if (workspace.path) {
       if (!buildDir) {
         buildDir = dialog.showOpenDialogSync({
           properties: ["openDirectory", "createDirectory"],
+          defaultPath: useSetting.getState().data.buildDir,
         })?.[0];
       }
+    }
     if (buildDir) {
       for (const editor of workspace.editors) {
         editor.dispatch("save");
@@ -382,6 +384,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         } else {
           message.success(i18n.t("buildCompleted"));
         }
+        useSetting.getState().setBuildDir(buildDir);
       } catch (error) {
         console.error(error);
         message.error(i18n.t("buildFailed"));

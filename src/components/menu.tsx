@@ -58,9 +58,7 @@ export const Menu: FC<LayoutProps> = () => {
   );
   const enabled = !!workspace.workdir;
   const homedir = app.getPath("home");
-  const settings = {
-    recent: useSetting((state) => state.recent),
-  };
+  const { settings } = useSetting(useShallow((state) => ({ settings: state.data })));
 
   const menuTemplate: MenuItemConstructorOptions[] = useMemo(() => {
     const recentWorkspaces: MenuItemConstructorOptions[] = settings.recent.map((path, i) => ({

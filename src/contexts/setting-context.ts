@@ -7,47 +7,53 @@ const settingPath = app.getPath("userData") + "/settings.json";
 
 export type SettingModel = {
   recent: string[];
+  buildDir: string;
 };
 
 export type SettingStore = {
-  recent: string[];
+  data: SettingModel;
+
   load: () => void;
   save: () => void;
   appendRecent: (path: string) => void;
   removeRecent: (path: string) => void;
+  setBuildDir: (dir: string) => void;
 };
 
 export const useSetting = create<SettingStore>((set, get) => ({
-  recent: [],
+  data: {
+    recent: [],
+    buildDir: "",
+  },
   load: () => {
     try {
       if (fs.existsSync(settingPath)) {
         const settings = readJson(settingPath) as SettingModel;
-        if (!(settings.recent instanceof Array)) {
-          settings.recent = [];
-        }
-
-        set({ recent: settings.recent });
+        set({ data: settings });
       }
     } catch (error) {
       console.error(error);
     }
   },
   save: () => {
-    const settings = get();
-    writeJson(settingPath, {
-      recent: settings.recent,
-    } as SettingModel);
+    writeJson(settingPath, get().data);
   },
   appendRecent: (path: string) => {
-    const recent = get().recent.filter((v) => v !== path);
+    const { data, save } = get();
+    const recent = data.recent.filter((v) => v !== path);
     recent.unshift(path);
-    set({ recent });
-    get().save();
+    set({ data: { ...data, recent } });
+    save();
   },
   removeRecent: (path: string) => {
-    const recent = get().recent.filter((v) => v !== path);
-    set({ recent });
-    get().save();
+    const { data, save } = get();
+    const recent = data.recent.filter((v) => v !== path);
+    set({ data: { ...data, recent } });
+    save();
+  },
+  setBuildDir: (dir: string) => {
+    const { data, save } = get();
+    set({ data: { ...data, buildDir: dir } });
+    save();
   },
 }));

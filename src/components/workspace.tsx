@@ -39,7 +39,7 @@ export const Workspace: FC = () => {
       find: state.find,
     }))
   );
-  const settings = useSetting(useShallow((state) => ({ recent: state.recent })));
+  const { settings } = useSetting(useShallow((state) => ({ settings: state.data })));
   const [isShowingAlert, setShowingAlert] = useState(false);
   const { t } = useTranslation();
   const forceUpdate = useForceUpdate();
