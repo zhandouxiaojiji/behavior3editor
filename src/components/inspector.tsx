@@ -106,7 +106,7 @@ const VarDefItem: FC<VarDefItemProps> = ({ name, onChange, onRemove, disabled, .
             borderTop: "1px solid #3d506c",
             borderBottom: "1px solid #3d506c",
           }}
-          onClick={() => editing?.dispatch("clickVar", name)}
+          onClick={() => value.name && editing?.dispatch("clickVar", value.name)}
         >
           <AimOutlined />
           <span style={{ marginLeft: 4 }}>{value?.count ?? 0}</span>
