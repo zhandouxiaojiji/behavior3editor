@@ -12,9 +12,10 @@ import {
   Space,
   Switch,
 } from "antd";
+import useFormInstance from "antd/es/form/hooks/useFormInstance";
 import TextArea from "antd/es/input/TextArea";
 import { DefaultOptionType } from "antd/es/select";
-import { FC, useEffect, useMemo } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import { useDebounceCallback } from "usehooks-ts";
@@ -53,6 +54,86 @@ import { mergeClassNames } from "../misc/util";
 interface OptionType extends DefaultOptionType {
   value: string;
 }
+
+interface VarDefItem extends VarDef {
+  count?: number;
+}
+
+interface VarDefItemProps {
+  id: number;
+  disabled?: boolean;
+  value?: VarDefItem;
+  onChange?: (vardef: VarDefItem) => void;
+  onRemove?: (index: number | number[]) => void;
+}
+
+const VarDefItem: FC<VarDefItemProps> = ({ id, value, onChange, onRemove, disabled }) => {
+  const { t } = useTranslation();
+  const form = useFormInstance();
+  const [name, setName] = useState(value?.name ?? "");
+  const [desc, setDesc] = useState(value?.desc ?? "");
+  const { editing } = useWorkspace(
+    useShallow((state) => ({
+      editing: state.editing,
+    }))
+  );
+
+  const onSubmit = () => {
+    onChange?.({ name, desc });
+    form.submit();
+  };
+
+  return (
+    <Flex gap={4}>
+      <Space.Compact>
+        <div
+          style={{
+            display: "flex",
+            cursor: "pointer",
+            alignItems: "center",
+            paddingLeft: "8px",
+            paddingRight: "8px",
+            maxWidth: "52px",
+            minWidth: "52px",
+            borderTopLeftRadius: "4px",
+            borderBottomLeftRadius: "4px",
+            borderLeft: "1px solid #3d506c",
+            borderTop: "1px solid #3d506c",
+            borderBottom: "1px solid #3d506c",
+          }}
+          onClick={() => editing?.dispatch("clickVar", name)}
+        >
+          <AimOutlined />
+          <span style={{ marginLeft: 4 }}>{value?.count ?? 0}</span>
+        </div>
+        <Input
+          disabled={disabled}
+          value={name}
+          placeholder={t("tree.vars.name")}
+          onBlur={onSubmit}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <Input
+          disabled={disabled}
+          value={desc}
+          placeholder={t("tree.vars.desc")}
+          onBlur={onSubmit}
+          onChange={(e) => setDesc(e.target.value)}
+        />
+      </Space.Compact>
+      {!disabled && (
+        <MinusCircleOutlined
+          style={{ marginBottom: "6px" }}
+          onClick={() => {
+            onRemove?.(id);
+            form.submit();
+          }}
+        />
+      )}
+      {disabled && <div style={{ width: 20 }} />}
+    </Flex>
+  );
+};
 
 const TreeInspector: FC = () => {
   const workspace = useWorkspace(
@@ -141,10 +222,33 @@ const TreeInspector: FC = () => {
     form.setFieldValue("export", workspace.editingTree.export !== false);
     form.setFieldValue("firstid", workspace.editingTree.firstid);
     form.setFieldValue("group", groupDefs);
-    form.setFieldValue("declvar", workspace.editingTree.declvar);
-    form.setFieldValue("import", workspace.editingTree.import);
-    form.setFieldValue("subtree", workspace.editingTree.subtree);
-  }, [workspace.editingTree, groupDefs]);
+    form.setFieldValue(
+      "declvar",
+      workspace.editingTree.declvar.map((v) => ({
+        name: v.name,
+        desc: v.desc,
+        count: usingCount[v.name] ?? 0,
+      }))
+    );
+    form.setFieldValue(
+      "import",
+      workspace.editingTree.import.map((entry) => ({
+        path: entry.path,
+        vars: entry.vars.map((v) => ({
+          name: v.name,
+          count: usingCount[v.name] ?? 0,
+        })),
+      }))
+    );
+    form.setFieldValue(
+      "subtree",
+      workspace.editingTree.subtree.map((v) => ({
+        name: v.name,
+        desc: v.desc,
+        count: usingCount[v.name] ?? 0,
+      }))
+    );
+  }, [workspace.editingTree, groupDefs, usingCount]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finish = (values: any) => {
@@ -153,19 +257,22 @@ const TreeInspector: FC = () => {
       desc: values.desc,
       export: values.export,
       firstid: Number(values.firstid),
-      group: (values.group as GroupDef[])
-        .map((v) => (v.value ? v.name : ""))
+      group: Array.from(new Set((values.group as GroupDef[]).map((v) => (v.value ? v.name : ""))))
         .filter((v) => v)
         .sort((a, b) => a.localeCompare(b)),
       declvar: (values.declvar as VarDef[])
         .filter((v) => v && v.name)
+        .map((v) => ({
+          name: v.name,
+          desc: v.desc,
+        }))
         .sort((a, b) => a.name.localeCompare(b.name)),
       import: (values.import as ImportDef[])
         .filter((v) => v && v.path)
         .sort((a, b) => a.path.localeCompare(b.path))
         .map((v) => ({
           path: v.path,
-          vars: v.vars ?? [],
+          vars: (v.vars ?? []).map((v1) => ({ name: v1.name, desc: v1.desc })),
         })),
     } as EditTree);
   };
@@ -240,80 +347,31 @@ const TreeInspector: FC = () => {
             <Form.List name="declvar">
               {(fields, { add, remove }, { errors }) => (
                 <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
-                  {fields.map((item) => {
-                    const vardef = workspace.editingTree.declvar[item.name] as VarDef | undefined;
-                    return (
-                      <Flex key={item.key} gap={4}>
-                        <Space.Compact
-                          className="b3-inspector-vars-item"
-                          style={{ width: "100%", marginBottom: 2 }}
-                        >
-                          <Form.Item
-                            noStyle
-                            name={[item.name, "name"]}
-                            validateTrigger={["onChange", "onBlur"]}
-                            rules={[
-                              {
-                                validator(_, value) {
-                                  if (value && /^[_\w]+\w*$/.test(value)) {
-                                    return Promise.resolve();
-                                  }
-                                  return Promise.reject(new Error(t("tree.vars.invalidName")));
-                                },
-                              },
-                            ]}
-                          >
-                            <Input
-                              addonBefore={
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    cursor: "pointer",
-                                    alignItems: "center",
-                                    width: "33px",
-                                  }}
-                                  onClick={() =>
-                                    vardef && workspace.editing?.dispatch("clickVar", vardef.name)
-                                  }
-                                >
-                                  <AimOutlined />
-                                  <span style={{ marginLeft: 4 }}>
-                                    {usingCount[vardef?.name ?? ""] ?? 0}
-                                  </span>
-                                </div>
-                              }
-                              placeholder={t("tree.vars.name")}
-                              onBlur={form.submit}
-                            />
-                          </Form.Item>
-                          <Form.Item
-                            noStyle
-                            name={[item.name, "desc"]}
-                            validateTrigger={["onChange", "onBlur"]}
-                            rules={[
-                              {
-                                required: true,
-                                message: t("fieldRequired", { field: t("tree.vars.desc") }),
-                              },
-                            ]}
-                          >
-                            <Input
-                              style={{ width: "60%" }}
-                              placeholder={t("tree.vars.desc")}
-                              onBlur={form.submit}
-                            />
-                          </Form.Item>
-                        </Space.Compact>
-                        <MinusCircleOutlined
-                          style={{ marginBottom: "6px" }}
-                          onClick={() => {
-                            remove(item.name);
-                            form.submit();
-                          }}
-                        />
-                      </Flex>
-                    );
-                  })}
+                  {fields.map((item) => (
+                    <Form.Item
+                      key={item.key}
+                      name={item.name}
+                      validateTrigger={["onChange", "onBlur"]}
+                      style={{ marginBottom: 2 }}
+                      rules={[
+                        {
+                          validator(_, value: VarDefItem) {
+                            if (!value.name || !/^[_\w]+\w*$/.test(value.name)) {
+                              return Promise.reject(new Error(t("tree.vars.invalidName")));
+                            }
+                            if (!value.desc) {
+                              return Promise.reject(
+                                new Error(t("fieldRequired", { field: t("tree.vars.desc") }))
+                              );
+                            }
+                            return Promise.resolve();
+                          },
+                        },
+                      ]}
+                    >
+                      <VarDefItem id={item.name} onRemove={remove} />
+                    </Form.Item>
+                  ))}
                   <Form.Item
                     style={{
                       marginRight: fields.length === 0 ? undefined : "18px",
@@ -345,71 +403,11 @@ const TreeInspector: FC = () => {
               <Form.List name="subtree">
                 {(fields) => (
                   <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
-                    {fields.map((item, idx) => {
-                      const vardef = workspace.editingTree.subtree[item.name] as VarDef | undefined;
-                      return (
-                        <Flex key={item.key} gap={4}>
-                          <Space.Compact
-                            className="b3-inspector-vars-item"
-                            style={{ width: "100%", marginBottom: 0, paddingRight: 18 }}
-                          >
-                            <Form.Item noStyle name={[item.name, "id"]}>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  paddingLeft: "8px",
-                                  paddingRight: "8px",
-                                  maxWidth: "52px",
-                                  minWidth: "52px",
-                                  borderTopLeftRadius: idx === 0 ? "4px" : 0,
-                                  borderBottomLeftRadius: idx === fields.length - 1 ? "4px" : 0,
-                                  borderLeft: "1px solid #3d506c",
-                                  borderTop: "1px solid #3d506c",
-                                  cursor: "pointer",
-                                  borderBottom:
-                                    idx === fields.length - 1 ? "1px solid #3d506c" : "none",
-                                }}
-                                onClick={() =>
-                                  vardef && workspace.editing?.dispatch("clickVar", vardef.name)
-                                }
-                              >
-                                <AimOutlined />
-                                <span style={{ marginLeft: 4 }}>
-                                  {usingCount[vardef?.name ?? ""] ?? 0}
-                                </span>
-                              </div>
-                            </Form.Item>
-                            <Form.Item noStyle name={[item.name, "name"]}>
-                              <Input
-                                disabled={true}
-                                placeholder={t("tree.vars.name")}
-                                style={{
-                                  borderRadius: "0",
-                                  borderTop: "1px solid #3d506c",
-                                  borderBottom:
-                                    idx === fields.length - 1 ? "1px solid #3d506c" : "none",
-                                }}
-                              />
-                            </Form.Item>
-                            <Form.Item noStyle name={[item.name, "desc"]}>
-                              <Input
-                                disabled={true}
-                                placeholder={t("tree.vars.desc")}
-                                style={{
-                                  width: "90%",
-                                  borderTopRightRadius: idx === 0 ? "4px" : 0,
-                                  borderBottomRightRadius: idx === fields.length - 1 ? "4px" : 0,
-                                  borderTop: "1px solid #3d506c",
-                                  borderBottom:
-                                    idx === fields.length - 1 ? "1px solid #3d506c" : "none",
-                                }}
-                              />
-                            </Form.Item>
-                          </Space.Compact>
-                        </Flex>
-                      );
-                    })}
+                    {fields.map((item) => (
+                      <Form.Item key={item.key} name={item.name} style={{ marginBottom: 2 }}>
+                        <VarDefItem id={item.name} disabled={true} />
+                      </Form.Item>
+                    ))}
                   </div>
                 )}
               </Form.List>
@@ -456,77 +454,11 @@ const TreeInspector: FC = () => {
                       <Form.List name={[item.name, "vars"]}>
                         {(vars) => (
                           <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
-                            {vars.map((v, idx) => {
-                              const entry = workspace.editingTree.import[item.name] as
-                                | ImportDef
-                                | undefined;
-                              const vardef = entry?.vars[v.name] as VarDef | undefined;
-                              return (
-                                <Flex key={v.key} gap={4}>
-                                  <Space.Compact
-                                    className="b3-inspector-vars-item"
-                                    style={{ width: "100%", marginBottom: 0, paddingRight: 18 }}
-                                  >
-                                    <Form.Item noStyle name={[v.name, "id"]}>
-                                      <div
-                                        style={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                          paddingLeft: "8px",
-                                          paddingRight: "8px",
-                                          maxWidth: "52px",
-                                          minWidth: "52px",
-                                          borderTopLeftRadius: idx === 0 ? "4px" : 0,
-                                          borderBottomLeftRadius:
-                                            idx === vars.length - 1 ? "4px" : 0,
-                                          borderLeft: "1px solid #3d506c",
-                                          borderTop: "1px solid #3d506c",
-                                          borderBottom:
-                                            idx === vars.length - 1 ? "1px solid #3d506c" : "none",
-                                          cursor: "pointer",
-                                        }}
-                                        onClick={() =>
-                                          vardef &&
-                                          workspace.editing?.dispatch("clickVar", vardef.name)
-                                        }
-                                      >
-                                        <AimOutlined />
-                                        <span style={{ marginLeft: 4 }}>
-                                          {usingCount[vardef?.name ?? ""] ?? 0}
-                                        </span>
-                                      </div>
-                                    </Form.Item>
-                                    <Form.Item noStyle name={[v.name, "name"]}>
-                                      <Input
-                                        disabled={true}
-                                        placeholder={t("tree.vars.name")}
-                                        style={{
-                                          borderRadius: "0",
-                                          borderTop: "1px solid #3d506c",
-                                          borderBottom:
-                                            idx === vars.length - 1 ? "1px solid #3d506c" : "none",
-                                        }}
-                                      />
-                                    </Form.Item>
-                                    <Form.Item noStyle name={[v.name, "desc"]}>
-                                      <Input
-                                        disabled={true}
-                                        placeholder={t("tree.vars.desc")}
-                                        style={{
-                                          width: "90%",
-                                          borderTopRightRadius: idx === 0 ? "4px" : 0,
-                                          borderBottomRightRadius:
-                                            idx === vars.length - 1 ? "4px" : 0,
-                                          borderTop: "1px solid #3d506c",
-                                          borderBottom:
-                                            idx === vars.length - 1 ? "1px solid #3d506c" : "none",
-                                        }}
-                                      />
-                                    </Form.Item>
-                                  </Space.Compact>
-                                </Flex>
-                              );
-                            })}
+                            {vars.map((v) => (
+                              <Form.Item key={v.key} name={v.name} style={{ marginBottom: 2 }}>
+                                <VarDefItem id={v.name} disabled={true} />
+                              </Form.Item>
+                            ))}
                           </div>
                         )}
                       </Form.List>
