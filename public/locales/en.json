@@ -102,6 +102,7 @@
   "node.desc": "Node desc",
   "node.disabled": "Disabled",
   "node.editSubtreeDenied": "Unable to edit the subtree node",
+  "node.group": "Node group",
   "node.id": "Node id",
   "node.inputVariable": "Input variables",
   "node.invalidChildren": "Invalid number of children",

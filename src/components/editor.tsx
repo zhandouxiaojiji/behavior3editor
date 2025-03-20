@@ -578,11 +578,14 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       refreshHighlight(editor.root);
     }
     if (names.length === 0 && editor.searchingText) {
+      const matrix = editor.graphMatrix;
       onSearchChange({
         ...filterOption,
         filterType: "content",
         filterStr: editor.searchingText,
       });
+      editor.graphMatrix = matrix;
+      restoreViewport();
     }
   };
 

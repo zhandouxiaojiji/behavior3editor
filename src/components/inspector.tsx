@@ -28,7 +28,6 @@ import { useDebounceCallback } from "usehooks-ts";
 import { useShallow } from "zustand/react/shallow";
 import { EditNode, EditTree, useWorkspace } from "../contexts/workspace-context";
 import {
-  GroupDef,
   ImportDef,
   isBoolType,
   isEnumType,
@@ -61,22 +60,22 @@ interface OptionType extends DefaultOptionType {
   value: string;
 }
 
-interface VarDefItem extends VarDef {
+interface VarItem extends VarDef {
   count?: number;
 }
 
-interface VarDefItemProps {
+interface VarItemProps {
   name: number;
   disabled?: boolean;
-  value?: VarDefItem;
-  onChange?: (vardef: VarDefItem) => void;
+  value?: VarItem;
+  onChange?: (vardef: VarItem) => void;
   onRemove?: (name: number | number[]) => void;
 }
 
-const VarDefItem: FC<VarDefItemProps> = ({ name, onChange, onRemove, disabled, ...props }) => {
+const VarDefItem: FC<VarItemProps> = ({ name, onChange, onRemove, disabled, ...props }) => {
   const { t } = useTranslation();
   const form = useFormInstance();
-  const [value, setValue] = useState<VarDefItem>(props.value ?? { name: "", desc: "" });
+  const [value, setValue] = useState<VarItem>(props.value ?? { name: "", desc: "" });
   const { editing } = useWorkspace(
     useShallow((state) => ({
       editing: state.editing,
@@ -140,6 +139,49 @@ const VarDefItem: FC<VarDefItemProps> = ({ name, onChange, onRemove, disabled, .
   );
 };
 
+interface GroupDefItemProps {
+  disabled?: boolean;
+  value?: string[];
+  onChange?: (value: string[]) => void;
+}
+
+const GroupDefItem: FC<GroupDefItemProps> = ({ disabled, onChange, ...props }) => {
+  const [value, setValue] = useState<string[]>(props.value ?? []);
+  const form = useFormInstance();
+  const workspace = useWorkspace(
+    useShallow((state) => ({
+      groupDefs: state.groupDefs,
+    }))
+  );
+  return (
+    <Flex
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        gap: 10,
+        rowGap: 2,
+        flexWrap: "wrap",
+      }}
+    >
+      {workspace.groupDefs.map((g) => (
+        <Checkbox
+          key={g}
+          disabled={disabled}
+          checked={value.includes(g)}
+          onChange={(e) => {
+            const arr = e.target.checked ? [...value, g] : value.filter((v) => v !== g);
+            setValue(arr);
+            onChange?.(arr);
+            form.submit();
+          }}
+        >
+          {g}
+        </Checkbox>
+      ))}
+    </Flex>
+  );
+};
+
 const TreeInspector: FC = () => {
   const workspace = useWorkspace(
     useShallow((state) => ({
@@ -156,14 +198,6 @@ const TreeInspector: FC = () => {
   );
   const { t } = useTranslation();
   const [form] = Form.useForm();
-
-  // group defs
-  const groupDefs: GroupDef[] = useMemo(() => {
-    return workspace.groupDefs.map((v) => ({
-      name: v,
-      value: workspace.editingTree.group.includes(v),
-    }));
-  }, [workspace.groupDefs, workspace.editingTree]);
 
   // using count
   const usingCount: Record<string, number> = useMemo(() => {
@@ -228,7 +262,7 @@ const TreeInspector: FC = () => {
     form.setFieldValue("desc", workspace.editingTree.desc);
     form.setFieldValue("export", workspace.editingTree.export !== false);
     form.setFieldValue("firstid", workspace.editingTree.firstid);
-    form.setFieldValue("group", groupDefs);
+    form.setFieldValue("group", workspace.editingTree.group);
     form.setFieldValue(
       "declvar",
       workspace.editingTree.declvar.map((v) => ({
@@ -259,7 +293,7 @@ const TreeInspector: FC = () => {
         })),
       }))
     );
-  }, [workspace.editingTree, groupDefs, usingCount]);
+  }, [workspace.editingTree, usingCount]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finish = (values: any) => {
@@ -268,11 +302,7 @@ const TreeInspector: FC = () => {
       desc: values.desc,
       export: values.export,
       firstid: Number(values.firstid),
-      group: Array.from(
-        new Set(((values.group ?? []) as GroupDef[]).map((v) => (v.value ? v.name : "")))
-      )
-        .filter((v) => v)
-        .sort((a, b) => a.localeCompare(b)),
+      group: ((values.group ?? []) as string[]).filter((g) => g).sort((a, b) => a.localeCompare(b)),
       declvar: (values.declvar as VarDef[])
         .filter((v) => v && v.name)
         .map((v) => ({
@@ -319,38 +349,14 @@ const TreeInspector: FC = () => {
               <Switch onChange={() => form.submit()} />
             </Form.Item>
           </>
-          {groupDefs.length > 0 && (
+          {workspace.groupDefs.length > 0 && (
             <>
               <Divider orientation="left">
                 <h4>{t("tree.group")}</h4>
               </Divider>
-              <Form.List name="group">
-                {(items) => (
-                  <Flex
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      gap: 8,
-                      rowGap: 0,
-                      marginLeft: 16,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {items
-                      .filter((v) => groupDefs[v.name])
-                      .map((item, idx) => (
-                        <Form.Item
-                          key={item.key}
-                          name={[item.name, "value"]}
-                          valuePropName="checked"
-                          style={{ marginBottom: 0 }}
-                        >
-                          <Checkbox onChange={form.submit}>{groupDefs[idx].name}</Checkbox>
-                        </Form.Item>
-                      ))}
-                  </Flex>
-                )}
-              </Form.List>
+              <Form.Item name="group" style={{ marginLeft: 16 }}>
+                <GroupDefItem />
+              </Form.Item>
             </>
           )}
           <>
@@ -368,7 +374,7 @@ const TreeInspector: FC = () => {
                       style={{ marginBottom: 2 }}
                       rules={[
                         {
-                          validator(_, value: VarDefItem) {
+                          validator(_, value: VarItem) {
                             if (!value.name || !/^[_\w]+\w*$/.test(value.name)) {
                               return Promise.reject(new Error(t("tree.vars.invalidName")));
                             }
@@ -426,7 +432,7 @@ const TreeInspector: FC = () => {
                         <Flex gap={4} style={{ width: "100%" }}>
                           <Form.Item
                             name={[item.name, "path"]}
-                            style={{ width: "100%", marginBottom: 2 }}
+                            style={{ width: "100%", maxWidth: 300, marginBottom: 2 }}
                           >
                             <Select
                               disabled={true}
@@ -482,7 +488,7 @@ const TreeInspector: FC = () => {
                       <Flex gap={4} style={{ width: "100%" }}>
                         <Form.Item
                           name={[item.name, "path"]}
-                          style={{ width: "100%", marginBottom: 2 }}
+                          style={{ width: "100%", maxWidth: 300, marginBottom: 2 }}
                         >
                           <Select
                             showSearch
@@ -547,13 +553,14 @@ const TreeInspector: FC = () => {
 const NodeInspector: FC = () => {
   const workspace = useWorkspace(
     useShallow((state) => ({
+      allFiles: state.allFiles,
       editing: state.editing,
       editingNode: state.editingNode!,
-      nodeDefs: state.nodeDefs,
-      allFiles: state.allFiles,
       fileTree: state.fileTree,
-      relative: state.relative,
+      groupDefs: state.groupDefs,
+      nodeDefs: state.nodeDefs,
       onEditingNode: state.onEditingNode,
+      relative: state.relative,
     }))
   );
 
@@ -577,6 +584,7 @@ const NodeInspector: FC = () => {
     form.setFieldValue("debug", data.debug);
     form.setFieldValue("disabled", data.disabled);
     form.setFieldValue("path", data.path);
+    form.setFieldValue("group", def.group);
     if (def.children === undefined || def.children === -1) {
       form.setFieldValue("children", t("node.children.unlimited"));
     } else {
@@ -843,6 +851,11 @@ const NodeInspector: FC = () => {
           >
             <Input disabled={true} />
           </Form.Item>
+          {workspace.groupDefs.length > 0 && def.group?.length && (
+            <Form.Item name="group" label={t("node.group")}>
+              <GroupDefItem disabled={true} />
+            </Form.Item>
+          )}
           <Form.Item
             name="children"
             label={t("node.children")}
@@ -1461,6 +1474,7 @@ const NodeDefInspector: FC = () => {
   const workspace = useWorkspace(
     useShallow((state) => ({
       editingNodeDef: state.editingNodeDef!,
+      groupDefs: state.groupDefs,
     }))
   );
   const { t } = useTranslation();
@@ -1474,6 +1488,7 @@ const NodeDefInspector: FC = () => {
     form.setFieldValue("type", def.type);
     form.setFieldValue("desc", def.desc);
     form.setFieldValue("doc", def.doc);
+    form.setFieldValue("group", def.group);
     if (def.children === undefined || def.children === -1) {
       form.setFieldValue("children", t("node.children.unlimited"));
     } else {
@@ -1510,6 +1525,11 @@ const NodeDefInspector: FC = () => {
           <Form.Item name="type" label={t("node.type")}>
             <Input disabled={true} />
           </Form.Item>
+          {workspace.groupDefs.length > 0 && def.group?.length && (
+            <Form.Item name="group" label={t("node.group")}>
+              <GroupDefItem disabled={true} />
+            </Form.Item>
+          )}
           <Form.Item name="children" label={t("node.children")}>
             <Input disabled={true} />
           </Form.Item>

@@ -1,10 +1,12 @@
 {
+  "version": "1.8.0",
   "name": "test-vars",
   "desc": "",
   "firstid": 1,
   "export": true,
   "group": [
-    "Client"
+    "Client",
+    "Server"
   ],
   "import": [
     "vars/declare-core.json",
@@ -95,6 +97,5 @@
         ]
       }
     ]
-  },
-  "version": "1.8.0"
+  }
 }

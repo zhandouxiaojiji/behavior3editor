@@ -54,6 +54,7 @@ export const initWorkdir = (path: string, handler: typeof alertError) => {
 
     const group = v.type.match(/\(([\w|]+)\)/)?.[1];
     if (group) {
+      v.type = v.type.match(/^\w+/)![0] as NodeDef["type"];
       v.group = group.split("|");
       v.group.forEach((g) => groups.add(g));
     }

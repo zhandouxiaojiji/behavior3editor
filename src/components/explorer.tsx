@@ -325,7 +325,7 @@ export const Explorer: FC = () => {
     };
     workspace.nodeDefs.forEach((nodeDef) => {
       (nodeDef.group || [""]).forEach((g, idx) => {
-        const typeGroup = !g ? nodeDef.type : nodeDef.type.replace(/\(([\w|]+)\)/, `(${g})`);
+        const typeGroup = !g ? nodeDef.type : `${nodeDef.type} (${g})`;
         let catalog = data.children?.find((nt) => nt.title === typeGroup);
         if (!catalog) {
           const type = getNodeType(nodeDef);

@@ -102,6 +102,7 @@
   "node.desc": "节点说明",
   "node.disabled": "禁用",
   "node.editSubtreeDenied": "不能编辑子树节点",
+  "node.group": "节点分组",
   "node.id": "节点标识",
   "node.invalidChildren": "子节点数量不合法",
   "node.inputVariable": "输入变量",
