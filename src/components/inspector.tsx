@@ -243,6 +243,7 @@ const TreeInspector: FC = () => {
         path: entry.path,
         vars: entry.vars.map((v) => ({
           name: v.name,
+          desc: v.desc,
           count: usingCount[v.name] ?? 0,
         })),
       }))
@@ -253,6 +254,7 @@ const TreeInspector: FC = () => {
         path: entry.path,
         vars: entry.vars.map((v) => ({
           name: v.name,
+          desc: v.desc,
           count: usingCount[v.name] ?? 0,
         })),
       }))
