@@ -21,21 +21,13 @@ import {
   EditTree,
   useWorkspace,
 } from "../contexts/workspace-context";
-import {
-  ImportDef,
-  isExprType,
-  NodeModel,
-  TreeGraphData,
-  TreeModel,
-  VarDef,
-  VERSION,
-} from "../misc/b3type";
+import { ImportDef, isExprType, NodeModel, TreeGraphData, TreeModel, VarDef } from "../misc/b3type";
 import * as b3util from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
 import { Hotkey, isMacos, useKeyDown } from "../misc/keys";
 import Path from "../misc/path";
-import { mergeClassNames, readJson } from "../misc/util";
+import { mergeClassNames, readJson, writeTree } from "../misc/util";
 import "./register-node";
 import { calcTreeDataSize } from "./register-node";
 
@@ -829,17 +821,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     editor.autoId = b3util.refreshTreeDataId(editor.root, editor.data.firstid);
     editor.data.root = b3util.createFileData(editor.root);
     editor.modifiedTime = Date.now();
-    fs.writeFileSync(
-      path,
-      JSON.stringify(
-        {
-          ...editor.data,
-          version: VERSION,
-        },
-        null,
-        2
-      )
-    );
+    writeTree(path, editor.data);
     workspace.updateFileMeta(editor);
     editor.unsave = false;
     editor.graph.changeData(editor.root);

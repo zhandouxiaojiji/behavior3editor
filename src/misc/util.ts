@@ -7,14 +7,28 @@ export const readJson = (path: string) => {
 };
 
 export const readTree = (path: string) => {
-  const str = fs.readFileSync(path, "utf-8");
-  const data = JSON.parse(str) as TreeModel;
+  const data = readJson(path);
   data.version = data.version ?? VERSION;
   data.firstid = data.firstid ?? 1;
   data.group = data.group || [];
   data.import = data.import || [];
   data.declvar = data.declvar || [];
+  data.root = data.root || {};
   return data;
+};
+
+export const writeTree = (path: string, data: TreeModel) => {
+  writeJson(path, {
+    version: VERSION,
+    name: data.name,
+    desc: data.desc,
+    firstid: data.firstid,
+    export: data.export,
+    group: data.group,
+    import: data.import,
+    declvar: data.declvar,
+    root: data.root,
+  });
 };
 
 export const writeJson = (path: string, data: unknown) => {

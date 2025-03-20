@@ -60,18 +60,17 @@ interface VarDefItem extends VarDef {
 }
 
 interface VarDefItemProps {
-  id: number;
+  name: number;
   disabled?: boolean;
   value?: VarDefItem;
   onChange?: (vardef: VarDefItem) => void;
-  onRemove?: (index: number | number[]) => void;
+  onRemove?: (name: number | number[]) => void;
 }
 
-const VarDefItem: FC<VarDefItemProps> = ({ id, value, onChange, onRemove, disabled }) => {
+const VarDefItem: FC<VarDefItemProps> = ({ name, onChange, onRemove, disabled, ...props }) => {
   const { t } = useTranslation();
   const form = useFormInstance();
-  const [name, setName] = useState(value?.name ?? "");
-  const [desc, setDesc] = useState(value?.desc ?? "");
+  const [value, setValue] = useState<VarDefItem>(props.value ?? { name: "", desc: "" });
   const { editing } = useWorkspace(
     useShallow((state) => ({
       editing: state.editing,
@@ -79,7 +78,7 @@ const VarDefItem: FC<VarDefItemProps> = ({ id, value, onChange, onRemove, disabl
   );
 
   const onSubmit = () => {
-    onChange?.({ name, desc });
+    onChange?.(value);
     form.submit();
   };
 
@@ -108,24 +107,24 @@ const VarDefItem: FC<VarDefItemProps> = ({ id, value, onChange, onRemove, disabl
         </div>
         <Input
           disabled={disabled}
-          value={name}
+          value={value.name}
           placeholder={t("tree.vars.name")}
           onBlur={onSubmit}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => setValue({ ...value, name: e.target.value })}
         />
         <Input
           disabled={disabled}
-          value={desc}
+          value={value.desc}
           placeholder={t("tree.vars.desc")}
           onBlur={onSubmit}
-          onChange={(e) => setDesc(e.target.value)}
+          onChange={(e) => setValue({ ...value, desc: e.target.value })}
         />
       </Space.Compact>
       {!disabled && (
         <MinusCircleOutlined
           style={{ marginBottom: "6px" }}
           onClick={() => {
-            onRemove?.(id);
+            onRemove?.(name);
             form.submit();
           }}
         />
@@ -257,7 +256,9 @@ const TreeInspector: FC = () => {
       desc: values.desc,
       export: values.export,
       firstid: Number(values.firstid),
-      group: Array.from(new Set((values.group as GroupDef[]).map((v) => (v.value ? v.name : ""))))
+      group: Array.from(
+        new Set(((values.group ?? []) as GroupDef[]).map((v) => (v.value ? v.name : "")))
+      )
         .filter((v) => v)
         .sort((a, b) => a.localeCompare(b)),
       declvar: (values.declvar as VarDef[])
@@ -369,7 +370,7 @@ const TreeInspector: FC = () => {
                         },
                       ]}
                     >
-                      <VarDefItem id={item.name} onRemove={remove} />
+                      <VarDefItem name={item.name} onRemove={remove} />
                     </Form.Item>
                   ))}
                   <Form.Item
@@ -405,7 +406,7 @@ const TreeInspector: FC = () => {
                   <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
                     {fields.map((item) => (
                       <Form.Item key={item.key} name={item.name} style={{ marginBottom: 2 }}>
-                        <VarDefItem id={item.name} disabled={true} />
+                        <VarDefItem name={item.name} disabled={true} />
                       </Form.Item>
                     ))}
                   </div>
@@ -456,7 +457,7 @@ const TreeInspector: FC = () => {
                           <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
                             {vars.map((v) => (
                               <Form.Item key={v.key} name={v.name} style={{ marginBottom: 2 }}>
-                                <VarDefItem id={v.name} disabled={true} />
+                                <VarDefItem name={v.name} disabled={true} />
                               </Form.Item>
                             ))}
                           </div>
