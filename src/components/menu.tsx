@@ -58,7 +58,12 @@ export const Menu: FC<LayoutProps> = () => {
   );
   const enabled = !!workspace.workdir;
   const homedir = app.getPath("home");
-  const { settings } = useSetting(useShallow((state) => ({ settings: state.data })));
+  const { settings, setLayout } = useSetting(
+    useShallow((state) => ({
+      settings: state.data,
+      setLayout: state.setLayout,
+    }))
+  );
 
   const menuTemplate: MenuItemConstructorOptions[] = useMemo(() => {
     const recentWorkspaces: MenuItemConstructorOptions[] = settings.recent.map((path, i) => ({
@@ -349,6 +354,30 @@ export const Menu: FC<LayoutProps> = () => {
               },
             ],
           },
+          {
+            id: "menu.view.layout",
+            label: t("nodeLayout"),
+            submenu: [
+              {
+                id: "menu.view.layout.compact",
+                label: t("compact"),
+                type: "radio",
+                checked: settings.layout === "compact",
+                click: () => {
+                  setLayout("compact");
+                },
+              },
+              {
+                id: "menu.view.layout.normal",
+                label: t("normal"),
+                type: "radio",
+                checked: settings.layout === "normal",
+                click: () => {
+                  setLayout("normal");
+                },
+              },
+            ],
+          },
         ],
       },
       {
@@ -365,7 +394,7 @@ export const Menu: FC<LayoutProps> = () => {
         ],
       },
     ] as MenuItemConstructorOptions[];
-  }, [t, workspace.workdir, settings.recent, workspace.editing]);
+  }, [t, workspace.workdir, settings.recent, workspace.editing, settings]);
 
   if (isMacos) {
     const menu = AppMenu.buildFromTemplate(menuTemplate);

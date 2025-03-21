@@ -4,11 +4,15 @@ import { useWorkspace } from "../contexts/workspace-context";
 import { TreeGraphData, getNodeType, isExprType } from "../misc/b3type";
 import { checkTreeData, nodeDefs, parseExpr, usingGroups, usingVars } from "../misc/b3util";
 import i18n from "../misc/i18n";
+import { isMacos } from "../misc/keys";
 
 let ctx: CanvasRenderingContext2D | null = null;
 let defaultFontSize = "";
 const textWidthMap = new Map<string, number>();
 const textLines: Record<string, string[]> = {};
+
+let layoutWidth = 220;
+let layoutStyle: "compact" | "normal" = "compact";
 
 const calcTextWith = (text: string, fontSize?: string) => {
   fontSize = fontSize ?? defaultFontSize;
@@ -35,7 +39,7 @@ const calcTextWith = (text: string, fontSize?: string) => {
       const metrics = ctx.measureText(text);
       width = metrics.width;
       // width = width - (isMacos ? 1.6 : 0.8);
-      // width *= isMacos ? 0.88 : 0.95;
+      width *= isMacos ? 0.88 : 0.95;
       textWidthMap.set(key, width);
     }
   }
@@ -143,7 +147,16 @@ export const calcTreeDataSize = (data: TreeGraphData) => {
   updateHeight(data.args);
   updateHeight(data.input);
   updateHeight(data.output);
-  return [260, height];
+  return [layoutWidth, height];
+};
+
+export const setLayoutStyle = (style: "compact" | "normal") => {
+  layoutStyle = style;
+  if (style === "compact") {
+    layoutWidth = 220;
+  } else {
+    layoutWidth = 260;
+  }
 };
 
 const NODE_COLORS = {
@@ -216,10 +229,8 @@ G6.registerNode(
         classify = "Error";
         color = NODE_COLORS[classify];
       }
-      const size = data.size ? data.size : [200, 40];
-      const w = size[0];
-      const h = size[1];
-      const r = 4;
+      const [width, height] = data.size;
+      const radius = 4;
 
       let bgColor = "white";
       let textColor = "black";
@@ -234,7 +245,6 @@ G6.registerNode(
       const addShape = (type: string, shapeCfg: ShapeCfg, clickEnabled: boolean = false) => {
         shapeCfg.draggable = clickEnabled;
         shapeCfg.capture = clickEnabled;
-        // shapeCfg.attrs.fontFamily = "Menlo, Monaco, 'Courier New', monospace";
         return group.addShape(type, shapeCfg);
       };
 
@@ -242,11 +252,11 @@ G6.registerNode(
         attrs: {
           x: -15,
           y: -15,
-          width: w + 30,
-          height: h + 30,
+          width: width + 30,
+          height: height + 30,
           fill: "#fff",
           fillOpacity: 0,
-          radius: r + 4,
+          radius: radius + 4,
         },
         name: "main-box-selected",
         draggable: true,
@@ -258,12 +268,12 @@ G6.registerNode(
           attrs: {
             x: 0,
             y: 0,
-            width: w,
-            height: h,
+            width: width,
+            height: height,
             stroke: color,
             lineWidth: 2,
             fill: bgColor,
-            radius: r,
+            radius: radius,
           },
           name: "main-box",
           draggable: true,
@@ -271,17 +281,19 @@ G6.registerNode(
         true
       );
 
-      // name line
-      addShape("path", {
-        attrs: {
-          path: [
-            ["M", 46, 23],
-            ["L", w - 40, 23],
-          ],
-          stroke: "#666",
-          lineWidth: 1,
-        },
-      });
+      if (layoutStyle === "normal") {
+        // name line
+        addShape("path", {
+          attrs: {
+            path: [
+              ["M", 46, 23],
+              ["L", width - 40, 23],
+            ],
+            stroke: "#666",
+            lineWidth: 1,
+          },
+        });
+      }
 
       // is subtree
       if (data.path && data.id !== "1") {
@@ -289,12 +301,12 @@ G6.registerNode(
           attrs: {
             x: -10,
             y: -10,
-            width: w + 20,
-            height: h + 20,
+            width: width + 20,
+            height: height + 20,
             stroke: "#a5b1be",
             lineWidth: 2.5,
             lineDash: [6, 6],
-            radius: [r, r, r, r],
+            radius: [radius, radius, radius, radius],
           },
           name: "subtree",
           draggable: true,
@@ -306,10 +318,10 @@ G6.registerNode(
         attrs: {
           x: 0,
           y: 0,
-          width: 40,
-          height: h,
+          width: layoutStyle === "compact" ? width : 40,
+          height: layoutStyle === "compact" ? 25 : height,
           fill: color,
-          radius: [r, 0, 0, r],
+          radius: layoutStyle === "compact" ? [radius, radius, 0, 0] : [radius, 0, 0, radius],
         },
         name: "name-bg",
         draggable: true,
@@ -320,7 +332,7 @@ G6.registerNode(
         attrs: {
           textBaseline: "top",
           x: -3,
-          y: h / 2 - 8,
+          y: height / 2 - 8,
           fontSize: 20,
           lineHeight: 20,
           text: data.id,
@@ -339,9 +351,9 @@ G6.registerNode(
       addShape("image", {
         attrs: {
           x: 5,
-          y: h / 2 - 16,
-          height: 30,
-          width: 30,
+          y: layoutStyle === "compact" ? 3 : height / 2 - 16,
+          height: layoutStyle === "compact" ? 18 : 30,
+          width: layoutStyle === "compact" ? 18 : 30,
           img,
         },
         name: "node-icon",
@@ -351,10 +363,10 @@ G6.registerNode(
       const status = ((data.status ?? 0) & 0b111).toString(2).padStart(3, "0");
       addShape("image", {
         attrs: {
-          x: w - 18,
+          x: width - 18,
           y: 3,
-          height: 20,
-          width: 20,
+          height: layoutStyle === "compact" ? 18 : 20,
+          width: layoutStyle === "compact" ? 18 : 20,
           img: `./icons/status${status}.svg`,
         },
         name: "status-icon",
@@ -364,12 +376,12 @@ G6.registerNode(
       addShape("text", {
         attrs: {
           textBaseline: "top",
-          x: 46,
+          x: layoutStyle === "compact" ? 26 : 46,
           y: 5,
-          fontWeight: 900,
+          fontWeight: "bolder",
           text: data.name,
           fill: textColor,
-          fontSize: 14,
+          fontSize: layoutStyle === "compact" ? 13 : 14,
         },
         name: "name-text",
       });
@@ -378,7 +390,7 @@ G6.registerNode(
       if (data.debug) {
         addShape("image", {
           attrs: {
-            x: w - 30,
+            x: width - 30,
             y: 4,
             height: 16,
             width: 16,
@@ -391,7 +403,7 @@ G6.registerNode(
       if (data.disabled) {
         addShape("image", {
           attrs: {
-            x: w - 30 - (data.debug ? 18 : 0),
+            x: width - 30 - (data.debug ? 18 : 0),
             y: 4,
             height: 16,
             width: 16,
@@ -401,20 +413,21 @@ G6.registerNode(
         });
       }
 
-      const x = 46;
-      let y = 32;
+      const contentWidth = 220;
+      const contentX = layoutStyle === "compact" ? 6 : 46;
+      let contentY = 32;
       // desc text
       let desc = (data.desc || nodeDef.desc) as string;
       if (desc || desc === "") {
         desc = i18n.t("regnode.mark") + desc;
-        desc = cutWordTo(desc, w - 40 - 15);
+        desc = cutWordTo(desc, contentWidth - 15);
         addShape("text", {
           attrs: {
             textBaseline: "top",
-            x,
-            y,
+            x: contentX,
+            y: contentY,
             lineHeight: 20,
-            fontWeight: 800,
+            fontWeight: "bolder",
             text: `${desc}`,
             fill: textColor,
           },
@@ -428,12 +441,12 @@ G6.registerNode(
         if (data.highlightArgs) {
           addShape("rect", {
             attrs: {
-              x: x - 2,
-              y: y + 17,
-              width: w - 40 - 6,
+              x: contentX - 2,
+              y: contentY + 17,
+              width: contentWidth - 6,
               height: 18,
               fill: "#0d1117",
-              radius: [r, r, r, r],
+              radius: [radius, radius, radius, radius],
             },
             name: "args-text-bg",
           });
@@ -441,9 +454,9 @@ G6.registerNode(
         addShape("text", {
           attrs: {
             textBaseline: "top",
-            x,
-            y: y + 20,
-            w,
+            x: contentX,
+            y: contentY + 20,
+            w: width,
             lineHeight: 20,
             text: str,
             fill: data.highlightArgs ? "white" : textColor,
@@ -451,7 +464,7 @@ G6.registerNode(
           },
           name: "args-text",
         });
-        y += 20 * line;
+        contentY += 20 * line;
       }
 
       const input = data.input ?? [];
@@ -463,12 +476,12 @@ G6.registerNode(
         if (data.highlightInput) {
           addShape("rect", {
             attrs: {
-              x: x - 2,
-              y: y + 17,
-              width: w - 40 - 6,
+              x: contentX - 2,
+              y: contentY + 17,
+              width: contentWidth - 6,
               height: 18,
               fill: "#0d1117",
-              radius: [r, r, r, r],
+              radius: [radius, radius, radius, radius],
             },
             name: "input-text-bg",
           });
@@ -478,8 +491,8 @@ G6.registerNode(
           {
             attrs: {
               textBaseline: "top",
-              x,
-              y: y + 20,
+              x: contentX,
+              y: contentY + 20,
               lineHeight: 20,
               text: str,
               fill: data.highlightInput ? "white" : textColor,
@@ -489,7 +502,7 @@ G6.registerNode(
           },
           true
         );
-        y += 20 * line;
+        contentY += 20 * line;
       }
 
       const output = data.output ?? [];
@@ -501,12 +514,12 @@ G6.registerNode(
         if (data.highlightOutput) {
           addShape("rect", {
             attrs: {
-              x: x - 2,
-              y: y + 17,
-              width: w - 40 - 6,
+              x: contentX - 2,
+              y: contentY + 17,
+              width: contentWidth - 6,
               height: 18,
               fill: "#0d1117",
-              radius: [r, r, r, r],
+              radius: [radius, radius, radius, radius],
             },
             name: "output-text-bg",
           });
@@ -516,8 +529,8 @@ G6.registerNode(
           {
             attrs: {
               textBaseline: "top",
-              x,
-              y: y + 20,
+              x: contentX,
+              y: contentY + 20,
               lineHeight: 20,
               text: str,
               fill: data.highlightOutput ? "white" : textColor,
@@ -527,24 +540,24 @@ G6.registerNode(
           },
           true
         );
-        y += 20 * line;
+        contentY += 20 * line;
       }
 
       if (data.path) {
         let path = (i18n.t("regnode.subtree") + data.path) as string;
-        path = cutWordTo(path, w - 40 - 15);
+        path = cutWordTo(path, contentWidth - 15);
         addShape("text", {
           attrs: {
             textBaseline: "top",
-            x,
-            y: y + 20,
+            x: contentX,
+            y: contentY + 20,
             lineHeight: 20,
             text: `${path}`,
             fill: textColor,
           },
           name: "subtree-text",
         });
-        y += 20;
+        contentY += 20;
       }
 
       addShape("rect", {
@@ -552,14 +565,14 @@ G6.registerNode(
         attrs: {
           x: 0,
           y: 0,
-          width: w,
-          height: h / 2,
+          width: width,
+          height: height / 2,
           lineWidth: 2,
           stroke: "#ff0000",
           strokeOpacity: 0,
           fill: "#ff0000",
           fillOpacity: 0,
-          radius: [r, r, 0, 0],
+          radius: [radius, radius, 0, 0],
         },
         draggable: true,
       });
@@ -568,15 +581,15 @@ G6.registerNode(
         name: "drag-down",
         attrs: {
           x: 0,
-          y: h / 2,
-          width: w,
-          height: h / 2,
+          y: height / 2,
+          width: width,
+          height: height / 2,
           lineWidth: 2,
           stroke: "#ff0000",
           strokeOpacity: 0,
           fill: "#ff0000",
           fillOpacity: 0,
-          radius: [0, 0, r, r],
+          radius: [0, 0, radius, radius],
         },
         draggable: true,
       });
@@ -584,16 +597,16 @@ G6.registerNode(
       addShape("rect", {
         name: "drag-right",
         attrs: {
-          x: w / 2,
+          x: width / 2,
           y: 0,
-          width: w / 2,
-          height: h,
+          width: width / 2,
+          height: height,
           lineWidth: 2,
           stroke: "#ff0000",
           strokeOpacity: 0,
           fill: "#ff0000",
           fillOpacity: 0,
-          radius: [0, r, r, 0],
+          radius: [0, radius, radius, 0],
         },
         draggable: true,
       });
@@ -601,8 +614,8 @@ G6.registerNode(
       if (data.children?.length) {
         addShape("marker", {
           attrs: {
-            x: w,
-            y: h / 2,
+            x: width,
+            y: height / 2,
             r: 6,
             symbol: G6.Marker.collapse,
             stroke: "#666",

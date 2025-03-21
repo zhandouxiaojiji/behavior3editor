@@ -85,7 +85,7 @@ export interface TreeGraphData extends G6TreeGraphData {
   path?: string;
   lastModified?: number;
 
-  size?: number[];
+  size: number[];
   highlightInput?: boolean;
   highlightOutput?: boolean;
   highlightArgs?: boolean;

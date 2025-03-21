@@ -671,6 +671,7 @@ export const createTreeData = (
     disabled: node.disabled,
     def: nodeDefs.get(node.name),
     parent: parent,
+    size: [0, 0],
   };
 
   treeData.def.args?.forEach((arg) => {

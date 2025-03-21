@@ -468,6 +468,9 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     editor.autoId = b3util.refreshTreeDataId(editor.root, editor.data.firstid);
     editor.graph.changeData(editor.root);
     editor.graph.layout();
+    if (editor.selectedId) {
+      selectNode(editor.selectedId);
+    }
     restoreViewport();
   };
 
@@ -945,18 +948,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
         direction: "LR",
         getHGap: () => 30,
         getWidth: (d: TreeGraphData) => {
-          if (d.size) {
-            return d.size[0];
-          } else {
-            return 200;
-          }
+          return d.size![0];
         },
         getHeight: (d: TreeGraphData) => {
-          if (d.size) {
-            return d.size[1];
-          } else {
-            return 50;
-          }
+          return d.size![1];
         },
       },
     });
@@ -1279,6 +1274,7 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   useEffect(() => {
     if (workspace.editing === editor) {
       checkSubtree();
+      editor.graph && refresh();
     }
   }, [workspace.editing]);
 
