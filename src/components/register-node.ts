@@ -4,11 +4,11 @@ import { useWorkspace } from "../contexts/workspace-context";
 import { TreeGraphData, getNodeType, isExprType } from "../misc/b3type";
 import { checkTreeData, nodeDefs, parseExpr, usingGroups, usingVars } from "../misc/b3util";
 import i18n from "../misc/i18n";
-import { isMacos } from "../misc/keys";
 
 let ctx: CanvasRenderingContext2D | null = null;
 let defaultFontSize = "";
 const textWidthMap = new Map<string, number>();
+const textLines: Record<string, string[]> = {};
 
 const calcTextWith = (text: string, fontSize?: string) => {
   fontSize = fontSize ?? defaultFontSize;
@@ -30,45 +30,68 @@ const calcTextWith = (text: string, fontSize?: string) => {
       css ||= getComputedStyle(b3Workspace);
       ctx = ctx || document.createElement("canvas").getContext("2d")!;
       ctx.font = `${fontSize} ${css.fontFamily}`;
+      ctx.wordSpacing = "0px";
+      ctx.letterSpacing = "-0.5px";
       const metrics = ctx.measureText(text);
       width = metrics.width;
-      width = width - (isMacos ? 1.6 : 0.8);
+      // width = width - (isMacos ? 1.6 : 0.8);
+      // width *= isMacos ? 0.88 : 0.95;
       textWidthMap.set(key, width);
     }
   }
   return width ?? 13;
 };
 
-const cutWordTo = (str: string, maxWidth: number, fontSize?: string) => {
-  let i = 0;
-  for (; i < str.length; i++) {
-    maxWidth -= calcTextWith(str.charAt(i), fontSize);
-    if (maxWidth < 0) {
-      i--;
-      break;
+const calcTextLines = (str: string, maxWidth: number, fontSize?: string) => {
+  const key = `${str}-${maxWidth}-${fontSize}`;
+  let lines = textLines[key];
+  if (!lines) {
+    lines = [];
+    textLines[key] = lines;
+    while (str.length > 0) {
+      let left = 0;
+      let right = str.length;
+      let mid = 0;
+      let width = 0;
+
+      while (left < right) {
+        mid = Math.floor((left + right + 1) / 2);
+        const substr = str.substring(0, mid);
+        width = calcTextWith(substr, fontSize);
+
+        if (width <= maxWidth) {
+          left = mid;
+        } else {
+          right = mid - 1;
+        }
+      }
+
+      if (left > 0) {
+        lines.push(str.substring(0, left));
+        str = str.substring(left);
+      } else {
+        // Handle case where even single character exceeds maxWidth
+        lines.push(str.substring(0, 1));
+        str = str.substring(1);
+      }
     }
   }
-  return str.slice(0, i) + (i < str.length - 1 ? "..." : "");
+  return lines;
+};
+
+const cutWordTo = (str: string, maxWidth: number, fontSize?: string) => {
+  const lines = calcTextLines(str, maxWidth, fontSize);
+  if (lines.length > 1) {
+    return lines[0].slice(0, -1) + "...";
+  }
+  return lines[0];
 };
 
 const toBreakWord = (str: string, maxWidth: number, fontSize?: string) => {
-  const chars: string[] = [];
-  let line = str.length > 0 ? 1 : 0;
-  let width = maxWidth;
-  for (let i = 0; i < str.length; i++) {
-    width -= calcTextWith(str.charAt(i), fontSize);
-    if (width > 0) {
-      chars.push(str.charAt(i));
-    } else {
-      width = maxWidth;
-      line++;
-      chars.push("\n");
-      i--;
-    }
-  }
+  const lines = calcTextLines(str, maxWidth, fontSize);
   return {
-    str: chars.join(""),
-    line,
+    str: lines.join("\n"),
+    line: lines.length,
   };
 };
 
@@ -120,7 +143,7 @@ export const calcTreeDataSize = (data: TreeGraphData) => {
   updateHeight(data.args);
   updateHeight(data.input);
   updateHeight(data.output);
-  return [220, height];
+  return [260, height];
 };
 
 const NODE_COLORS = {
@@ -193,7 +216,7 @@ G6.registerNode(
         classify = "Error";
         color = NODE_COLORS[classify];
       }
-      const size = data.size ? data.size : [150, 40];
+      const size = data.size ? data.size : [200, 40];
       const w = size[0];
       const h = size[1];
       const r = 4;
@@ -248,6 +271,18 @@ G6.registerNode(
         true
       );
 
+      // name line
+      addShape("path", {
+        attrs: {
+          path: [
+            ["M", 46, 23],
+            ["L", w - 40, 23],
+          ],
+          stroke: "#666",
+          lineWidth: 1,
+        },
+      });
+
       // is subtree
       if (data.path && data.id !== "1") {
         addShape("rect", {
@@ -271,10 +306,10 @@ G6.registerNode(
         attrs: {
           x: 0,
           y: 0,
-          width: w,
-          height: 25,
+          width: 40,
+          height: h,
           fill: color,
-          radius: [r, r, 0, 0],
+          radius: [r, 0, 0, r],
         },
         name: "name-bg",
         draggable: true,
@@ -304,9 +339,9 @@ G6.registerNode(
       addShape("image", {
         attrs: {
           x: 5,
-          y: 3,
-          height: 18,
-          width: 18,
+          y: h / 2 - 16,
+          height: 30,
+          width: 30,
           img,
         },
         name: "node-icon",
@@ -316,10 +351,10 @@ G6.registerNode(
       const status = ((data.status ?? 0) & 0b111).toString(2).padStart(3, "0");
       addShape("image", {
         attrs: {
-          x: 204,
+          x: w - 18,
           y: 3,
-          height: 18,
-          width: 18,
+          height: 20,
+          width: 20,
           img: `./icons/status${status}.svg`,
         },
         name: "status-icon",
@@ -329,12 +364,12 @@ G6.registerNode(
       addShape("text", {
         attrs: {
           textBaseline: "top",
-          x: 26,
+          x: 46,
           y: 5,
-          fontWeight: 800,
+          fontWeight: 900,
           text: data.name,
           fill: textColor,
-          fontSize: 13,
+          fontSize: 14,
         },
         name: "name-text",
       });
@@ -343,7 +378,7 @@ G6.registerNode(
       if (data.debug) {
         addShape("image", {
           attrs: {
-            x: 192,
+            x: w - 30,
             y: 4,
             height: 16,
             width: 16,
@@ -356,7 +391,7 @@ G6.registerNode(
       if (data.disabled) {
         addShape("image", {
           attrs: {
-            x: 200 - (data.debug ? 25 : 8),
+            x: w - 30 - (data.debug ? 18 : 0),
             y: 4,
             height: 16,
             width: 16,
@@ -366,13 +401,13 @@ G6.registerNode(
         });
       }
 
-      const x = 6;
+      const x = 46;
       let y = 32;
       // desc text
       let desc = (data.desc || nodeDef.desc) as string;
       if (desc || desc === "") {
         desc = i18n.t("regnode.mark") + desc;
-        desc = cutWordTo(desc, w - 15);
+        desc = cutWordTo(desc, w - 40 - 15);
         addShape("text", {
           attrs: {
             textBaseline: "top",
@@ -395,7 +430,7 @@ G6.registerNode(
             attrs: {
               x: x - 2,
               y: y + 17,
-              width: w - 6,
+              width: w - 40 - 6,
               height: 18,
               fill: "#0d1117",
               radius: [r, r, r, r],
@@ -430,7 +465,7 @@ G6.registerNode(
             attrs: {
               x: x - 2,
               y: y + 17,
-              width: w - 6,
+              width: w - 40 - 6,
               height: 18,
               fill: "#0d1117",
               radius: [r, r, r, r],
@@ -468,7 +503,7 @@ G6.registerNode(
             attrs: {
               x: x - 2,
               y: y + 17,
-              width: w - 6,
+              width: w - 40 - 6,
               height: 18,
               fill: "#0d1117",
               radius: [r, r, r, r],
@@ -497,7 +532,7 @@ G6.registerNode(
 
       if (data.path) {
         let path = (i18n.t("regnode.subtree") + data.path) as string;
-        path = cutWordTo(path, w - 15);
+        path = cutWordTo(path, w - 40 - 15);
         addShape("text", {
           attrs: {
             textBaseline: "top",
@@ -577,6 +612,19 @@ G6.registerNode(
           name: "collapse-icon",
         });
       }
+
+      // restore stroke color and lineWidth
+      // after lose focus, the main box stroke and color is not the node color
+      addShape("path", {
+        attrs: {
+          path: [
+            ["M", 0, 0],
+            ["L", 0, 0],
+          ],
+          stroke: color,
+          lineWidth: 2,
+        },
+      });
 
       return shape;
     },

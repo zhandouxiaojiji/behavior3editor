@@ -1,10 +1,11 @@
 {
+  "version": "1.8.0",
   "name": "declare-core",
   "desc": "",
   "firstid": 1,
   "export": true,
-  "import": [],
   "group": [],
+  "import": [],
   "declvar": [
     {
       "name": "context",
@@ -17,6 +18,12 @@
   ],
   "root": {
     "id": 1,
-    "name": "Sequence"
+    "name": "Wait",
+    "args": {
+      "time": 1
+    },
+    "input": [
+      "version"
+    ]
   }
 }

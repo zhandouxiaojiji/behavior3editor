@@ -943,9 +943,13 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       layout: {
         type: "compactBox",
         direction: "LR",
-        getHGap: () => 60,
+        getHGap: () => 30,
         getWidth: (d: TreeGraphData) => {
-          return 160;
+          if (d.size) {
+            return d.size[0];
+          } else {
+            return 200;
+          }
         },
         getHeight: (d: TreeGraphData) => {
           if (d.size) {

@@ -515,6 +515,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     }
     set({ editing: editor, editingNode: null, editingTree: null });
     if (editor) {
+      workspace.refresh(editor.path);
       if (!editor.editNode) {
         workspace.onEditingTree(editor);
       } else if (typeof editor.editNode === "object") {
