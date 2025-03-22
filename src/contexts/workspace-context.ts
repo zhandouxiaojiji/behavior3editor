@@ -121,6 +121,7 @@ export type EditNode = {
 
 export type EditNodeDef = {
   data: NodeDef;
+  path?: string;
 };
 
 export type EditTree = {

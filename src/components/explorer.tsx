@@ -324,7 +324,7 @@ export const Explorer: FC = () => {
       },
     };
     workspace.nodeDefs.forEach((nodeDef) => {
-      (nodeDef.group || [""]).forEach((g, idx) => {
+      (nodeDef.group || [""]).forEach((g) => {
         const typeGroup = !g ? nodeDef.type : `${nodeDef.type} (${g})`;
         let catalog = data.children?.find((nt) => nt.title === typeGroup);
         if (!catalog) {
@@ -349,7 +349,7 @@ export const Explorer: FC = () => {
           title: `${nodeDef.name}(${nodeDef.desc})`,
           isLeaf: true,
           def: nodeDef,
-          path: `${nodeDef.name} ${idx}`,
+          path: `${nodeDef.name}(${g})`,
           icon: nodeDef.icon ? (
             <Flex justify="center" align="center" style={{ height: "100%" }}>
               <img
@@ -392,15 +392,18 @@ export const Explorer: FC = () => {
   // expand the selected node def
   useEffect(() => {
     if (workspace.editingNodeDef) {
+      const def = workspace.editingNodeDef.data;
+      const path = workspace.editingNodeDef.path ?? `${def.name}(${def.group?.[0] ?? ""})`;
       const keys: React.Key[] = [];
-      resolveKeys(workspace.editingNodeDef.data.name, nodeTree, keys);
+
+      resolveKeys(path, nodeTree, keys);
       for (const k of expandedNodedefKeys) {
         if (keys.indexOf(k) === -1) {
           keys.push(k);
         }
       }
       setExpandedNodedefKeys(keys);
-      setSelectedNodedefKeys([workspace.editingNodeDef.data.name]);
+      setSelectedNodedefKeys([path]);
     }
   }, [t, workspace.editingNodeDef]);
 
@@ -922,8 +925,10 @@ export const Explorer: FC = () => {
               if (node.isLeaf) {
                 workspace.onEditingNodeDef({
                   data: node.def!,
+                  path: node.path,
                 });
               }
+              console.info("select node:", node.path, node.def);
               setSelectedNodedefKeys([node.path]);
             }
           }}

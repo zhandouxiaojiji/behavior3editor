@@ -100,12 +100,7 @@ const isTreeUpdated = (editor: EditorStore, editTree: EditTree) => {
 
 const isSubtreeUpdated = (data: TreeGraphData) => {
   if (data.path) {
-    try {
-      const subtreePath = useWorkspace.getState().workdir + "/" + data.path;
-      if (fs.statSync(subtreePath).mtimeMs !== data.lastModified) {
-        return true;
-      }
-    } catch (error) {
+    if (b3util.files[data.path] !== data.lastModified) {
       return true;
     }
   }
@@ -488,12 +483,10 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const checkSubtree = () => {
-    if (editor.graph) {
-      if (isSubtreeUpdated(editor.root)) {
-        refresh();
-        pushHistory();
-        onChange();
-      }
+    if (editor.graph && isSubtreeUpdated(editor.root)) {
+      refresh();
+      pushHistory();
+      onChange();
     }
   };
 
