@@ -634,10 +634,11 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         if (!fileMeta) {
           fileMeta = { path: fileNode.path };
           allFiles.set(path, fileMeta);
+          console.log("add file meta:", path);
         } else {
           fileMeta.path = fileNode.path;
         }
-        fileMeta.exists = true;
+        fileMeta.exists = fs.existsSync(fileNode.path);
         if (fileMeta.desc === undefined) {
           const file = readJson(fileNode.path) as TreeModel;
           fileMeta.desc = file.desc ?? "";
@@ -650,11 +651,12 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     allFiles.forEach((file, key) => {
       if (!file.exists) {
         allFiles.delete(key);
-        delete b3util.files[key];
         updated = true;
+        console.log("delete file meta:", key);
+        delete b3util.files[key];
+      } else {
+        b3util.files[key] = fs.statSync(file.path).mtimeMs;
       }
-      const modified = fs.statSync(file.path).mtimeMs;
-      b3util.files[key] = modified;
     });
     set({ allFiles });
     if (updated) {

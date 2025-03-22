@@ -22,6 +22,8 @@ import Path from "../misc/path";
 
 const { DirectoryTree } = Tree;
 
+let timeout: NodeJS.Timeout;
+
 type MenuInfo = Parameters<Exclude<MenuProps["onClick"], undefined>>[0];
 type MenuEvent =
   | "open"
@@ -273,6 +275,280 @@ const createFolderContextMenu = (copiedPath: string) => {
   return arr;
 };
 
+const createNodeTree = (rootName: string, nodeDefs: b3util.NodeDefs) => {
+  const workspace = useWorkspace.getState();
+  const data: NodeTreeType = {
+    title: i18n.t("nodeDefinition"),
+    path: rootName,
+    icon: (
+      <Flex justify="center" align="center" style={{ height: "100%" }}>
+        <PiTreeStructureFill size={19} />
+      </Flex>
+    ),
+    children: [],
+    style: {
+      fontWeight: "bold",
+      fontSize: "13px",
+    },
+  };
+  nodeDefs.forEach((nodeDef) => {
+    (nodeDef.group || [""]).forEach((g) => {
+      const typeGroup = !g ? nodeDef.type : `${nodeDef.type} (${g})`;
+      let catalog = data.children?.find((nt) => nt.title === typeGroup);
+      if (!catalog) {
+        const type = getNodeType(nodeDef);
+        catalog = {
+          title: typeGroup,
+          path: `nodeTree.catalog.${typeGroup}`,
+          children: [],
+          icon: (
+            <Flex justify="center" align="center" style={{ height: "100%" }}>
+              <img
+                className="b3-node-icon"
+                style={{ width: "13px", height: "13px", color: "white" }}
+                src={`./icons/${type}.svg`}
+              />
+            </Flex>
+          ),
+        };
+        data.children?.push(catalog);
+      }
+      catalog.children?.push({
+        title: `${nodeDef.name}(${nodeDef.desc})`,
+        isLeaf: true,
+        def: nodeDef,
+        path: `${nodeDef.name}(${g})`,
+        icon: (
+          <Flex justify="center" align="center" style={{ height: "100%" }}>
+            {nodeDef.icon ? (
+              <img
+                className="b3-node-icon"
+                style={{ width: "13px", height: "13px", color: "white" }}
+                src={`file:///${workspace.workdir}/${nodeDef.icon}`}
+              />
+            ) : (
+              <BsBoxFill style={{ width: "12px", height: "12px", color: "white" }} />
+            )}
+          </Flex>
+        ),
+      });
+    });
+  });
+  data.children?.sort((a, b) => a.title.localeCompare(b.title));
+  data.children?.forEach((child) => child.children?.sort((a, b) => a.title.localeCompare(b.title)));
+  return data;
+};
+
+const isElementInViewport = (element: Element, container: Element) => {
+  const elementRect = element.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  return elementRect.top >= containerRect.top && elementRect.bottom <= containerRect.bottom;
+};
+
+const scrollIntoView = (path: string) => {
+  clearTimeout(timeout);
+  timeout = setTimeout(() => {
+    const element = document.querySelector(`[title="${path}"]`);
+    const container = element?.closest(".b3-overflow") || element?.closest(".b3-explorer");
+    if (element && container && !isElementInViewport(element, container)) {
+      element.scrollIntoView({
+        behavior: "auto",
+        block: "center",
+      });
+    }
+  }, 300);
+};
+
+const alertReplaceFile = (path: string, newPath: string) => {
+  const workspace = useWorkspace.getState();
+  const alert = modal.confirm({
+    centered: true,
+    content: (
+      <Flex vertical gap="middle">
+        <div>
+          <FaExclamationTriangle style={{ fontSize: "60px", color: "#FADB14" }} />
+        </div>
+        <div>{i18n.t("explorer.replaceFile", { name: Path.basename(newPath) })}</div>
+      </Flex>
+    ),
+    footer: (
+      <Flex vertical gap="middle" style={{ paddingTop: "30px" }}>
+        <Flex vertical gap="6px">
+          <Button
+            danger
+            onClick={() => {
+              workspace.close(newPath);
+              renameFile(path, newPath);
+              alert.destroy();
+            }}
+          >
+            {i18n.t("replace")}
+          </Button>
+          <Button
+            type="primary"
+            onClick={() => {
+              alert.destroy();
+            }}
+          >
+            {i18n.t("cancel")}
+          </Button>
+        </Flex>
+      </Flex>
+    ),
+  });
+};
+
+const doMoveFile = (path: string, newPath: string) => {
+  const workspace = useWorkspace.getState();
+  const title = Path.basename(path);
+  const destDir = Path.dirname(newPath);
+  const doMove = () => {
+    fs.renameSync(path, newPath);
+    for (const editor of workspace.editors) {
+      if (editor.path.startsWith(path)) {
+        editor.dispatch("rename", destDir + "/" + Path.basename(editor.path));
+      }
+      console.log("editor move", editor.path === newPath, editor.path, newPath);
+      if (editor.path.startsWith(newPath)) {
+        console.log("editor reload", editor.path === newPath, editor.path, newPath);
+        editor.dispatch("refresh");
+      }
+    }
+  };
+
+  if (!fs.existsSync(newPath)) {
+    doMove();
+    return;
+  }
+
+  const alert = modal.confirm({
+    centered: true,
+    content: (
+      <Flex vertical gap="middle">
+        <div>
+          <FaExclamationTriangle style={{ fontSize: "60px", color: "#FADB14" }} />
+        </div>
+        <div>{i18n.t("explorer.replaceFile", { name: title })}</div>
+      </Flex>
+    ),
+    footer: (
+      <Flex vertical gap="middle" style={{ paddingTop: "30px" }}>
+        <Flex vertical gap="6px">
+          <Button
+            danger
+            onClick={() => {
+              console.log("close file", newPath);
+              workspace.close(path);
+              doMove();
+              alert.destroy();
+            }}
+          >
+            {i18n.t("replace")}
+          </Button>
+          <Button
+            type="primary"
+            onClick={() => {
+              alert.destroy();
+            }}
+          >
+            {i18n.t("cancel")}
+          </Button>
+        </Flex>
+      </Flex>
+    ),
+  });
+};
+
+const alertDeleteFile = (path: string) => {
+  const workspace = useWorkspace.getState();
+  const title = Path.basename(path);
+  const alert = modal.confirm({
+    centered: true,
+    content: (
+      <Flex vertical gap="middle">
+        <div>
+          <FaExclamationTriangle style={{ fontSize: "60px", color: "#FADB14" }} />
+        </div>
+        <div>{i18n.t("explorer.deleteFile", { name: title })}</div>
+      </Flex>
+    ),
+    footer: (
+      <Flex vertical gap="middle" style={{ paddingTop: "30px" }}>
+        <Flex vertical gap="6px">
+          <Button
+            onClick={() => {
+              alert.destroy();
+              if (path === workspace.editing?.path) {
+                workspace.close(path);
+              }
+              ipcRenderer.invoke("trashItem", path);
+            }}
+          >
+            {i18n.t("moveToTrash")}
+          </Button>
+          <Button
+            type="primary"
+            onClick={() => {
+              alert.destroy();
+            }}
+          >
+            {i18n.t("cancel")}
+          </Button>
+        </Flex>
+        <div style={{ fontSize: "11px", textAlign: "center" }}>
+          {i18n.t("explorer.restoreFileInfo")}
+        </div>
+      </Flex>
+    ),
+  });
+};
+
+const alertDeleteFolder = (path: string) => {
+  const workspace = useWorkspace.getState();
+  const title = Path.basename(path);
+  const alert = modal.confirm({
+    centered: true,
+    content: (
+      <Flex vertical gap="middle">
+        <div>
+          <FaExclamationTriangle style={{ fontSize: "60px", color: "#FADB14" }} />
+        </div>
+        <div>{i18n.t("explorer.deleteFolder", { name: title })}</div>
+      </Flex>
+    ),
+    footer: (
+      <Flex vertical gap="middle" style={{ paddingTop: "30px" }}>
+        <Flex vertical gap="6px">
+          <Button
+            onClick={() => {
+              workspace.editors.forEach((editor) => {
+                if (editor.path.startsWith(path + "/")) {
+                  workspace.close(editor.path);
+                }
+              });
+              ipcRenderer.invoke("trashItem", path);
+              alert.destroy();
+            }}
+          >
+            {i18n.t("moveToTrash")}
+          </Button>
+          <Button
+            type="primary"
+            onClick={() => {
+              alert.destroy();
+            }}
+          >
+            {i18n.t("cancel")}
+          </Button>
+        </Flex>
+        <div style={{ fontSize: "11px", textAlign: "center" }}>
+          {i18n.t("explorer.restoreFileInfo")}
+        </div>
+      </Flex>
+    ),
+  });
+};
+
 export const Explorer: FC = () => {
   const workspace = useWorkspace(
     useShallow((state) => ({
@@ -300,6 +576,7 @@ export const Explorer: FC = () => {
   const [selectedNodedefKeys, setSelectedNodedefKeys] = useState<string[]>([]);
   const [expandedNodedefKeys, setExpandedNodedefKeys] = useState<React.Key[]>([rootNodedefName]);
 
+  // set the icon of the root node
   if (workspace.fileTree) {
     workspace.fileTree.icon = (
       <Flex justify="center" align="center" style={{ height: "100%" }}>
@@ -308,71 +585,10 @@ export const Explorer: FC = () => {
     );
   }
 
-  const nodeTree = useMemo(() => {
-    const data: NodeTreeType = {
-      title: t("nodeDefinition"),
-      path: rootNodedefName,
-      icon: (
-        <Flex justify="center" align="center" style={{ height: "100%" }}>
-          <PiTreeStructureFill size={19} />
-        </Flex>
-      ),
-      children: [],
-      style: {
-        fontWeight: "bold",
-        fontSize: "13px",
-      },
-    };
-    workspace.nodeDefs.forEach((nodeDef) => {
-      (nodeDef.group || [""]).forEach((g) => {
-        const typeGroup = !g ? nodeDef.type : `${nodeDef.type} (${g})`;
-        let catalog = data.children?.find((nt) => nt.title === typeGroup);
-        if (!catalog) {
-          const type = getNodeType(nodeDef);
-          catalog = {
-            title: typeGroup,
-            path: `nodeTree.catalog.${typeGroup}`,
-            children: [],
-            icon: (
-              <Flex justify="center" align="center" style={{ height: "100%" }}>
-                <img
-                  className="b3-node-icon"
-                  style={{ width: "13px", height: "13px", color: "white" }}
-                  src={`./icons/${type}.svg`}
-                />
-              </Flex>
-            ),
-          };
-          data.children?.push(catalog);
-        }
-        catalog.children?.push({
-          title: `${nodeDef.name}(${nodeDef.desc})`,
-          isLeaf: true,
-          def: nodeDef,
-          path: `${nodeDef.name}(${g})`,
-          icon: nodeDef.icon ? (
-            <Flex justify="center" align="center" style={{ height: "100%" }}>
-              <img
-                className="b3-node-icon"
-                key={catalog.title}
-                style={{ width: "13px", height: "13px", color: "white" }}
-                src={`file:///${workspace.workdir}/${nodeDef.icon}`}
-              />
-            </Flex>
-          ) : (
-            <Flex justify="center" align="center" style={{ height: "100%" }}>
-              <BsBoxFill style={{ width: "12px", height: "12px", color: "white" }} />{" "}
-            </Flex>
-          ),
-        });
-      });
-    });
-    data.children?.sort((a, b) => a.title.localeCompare(b.title));
-    data.children?.forEach((child) =>
-      child.children?.sort((a, b) => a.title.localeCompare(b.title))
-    );
-    return data;
-  }, [t, workspace.nodeDefs]);
+  const nodeTree = useMemo(
+    () => createNodeTree(rootNodedefName, workspace.nodeDefs),
+    [t, workspace.nodeDefs]
+  );
 
   // expand the selected tree
   useEffect(() => {
@@ -383,6 +599,9 @@ export const Explorer: FC = () => {
         if (keys.indexOf(k) === -1) {
           keys.push(k);
         }
+      }
+      if (!selectedNodedefKeys.includes(workspace.editing.path)) {
+        scrollIntoView(workspace.editing.path);
       }
       setExpandedKeys(keys);
       setSelectedKeys([workspace.editing.path]);
@@ -401,6 +620,9 @@ export const Explorer: FC = () => {
         if (keys.indexOf(k) === -1) {
           keys.push(k);
         }
+      }
+      if (!workspace.editingNodeDef.path) {
+        scrollIntoView(path);
       }
       setExpandedNodedefKeys(keys);
       setSelectedNodedefKeys([path]);
@@ -537,41 +759,7 @@ export const Explorer: FC = () => {
             if (node.path === newPath) {
               dispatch("duplicate", node);
             } else {
-              const alert = modal.confirm({
-                centered: true,
-                content: (
-                  <Flex vertical gap="middle">
-                    <div>
-                      <FaExclamationTriangle style={{ fontSize: "60px", color: "#FADB14" }} />
-                    </div>
-                    <div>{t("explorer.replaceFile", { name: Path.basename(copyFile) })}</div>
-                  </Flex>
-                ),
-                footer: (
-                  <Flex vertical gap="middle" style={{ paddingTop: "30px" }}>
-                    <Flex vertical gap="6px">
-                      <Button
-                        danger
-                        onClick={() => {
-                          workspace.close(newPath);
-                          renameFile(node.path, newPath);
-                          alert.destroy();
-                        }}
-                      >
-                        {t("replace")}
-                      </Button>
-                      <Button
-                        type="primary"
-                        onClick={() => {
-                          alert.destroy();
-                        }}
-                      >
-                        {t("cancel")}
-                      </Button>
-                    </Flex>
-                  </Flex>
-                ),
-              });
+              alertReplaceFile(node.path, newPath);
             }
           } else {
             fs.copyFileSync(copyFile, newPath);
@@ -604,87 +792,9 @@ export const Explorer: FC = () => {
           return;
         }
         if (node.isLeaf) {
-          const alert = modal.confirm({
-            centered: true,
-            content: (
-              <Flex vertical gap="middle">
-                <div>
-                  <FaExclamationTriangle style={{ fontSize: "60px", color: "#FADB14" }} />
-                </div>
-                <div>{t("explorer.deleteFile", { name: node.title })}</div>
-              </Flex>
-            ),
-            footer: (
-              <Flex vertical gap="middle" style={{ paddingTop: "30px" }}>
-                <Flex vertical gap="6px">
-                  <Button
-                    onClick={() => {
-                      alert.destroy();
-                      if (node.path === workspace.editing?.path) {
-                        workspace.close(node.path);
-                      }
-                      ipcRenderer.invoke("trashItem", node.path);
-                    }}
-                  >
-                    {t("moveToTrash")}
-                  </Button>
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      alert.destroy();
-                    }}
-                  >
-                    {t("cancel")}
-                  </Button>
-                </Flex>
-                <div style={{ fontSize: "11px", textAlign: "center" }}>
-                  {t("explorer.restoreFileInfo")}
-                </div>
-              </Flex>
-            ),
-          });
+          alertDeleteFile(node.path);
         } else {
-          const alert = modal.confirm({
-            centered: true,
-            content: (
-              <Flex vertical gap="middle">
-                <div>
-                  <FaExclamationTriangle style={{ fontSize: "60px", color: "#FADB14" }} />
-                </div>
-                <div>{t("explorer.deleteFolder", { name: node.title })}</div>
-              </Flex>
-            ),
-            footer: (
-              <Flex vertical gap="middle" style={{ paddingTop: "30px" }}>
-                <Flex vertical gap="6px">
-                  <Button
-                    onClick={() => {
-                      workspace.editors.forEach((editor) => {
-                        if (editor.path.startsWith(node.path + "/")) {
-                          workspace.close(editor.path);
-                        }
-                      });
-                      ipcRenderer.invoke("trashItem", node.path);
-                      alert.destroy();
-                    }}
-                  >
-                    {t("moveToTrash")}
-                  </Button>
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      alert.destroy();
-                    }}
-                  >
-                    {t("cancel")}
-                  </Button>
-                </Flex>
-                <div style={{ fontSize: "11px", textAlign: "center" }}>
-                  {t("explorer.restoreFileInfo")}
-                </div>
-              </Flex>
-            ),
-          });
+          alertDeleteFolder(node.path);
         }
         break;
       }
@@ -695,59 +805,7 @@ export const Explorer: FC = () => {
             return;
           }
           const newPath = destDir + "/" + Path.basename(node.path);
-          const doMove = () => {
-            fs.renameSync(node.path, newPath);
-            for (const editor of workspace.editors) {
-              if (editor.path.startsWith(node.path)) {
-                editor.dispatch("rename", destDir + "/" + Path.basename(editor.path));
-              }
-              console.log("editor move", editor.path === newPath, editor.path, newPath);
-              if (editor.path.startsWith(newPath)) {
-                console.log("editor reload", editor.path === newPath, editor.path, newPath);
-                editor.dispatch("refresh");
-              }
-            }
-          };
-          if (fs.existsSync(newPath)) {
-            const alert = modal.confirm({
-              centered: true,
-              content: (
-                <Flex vertical gap="middle">
-                  <div>
-                    <FaExclamationTriangle style={{ fontSize: "60px", color: "#FADB14" }} />
-                  </div>
-                  <div>{t("explorer.replaceFile", { name: Path.basename(node.path) })}</div>
-                </Flex>
-              ),
-              footer: (
-                <Flex vertical gap="middle" style={{ paddingTop: "30px" }}>
-                  <Flex vertical gap="6px">
-                    <Button
-                      danger
-                      onClick={() => {
-                        console.log("close file", newPath);
-                        workspace.close(node.path);
-                        doMove();
-                        alert.destroy();
-                      }}
-                    >
-                      {t("replace")}
-                    </Button>
-                    <Button
-                      type="primary"
-                      onClick={() => {
-                        alert.destroy();
-                      }}
-                    >
-                      {t("cancel")}
-                    </Button>
-                  </Flex>
-                </Flex>
-              ),
-            });
-          } else {
-            doMove();
-          }
+          doMoveFile(node.path, newPath);
         } catch (error) {
           console.error("move file:", error);
         }
@@ -801,7 +859,7 @@ export const Explorer: FC = () => {
             <DirectoryTree
               tabIndex={-1}
               treeData={workspace.fileTree ? [workspace.fileTree] : []}
-              fieldNames={{ key: "path" }}
+              fieldNames={{ key: "path", title: "path" }}
               expandedKeys={expandedKeys}
               selectedKeys={selectedKeys}
               onExpand={(keys) => {
@@ -818,6 +876,18 @@ export const Explorer: FC = () => {
                 if (node && !node.editing) {
                   dispatch("open", node);
                   setSelectedKeys([node.path]);
+
+                  setTimeout(() => {
+                    const element = document.querySelector(`[title="${node.title}"]`);
+                    const container =
+                      element?.closest(".b3-overflow") || element?.closest(".b3-explorer");
+                    if (element && container && !isElementInViewport(element, container)) {
+                      element.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }
+                  }, 100);
                 }
               }}
               onDrop={(info) => {
@@ -898,7 +968,7 @@ export const Explorer: FC = () => {
         </Dropdown>
         <DirectoryTree
           tabIndex={-1}
-          fieldNames={{ key: "path" }}
+          fieldNames={{ key: "path", title: "path" }}
           treeData={[nodeTree]}
           expandedKeys={expandedNodedefKeys}
           selectedKeys={selectedNodedefKeys}
@@ -928,7 +998,6 @@ export const Explorer: FC = () => {
                   path: node.path,
                 });
               }
-              console.info("select node:", node.path, node.def);
               setSelectedNodedefKeys([node.path]);
             }
           }}
