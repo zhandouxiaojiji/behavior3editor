@@ -29,11 +29,10 @@
     }
 
     interface BuildScript {
-        processTree?(tree: TreeModel, path: string): TreeModel | null;
-
-        processNode?(node: NodeModel, tree: TreeModel): NodeModel | null;
-
-        writeFile?(path: string, tree: TreeModel): void;
+      processTree?(tree: TreeModel, path: string): TreeModel | null;
+      processNode?(node: NodeModel, tree: TreeModel): NodeModel | null;
+      onWriteFile?(path: string, tree: TreeModel): void;
+      onComplete?(status: "success" | "failure"): void;
     }
 */
 ({
@@ -44,5 +43,8 @@
   processNode: (node, tree) => {
     console.log(`processNode ${tree.name} ${node.name}#${node.id}`);
     return node;
+  },
+  onComplete: (status) => {
+    console.log(`onComplete ${status}`);
   },
 });

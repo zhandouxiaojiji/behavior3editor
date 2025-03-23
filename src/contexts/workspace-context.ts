@@ -394,47 +394,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       const debug = console.debug;
       console.debug = () => {};
       try {
-        let hasError = false;
-
-        let buildScript: b3util.BuildScript | undefined;
-        if (workspace.settings.buildScript) {
-          const scriptPath = workspace.workdir + "/" + workspace.settings.buildScript;
-          if (fs.existsSync(scriptPath)) {
-            buildScript = eval(fs.readFileSync(scriptPath, "utf8"));
-          }
-        }
-
-        workspace.allFiles.forEach((file) => {
-          const buildpath = buildDir + "/" + workspace.relative(file.path);
-          let tree = b3util.createBuildData(file.path);
-          if (buildScript) {
-            tree = b3util.processBatch(tree, file.path, buildScript);
-          }
-
-          if (!tree) {
-            return;
-          }
-
-          if (tree.export === false) {
-            console.log("skip:", buildpath);
-            return;
-          }
-          console.log("build:", buildpath);
-          const declare: FileVarDecl = {
-            import: tree.import.map((v) => ({ path: v, vars: [], depends: [] })),
-            declvar: tree.declvar.map((v) => ({ name: v.name, desc: v.desc })),
-            subtree: [],
-          };
-          b3util.refreshDeclare(tree.root, tree.group, declare);
-          if (!b3util.checkNodeData(tree?.root)) {
-            hasError = true;
-          }
-          if (buildScript?.writeFile) {
-            buildScript.writeFile(buildpath, tree);
-          }
-          fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
-          fs.writeFileSync(buildpath, JSON.stringify(tree, null, 2));
-        });
+        const hasError = b3util.buildProject(workspace.path, buildDir);
         if (hasError) {
           message.error(i18n.t("buildFailed"));
         } else {

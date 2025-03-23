@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import { ExpressionEvaluator, NodeDef } from "../behavior3/src/behavior3";
+import { type WorkspaceModel } from "../contexts/workspace-context";
 import {
   FileVarDecl,
   ImportDef,
@@ -22,12 +23,12 @@ import { readJson, readTree } from "./util";
 
 export interface BatchScript {
   processTree?(tree: TreeModel, path: string): TreeModel | null;
-
   processNode?(node: NodeModel, tree: TreeModel): NodeModel | null;
 }
 
 export interface BuildScript extends BatchScript {
-  writeFile?(path: string, tree: TreeModel): void;
+  onWriteFile?(path: string, tree: TreeModel): void;
+  onComplete?(status: "success" | "failure"): void;
 }
 
 export class NodeDefs extends Map<string, NodeDef> {
@@ -805,6 +806,54 @@ export const processBatch = (tree: TreeModel | null, path: string, batch: BatchS
     tree.root = processNode(tree.root) ?? ({} as NodeModel);
   }
   return tree;
+};
+
+export const buildProject = (project: string, buildDir: string) => {
+  let hasError = false;
+  const settings = readJson<WorkspaceModel>(project).settings;
+  let buildScript: BuildScript | undefined;
+  if (settings.checkExpr) {
+    setCheckExpr(true);
+  }
+  if (settings.buildScript) {
+    const scriptPath = workdir + "/" + settings.buildScript;
+    try {
+      buildScript = eval(fs.readFileSync(scriptPath, "utf8"));
+    } catch (e) {
+      console.error(`'${scriptPath}' is not a valid build script`);
+    }
+  }
+  for (const path of Path.ls(Path.dirname(project), true)) {
+    if (path.endsWith(".json")) {
+      const buildpath = buildDir + "/" + path.substring(workdir.length + 1);
+      let tree = createBuildData(path);
+      if (buildScript) {
+        tree = processBatch(tree, path, buildScript);
+      }
+      if (!tree) {
+        continue;
+      }
+      if (tree.export === false) {
+        console.log("skip:", buildpath);
+        continue;
+      }
+      console.log("build:", buildpath);
+      const declare: FileVarDecl = {
+        import: tree.import.map((v) => ({ path: v, vars: [], depends: [] })),
+        declvar: tree.declvar.map((v) => ({ name: v.name, desc: v.desc })),
+        subtree: [],
+      };
+      refreshDeclare(tree.root, tree.group, declare);
+      if (!checkNodeData(tree?.root)) {
+        hasError = true;
+      }
+      buildScript?.onWriteFile?.(buildpath, tree);
+      fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
+      fs.writeFileSync(buildpath, JSON.stringify(tree, null, 2));
+    }
+  }
+  buildScript?.onComplete?.(hasError ? "failure" : "success");
+  return hasError;
 };
 
 export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) => {
