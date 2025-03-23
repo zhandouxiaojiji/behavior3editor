@@ -44,7 +44,6 @@ interface FilterOption {
   filterFocus: boolean;
   filterType: "content" | "id";
   placeholder: string;
-  isFocused: boolean;
 }
 
 const createTreeData = (node: NodeModel, parent?: string) => {
@@ -227,7 +226,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     filterFocus: true,
     filterType: "content",
     placeholder: "",
-    isFocused: false,
   });
 
   const onSearchChange = (option: FilterOption) => {
@@ -710,10 +708,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
   };
 
   const createNode = () => {
-    if (filterOption.isFocused) {
-      return;
-    }
-
     if (!editor.selectedId) {
       message.warning(t("node.noNodeSelected"));
       return;
@@ -1391,8 +1385,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                   index: 0,
                 })
               }
-              onFocus={() => setFilterOption({ ...filterOption, isFocused: true })}
-              onBlur={() => setFilterOption({ ...filterOption, isFocused: false })}
               onKeyDownCapture={handleKeyDown}
               suffix={
                 <Flex gap="2px" style={{ alignItems: "center" }}>
@@ -1421,12 +1413,12 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                       filterOption.filterFocus && "b3-editor-filter-selected"
                     )}
                     icon={<RiFocus3Line />}
-                    onClick={() =>
+                    onClick={() => {
                       onSearchChange({
                         ...filterOption,
                         filterFocus: !filterOption.filterFocus,
-                      })
-                    }
+                      });
+                    }}
                   />
                 </Flex>
               }
@@ -1471,7 +1463,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
                   filterStr: "",
                   filterType: "content",
                   placeholder: "",
-                  isFocused: false,
                 });
                 keysRef.current?.focus();
               }}

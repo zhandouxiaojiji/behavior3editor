@@ -176,7 +176,7 @@ export type WorkspaceStore = {
   close: (path: string) => void;
   find: (path: string) => EditorStore | undefined;
   relative: (path: string) => string;
-  refresh: (path: string) => void;
+  refresh: (path: string) => boolean;
 
   save: () => void;
   saveAs: () => void;
@@ -592,9 +592,9 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const workspace = get();
     const editor = workspace.editors.find((v) => v.path === path);
     if (!editor) {
-      return;
+      return false;
     }
-    b3util.refreshDeclare(editor.root, editor.data.group, editor.declare);
+    return b3util.refreshDeclare(editor.root, editor.data.group, editor.declare);
   },
 
   save: () => {

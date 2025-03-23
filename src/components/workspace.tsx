@@ -445,6 +445,7 @@ export const Workspace: FC = () => {
                     showSaveDialog(editor);
                   } else {
                     workspace.close(path);
+                    keysRef.current?.focus();
                   }
                 }
               }}

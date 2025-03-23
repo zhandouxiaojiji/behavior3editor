@@ -859,7 +859,7 @@ export const isTreeFile = (path: string) => {
   return path.toLocaleLowerCase().endsWith(".json");
 };
 
-export const loadVarDef = (list: ImportDef[]) => {
+const loadVarDef = (list: ImportDef[], arr: Array<VarDef>) => {
   for (const entry of list) {
     if (!files[entry.path]) {
       console.warn(`file not found:${workdir}/${entry.path}`);
@@ -905,7 +905,7 @@ export const loadVarDef = (list: ImportDef[]) => {
           load(v);
           depends.add(v);
         });
-        console.log(`load var: ${path}`);
+        console.debug(`load var: ${path}`);
       } catch (e) {
         alertError(`parsing error: ${path}`);
       }
@@ -921,9 +921,7 @@ export const loadVarDef = (list: ImportDef[]) => {
       modified: entry.modified,
     };
   }
-  const all: Set<VarDef> = new Set();
-  list.forEach((entry) => entry.vars.forEach((v) => all.add(v)));
-  return Array.from(all);
+  list.forEach((entry) => arr.push(...entry.vars));
 };
 
 const collectSubtree = (data: TreeGraphData | NodeModel, list: string[] = []) => {
@@ -941,18 +939,44 @@ export const refreshDeclare = (
   group: string[],
   declare: FileVarDecl
 ) => {
-  const vars: Set<VarDef> = new Set(declare.declvar.slice());
+  const filter: Record<string, boolean> = {};
+  const vars: Array<VarDef> = new (class extends Array {
+    push(...items: VarDef[]): number {
+      for (const v of items) {
+        if (filter[v.name]) {
+          continue;
+        }
+        filter[v.name] = true;
+        super.push(v);
+      }
+      return this.length;
+    }
+  })();
+  vars.push(...declare.declvar);
   parsingStack.length = 0;
   declare.subtree = collectSubtree(root).map((v) => ({
     path: v,
     vars: [],
     depends: [],
   }));
-  loadVarDef(declare.import).forEach((v) => vars.add(v));
-  loadVarDef(declare.subtree).forEach((v) => {
-    vars.add(v);
-  });
-  updateUsingGroups(group);
-  updateUsingVars(Array.from(vars));
-  console.debug("refresh declare", group, vars);
+  loadVarDef(declare.import, vars);
+  loadVarDef(declare.subtree, vars);
+
+  let changed = false;
+  const lastGroup = Array.from(Object.keys(usingGroups)).sort();
+  group.sort();
+  if (lastGroup.length !== group.length || lastGroup.some((v, i) => v !== group[i])) {
+    changed = true;
+    console.debug("refresh group:", lastGroup, group);
+    updateUsingGroups(group);
+  }
+
+  const lastVars = Array.from(Object.keys(usingVars ?? {})).sort();
+  vars.sort((a, b) => a.name.localeCompare(b.name));
+  if (lastVars.length !== vars.length || lastVars.some((v, i) => v !== vars[i].name)) {
+    changed = true;
+    console.debug("refresh vars:", lastVars, vars);
+    updateUsingVars(vars);
+  }
+  return changed;
 };

@@ -50,7 +50,6 @@ import {
   isNodeArgOptional,
   isValidVariableName,
   isVariadic,
-  loadVarDef,
   parseExpr,
   usingGroups,
   usingVars,
@@ -259,7 +258,6 @@ const TreeInspector: FC = () => {
 
   // set form values
   useEffect(() => {
-    loadVarDef(workspace.editingTree.import);
     form.resetFields();
     form.setFieldValue("name", workspace.editingTree.name);
     form.setFieldValue("desc", workspace.editingTree.desc);
@@ -624,7 +622,10 @@ const NodeInspector: FC = () => {
     form.setFieldValue("debug", data.debug);
     form.setFieldValue("disabled", data.disabled);
     form.setFieldValue("path", data.path);
-    form.setFieldValue("group", def.group);
+    form.setFieldValue(
+      "group",
+      def.group?.map((g) => ({ label: g, value: g }))
+    );
     if (def.children === undefined || def.children === -1) {
       form.setFieldValue("children", t("node.children.unlimited"));
     } else {
@@ -872,30 +873,32 @@ const NodeInspector: FC = () => {
           labelCol={{ span: "auto" }}
           onFinish={finish}
         >
-          <Form.Item name="id" label={t("node.id")}>
-            <Input disabled={true} />
-          </Form.Item>
-          <Form.Item
-            name="type"
-            label={t("node.type")}
-            rules={[
-              {
-                validator() {
-                  if (def.group && !def.group.some((g) => usingGroups[g])) {
-                    return Promise.reject(
-                      new Error(t("node.groupNotEnabled", { group: def.group }))
-                    );
-                  }
-                  return Promise.resolve();
-                },
-              },
-            ]}
-          >
+          <Form.Item name="type" label={t("node.type")}>
             <Input disabled={true} />
           </Form.Item>
           {workspace.groupDefs.length > 0 && def.group?.length && (
-            <Form.Item name="group" label={t("node.group")}>
-              <GroupDefItem disabled={true} />
+            <Form.Item
+              name="group"
+              label={t("node.group")}
+              rules={[
+                {
+                  validator() {
+                    if (def.group && !def.group.some((g) => usingGroups[g])) {
+                      return Promise.reject(
+                        new Error(t("node.groupNotEnabled", { group: def.group }))
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
+            >
+              <Select
+                style={{ fontSize: "13px" }}
+                mode="multiple"
+                suffixIcon={null}
+                disabled={true}
+              />
             </Form.Item>
           )}
           <Form.Item
