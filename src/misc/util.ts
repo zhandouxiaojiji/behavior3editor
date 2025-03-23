@@ -1,13 +1,20 @@
 import * as fs from "fs";
+import { type WorkspaceModel } from "../contexts/workspace-context";
 import { VERSION, type TreeModel } from "./b3type";
 
-export const readJson = (path: string) => {
+export const readJson = <T>(path: string): T => {
   const str = fs.readFileSync(path, "utf-8");
   return JSON.parse(str);
 };
 
+export const readWorkspace = (path: string) => {
+  const data = readJson(path) as WorkspaceModel;
+  data.settings = data.settings ?? {};
+  return data;
+};
+
 export const readTree = (path: string) => {
-  const data = readJson(path);
+  const data = readJson(path) as TreeModel;
   data.version = data.version ?? VERSION;
   data.firstid = data.firstid ?? 1;
   data.group = data.group || [];

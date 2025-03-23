@@ -5,9 +5,11 @@ import os from "node:os";
 import path from "node:path";
 import { argv } from "node:process";
 import { fileURLToPath } from "node:url";
+import { type WorkspaceModel } from "../../src/contexts/workspace-context";
 import { VERSION, type FileVarDecl } from "../../src/misc/b3type";
 import * as b3util from "../../src/misc/b3util";
 import Path from "../../src/misc/path";
+import { readJson } from "../../src/misc/util";
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -19,13 +21,13 @@ let buildHelp: boolean = false;
 
 for (let i = 0; i < argv.length; i++) {
   const arg = argv[i];
-  if (arg === "--project") {
+  if (arg === "-p") {
     buildProject = argv[i + 1];
     i++;
-  } else if (arg === "--build") {
+  } else if (arg === "-o") {
     buildOutput = argv[i + 1];
     i++;
-  } else if (arg === "--help") {
+  } else if (arg === "-h" || arg === "-v") {
     buildHelp = true;
   }
 }
@@ -33,9 +35,9 @@ for (let i = 0; i < argv.length; i++) {
 const printHelp = () => {
   console.log(`Usage: Behavior3 Editor ${VERSION} [options]`);
   console.log("Options:");
-  console.log("  --project <path>  Set the project path");
-  console.log("  --build <path>    Set the build output path");
-  console.log("  --help            Print this help");
+  console.log("  -p <path>    Set the project path");
+  console.log("  -o <path>    Set the build output path");
+  console.log("  -h -v        Print this help");
 };
 
 if (buildOutput || buildProject || buildHelp) {
@@ -61,29 +63,45 @@ if (buildOutput || buildProject || buildHelp) {
     b3util.initWorkdir(workdir, (msg) => {
       console.error(`${msg}`);
     });
+    const settings = readJson<WorkspaceModel>(project).settings;
+    let buildScript: b3util.BuildScript | undefined;
+    if (settings.checkExpr) {
+      b3util.setCheckExpr(true);
+    }
+    if (settings.buildScript) {
+      const scriptPath = workdir + "/" + settings.buildScript;
+      try {
+        buildScript = eval(fs.readFileSync(scriptPath, "utf8"));
+      } catch (error) {
+        console.error(`'${scriptPath}' is not a valid build script`);
+      }
+    }
     for (const path of Path.ls(Path.dirname(project), true)) {
       if (path.endsWith(".json")) {
         const buildpath = buildDir + "/" + path.substring(workdir.length + 1);
-        const treeModel = b3util.createBuildData(path);
-        if (!treeModel) {
+        let tree = b3util.createBuildData(path);
+        if (buildScript) {
+          tree = b3util.processBatch(tree, path, buildScript);
+        }
+        if (!tree) {
           continue;
         }
-        if (treeModel.export === false) {
+        if (tree.export === false) {
           console.log("skip:", buildpath);
           continue;
         }
         console.log("build:", buildpath);
         const declare: FileVarDecl = {
-          import: treeModel.import.map((v) => ({ path: v, vars: [], depends: [] })),
-          declvar: treeModel.declvar.map((v) => ({ name: v.name, desc: v.desc })),
+          import: tree.import.map((v) => ({ path: v, vars: [], depends: [] })),
+          declvar: tree.declvar.map((v) => ({ name: v.name, desc: v.desc })),
           subtree: [],
         };
-        b3util.refreshDeclare(treeModel.root, treeModel.group, declare);
-        if (!b3util.checkNodeData(treeModel?.root)) {
+        b3util.refreshDeclare(tree.root, tree.group, declare);
+        if (!b3util.checkNodeData(tree?.root)) {
           hasError = true;
         }
         fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
-        fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
+        fs.writeFileSync(buildpath, JSON.stringify(tree, null, 2));
       }
     }
     if (hasError) {

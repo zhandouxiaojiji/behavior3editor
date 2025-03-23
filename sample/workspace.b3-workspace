@@ -40,5 +40,9 @@
       "path": "workdir/subtree2.json",
       "desc": "子树2"
     }
-  ]
+  ],
+  "settings": {
+    "checkExpr": true,
+    "buildScript": "scripts/build.js"
+  }
 }

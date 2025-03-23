@@ -1,5 +1,11 @@
 {
+  "version": "1.8.0",
   "name": "subtree1",
+  "desc": "子树1",
+  "firstid": 1,
+  "group": [],
+  "import": [],
+  "declvar": [],
   "root": {
     "id": 1,
     "name": "Sequence",
@@ -9,7 +15,7 @@
         "id": 2,
         "name": "Log",
         "args": {
-          "str": "hello"
+          "message": "d"
         }
       },
       {
@@ -17,15 +23,8 @@
         "name": "Wait",
         "args": {
           "time": 1
-        },
-        "children": [
-          {
-            "id": 4,
-            "name": "unknow"
-          }
-        ]
+        }
       }
     ]
-  },
-  "desc": "子树1"
+  }
 }

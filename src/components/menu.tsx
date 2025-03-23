@@ -54,6 +54,9 @@ export const Menu: FC<LayoutProps> = () => {
       save: state.save,
       saveAll: state.saveAll,
       workdir: state.workdir,
+      settings: state.settings,
+      setCheckExpr: state.setCheckExpr,
+      setupBuildScript: state.setupBuildScript,
     }))
   );
   const enabled = !!workspace.workdir;
@@ -166,6 +169,14 @@ export const Menu: FC<LayoutProps> = () => {
             },
           },
           {
+            id: "menu.file.buildScript",
+            label: t("setupBuildScript"),
+            enabled: enabled,
+            click: () => {
+              workspace.setupBuildScript();
+            },
+          },
+          {
             id: "menu.file.batch",
             label: t("batch"),
             enabled: enabled,
@@ -253,6 +264,17 @@ export const Menu: FC<LayoutProps> = () => {
             accelerator: Hotkey.Backspace.replaceAll(".", "+"),
             click: () => {
               // workspace.editing?.dispatch("delete");
+            },
+          },
+          { type: "separator" },
+          {
+            id: "menu.edit.checkExpr",
+            label: t("checkExpr"),
+            enabled: enabled,
+            type: "checkbox",
+            checked: workspace.settings.checkExpr,
+            click: () => {
+              workspace.setCheckExpr(!workspace.settings.checkExpr);
             },
           },
         ],
@@ -394,7 +416,7 @@ export const Menu: FC<LayoutProps> = () => {
         ],
       },
     ] as MenuItemConstructorOptions[];
-  }, [t, workspace.workdir, settings.recent, workspace.editing, settings]);
+  }, [t, workspace.workdir, settings.recent, workspace.editing, workspace.settings, settings]);
 
   if (isMacos) {
     const menu = AppMenu.buildFromTemplate(menuTemplate);
@@ -446,7 +468,7 @@ export const Menu: FC<LayoutProps> = () => {
               label: (
                 <MenuItemLabel>
                   <div>
-                    {option.type === "radio" && option.checked && (
+                    {(option.type === "radio" || option.type === "checkbox") && option.checked && (
                       <CheckOutlined style={{ paddingRight: "5px" }} />
                     )}
                     {option.type === "radio" && !option.checked && (

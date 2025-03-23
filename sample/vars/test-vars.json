@@ -50,7 +50,7 @@
         "id": 6,
         "name": "Check",
         "args": {
-          "value": "target1.x > 0"
+          "value": "target[0].x > 0 |"
         }
       },
       {

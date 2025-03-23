@@ -28,24 +28,21 @@
       path?: string;
     }
 
-    interface BatchScript {
-        processTree?(tree: TreeModel, path: string): TreeModel;
+    interface BuildScript {
+        processTree?(tree: TreeModel, path: string): TreeModel | null;
 
-        processNode?(node: NodeModel, tree: TreeModel): NodeModel;
+        processNode?(node: NodeModel, tree: TreeModel): NodeModel | null;
+
+        writeFile?(path: string, tree: TreeModel): void;
     }
 */
 ({
   processTree: (tree) => {
     console.log(`processTree ${tree.name}`);
-    if (tree.name == "hero") {
-      return tree;
-    }
+    return tree;
   },
   processNode: (node, tree) => {
-    console.log(`processNode ${tree.name}.${node.id}`);
-    if (node.name == "GetPos") {
-      return null;
-    }
+    console.log(`processNode ${tree.name} ${node.name}#${node.id}`);
     return node;
   },
 });

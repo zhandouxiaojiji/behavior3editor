@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { NodeDef } from "../behavior3/src/behavior3";
+import { ExpressionEvaluator, NodeDef } from "../behavior3/src/behavior3";
 import {
   FileVarDecl,
   ImportDef,
@@ -20,6 +20,16 @@ import {
 import Path from "./path";
 import { readJson, readTree } from "./util";
 
+export interface BatchScript {
+  processTree?(tree: TreeModel, path: string): TreeModel | null;
+
+  processNode?(node: NodeModel, tree: TreeModel): NodeModel | null;
+}
+
+export interface BuildScript extends BatchScript {
+  writeFile?(path: string, tree: TreeModel): void;
+}
+
 export class NodeDefs extends Map<string, NodeDef> {
   get(key: string): NodeDef {
     return super.get(key) ?? unknownNodeDef;
@@ -34,6 +44,7 @@ export const files: Record<string, number> = {};
 
 const parsedVarDefs: Record<string, ImportDef> = {};
 const parsedExprs: Record<string, string[]> = {};
+let checkExpr: boolean = false;
 let workdir: string = "";
 let alertError: (msg: string, duration?: number) => void = () => {};
 
@@ -76,6 +87,10 @@ export const updateUsingVars = (vars: VarDef[]) => {
     usingVars ??= {};
     usingVars[v.name] = v;
   }
+};
+
+export const setCheckExpr = (check: boolean) => {
+  checkExpr = check;
 };
 
 export const parseExpr = (expr: string) => {
@@ -323,11 +338,13 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
         }
       }
     }
+  }
 
-    if (data.args && conf.args) {
-      for (const arg of conf.args) {
-        const value = data.args?.[arg.name] as string | string[] | undefined;
-        if (isExprType(arg.type)) {
+  if (data.args && conf.args) {
+    for (const arg of conf.args) {
+      const value = data.args?.[arg.name] as string | string[] | undefined;
+      if (isExprType(arg.type) && value) {
+        if (usingVars) {
           const vars: string[] = [];
           if (typeof value === "string") {
             vars.push(...parseExpr(value));
@@ -339,6 +356,27 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
           for (const v of vars) {
             if (v && !usingVars[v]) {
               error(data, `expr variable '${arg.name}' is not defined`);
+              hasError = true;
+            }
+          }
+        }
+        if (checkExpr) {
+          const exprs: string[] = [];
+          if (typeof value === "string") {
+            exprs.push(value);
+          } else if (Array.isArray(value)) {
+            for (const v of value) {
+              exprs.push(v);
+            }
+          }
+          for (const expr of exprs) {
+            try {
+              if (!new ExpressionEvaluator(expr).dryRun()) {
+                error(data, `expr '${expr}' is not valid`);
+                hasError = true;
+              }
+            } catch (e) {
+              error(data, `expr '${expr}' is not valid`);
               hasError = true;
             }
           }
@@ -740,6 +778,35 @@ export const createBuildData = (path: string) => {
   return null;
 };
 
+export const processBatch = (tree: TreeModel | null, path: string, batch: BatchScript) => {
+  if (!tree) {
+    return null;
+  }
+  if (batch.processTree) {
+    tree = batch.processTree(tree, path);
+  }
+  if (!tree) {
+    return null;
+  }
+  if (batch.processNode) {
+    const processNode = (node: NodeModel) => {
+      if (node.children) {
+        const children: NodeModel[] = [];
+        node.children?.forEach((child) => {
+          const newChild = processNode(child);
+          if (newChild) {
+            children.push(newChild);
+          }
+        });
+        node.children = children;
+      }
+      return batch.processNode?.(node, tree);
+    };
+    tree.root = processNode(tree.root) ?? ({} as NodeModel);
+  }
+  return tree;
+};
+
 export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) => {
   const nodeData: NodeModel = {
     id: Number(data.id),
@@ -887,4 +954,5 @@ export const refreshDeclare = (
   });
   updateUsingGroups(group);
   updateUsingVars(Array.from(vars));
+  console.debug("refresh declare", group, vars);
 };

@@ -1,7 +1,6 @@
 import { app } from "@electron/remote";
 import * as fs from "fs";
 import { create } from "zustand";
-import { setLayoutStyle } from "../components/register-node";
 import { readJson, writeJson } from "../misc/util";
 import { useWorkspace } from "./workspace-context";
 
@@ -29,6 +28,7 @@ export const useSetting = create<SettingStore>((set, get) => ({
     recent: [],
     buildDir: "",
     layout: "compact",
+    checkExpr: true,
   },
   load: () => {
     try {
@@ -36,7 +36,6 @@ export const useSetting = create<SettingStore>((set, get) => ({
         const settings = readJson(settingPath) as SettingModel;
         settings.layout = settings.layout || "compact";
         set({ data: settings });
-        setLayoutStyle(settings.layout);
       }
     } catch (error) {
       console.error(error);
@@ -67,7 +66,6 @@ export const useSetting = create<SettingStore>((set, get) => ({
     const { data, save } = get();
     set({ data: { ...data, layout } });
     save();
-    setLayoutStyle(layout);
     useWorkspace.getState().editing?.dispatch("refresh");
   },
 }));

@@ -1,5 +1,6 @@
 import G6 from "@antv/g6";
-import { NodeDef } from "../behavior3/src/behavior3";
+import { ExpressionEvaluator, NodeDef } from "../behavior3/src/behavior3";
+import { useSetting } from "../contexts/setting-context";
 import { useWorkspace } from "../contexts/workspace-context";
 import { TreeGraphData, getNodeType, isExprType } from "../misc/b3type";
 import { checkTreeData, nodeDefs, parseExpr, usingGroups, usingVars } from "../misc/b3util";
@@ -10,9 +11,6 @@ let ctx: CanvasRenderingContext2D | null = null;
 let defaultFontSize = "";
 const textWidthMap = new Map<string, number>();
 const textLines: Record<string, string[]> = {};
-
-let layoutWidth = 220;
-let layoutStyle: "compact" | "normal" = "compact";
 
 const calcTextWith = (text: string, fontSize?: string) => {
   fontSize = fontSize ?? defaultFontSize;
@@ -133,7 +131,40 @@ const foundUndefinedInArgs = (def: NodeDef, data: TreeGraphData) => {
   return false;
 };
 
+const hasErrorInArgExpr = (def: NodeDef, data: TreeGraphData) => {
+  const checkExpr = useWorkspace.getState().settings.checkExpr;
+  if (!checkExpr || !def.args || !data.args) {
+    return false;
+  }
+  for (const arg of def.args) {
+    if (!isExprType(arg.type)) {
+      continue;
+    }
+    const expr = data.args[arg.name] as string | string[] | undefined;
+    if (!expr) {
+      continue;
+    }
+    try {
+      if (typeof expr === "string") {
+        if (!new ExpressionEvaluator(expr).dryRun()) {
+          return true;
+        }
+      } else if (Array.isArray(expr)) {
+        for (const str of expr) {
+          if (!new ExpressionEvaluator(str).dryRun()) {
+            return true;
+          }
+        }
+      }
+    } catch (e) {
+      return true;
+    }
+  }
+  return false;
+};
+
 export const calcTreeDataSize = (data: TreeGraphData) => {
+  const width = useSetting.getState().data.layout === "compact" ? 220 : 260;
   let height = 50 + 2;
   const updateHeight = (obj: unknown) => {
     if ((Array.isArray(obj) && obj.length) || (obj && Object.keys(obj).length > 0)) {
@@ -147,16 +178,7 @@ export const calcTreeDataSize = (data: TreeGraphData) => {
   updateHeight(data.args);
   updateHeight(data.input);
   updateHeight(data.output);
-  return [layoutWidth, height];
-};
-
-export const setLayoutStyle = (style: "compact" | "normal") => {
-  layoutStyle = style;
-  if (style === "compact") {
-    layoutWidth = 220;
-  } else {
-    layoutWidth = 260;
-  }
+  return [width, height];
 };
 
 const NODE_COLORS = {
@@ -217,6 +239,8 @@ G6.registerNode(
       let classify = getNodeType(nodeDef);
       let color = nodeDef.color || NODE_COLORS[classify] || NODE_COLORS["Other"];
 
+      const layoutStyle = useSetting.getState().data.layout;
+
       if (
         !nodeDefs.has(data.name) ||
         (data.path && !data.children?.length) ||
@@ -224,7 +248,8 @@ G6.registerNode(
         !checkTreeData(data) ||
         foundUndefined(data.input) ||
         foundUndefined(data.output) ||
-        foundUndefinedInArgs(nodeDef, data)
+        foundUndefinedInArgs(nodeDef, data) ||
+        hasErrorInArgExpr(nodeDef, data)
       ) {
         classify = "Error";
         color = NODE_COLORS[classify];

@@ -1,5 +1,11 @@
 {
+  "version": "1.8.0",
   "name": "subtree2",
+  "desc": "子树2",
+  "firstid": 1,
+  "group": [],
+  "import": [],
+  "declvar": [],
   "root": {
     "id": 1,
     "name": "Sequence",
@@ -10,14 +16,9 @@
         "name": "Cmp",
         "args": {},
         "input": [
-          ""
+          "x"
         ]
-      },
-      {
-        "id": 3,
-        "name": "unknow"
       }
     ]
-  },
-  "desc": "子树2"
+  }
 }

@@ -12,6 +12,7 @@
   "cancel": "取消",
   "compact": "紧凑",
   "console": "控制台",
+  "checkExpr": "检查表达式",
   "copy": "复制",
   "createProject": "新建项目",
   "cut": "剪切",
@@ -56,6 +57,7 @@
   "searchNode": "搜索节点",
   "selectAll": "全选",
   "services": "服务",
+  "setupBuildScript": "设置构建脚本",
   "start": "开始",
   "undo": "撤销",
   "unhide": "显示所有",
@@ -106,10 +108,11 @@
   "node.disabled": "禁用",
   "node.editSubtreeDenied": "不能编辑子树节点",
   "node.group": "节点分组",
+  "node.groupNotEnabled": "节点分组 “{{group}}” 任意一个未在当前文件中启用",
   "node.id": "节点标识",
-  "node.invalidChildren": "子节点数量不合法",
   "node.inputVariable": "输入变量",
-  "node.invalidGroup": "节点分组 “{{group}}” 未启用",
+  "node.invalidChildren": "子节点数量不合法",
+  "node.invalidExpression": "表达式不合法",
   "node.invalidValue": "无效的值",
   "node.invalidVariableName": "变量名必须以字母或下划线开头",
   "node.name": "节点名称",
@@ -124,6 +127,5 @@
   "node.subtreePathError": "子树必须保存在当前工作区的目录内",
   "node.type": "节点类型",
   "node.undefinedVariable": "变量 “{{variable}}” 未定义",
-
   "node.unknown.desc": "新建节点"
 }

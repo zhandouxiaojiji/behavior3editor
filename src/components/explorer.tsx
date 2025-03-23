@@ -876,18 +876,6 @@ export const Explorer: FC = () => {
                 if (node && !node.editing) {
                   dispatch("open", node);
                   setSelectedKeys([node.path]);
-
-                  setTimeout(() => {
-                    const element = document.querySelector(`[title="${node.title}"]`);
-                    const container =
-                      element?.closest(".b3-overflow") || element?.closest(".b3-explorer");
-                    if (element && container && !isElementInViewport(element, container)) {
-                      element.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center",
-                      });
-                    }
-                  }, 100);
                 }
               }}
               onDrop={(info) => {

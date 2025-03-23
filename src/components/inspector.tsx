@@ -26,6 +26,7 @@ import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import { useDebounceCallback } from "usehooks-ts";
 import { useShallow } from "zustand/react/shallow";
+import { ExpressionEvaluator } from "../behavior3/src/behavior3";
 import { EditNode, EditTree, useWorkspace } from "../contexts/workspace-context";
 import {
   ImportDef,
@@ -36,6 +37,7 @@ import {
   isIntType,
   isJsonType,
   isStringType,
+  NodeArg,
   NodeModel,
   TreeGraphData,
   VarDef,
@@ -53,6 +55,7 @@ import {
   usingGroups,
   usingVars,
 } from "../misc/b3util";
+import i18n from "../misc/i18n";
 import { Hotkey, isMacos } from "../misc/keys";
 import { mergeClassNames } from "../misc/util";
 
@@ -550,6 +553,43 @@ const TreeInspector: FC = () => {
   );
 };
 
+const validateArg = (node: NodeModel, arg: NodeArg, value: unknown) => {
+  const type = getNodeArgRawType(arg);
+  const required = !isNodeArgOptional(arg);
+  if (isExprType(type) && value) {
+    for (const v of parseExpr(value as string)) {
+      if (usingVars && !usingVars[v]) {
+        return Promise.reject(new Error(i18n.t("node.undefinedVariable", { variable: v })));
+      }
+    }
+    if (useWorkspace.getState().settings.checkExpr) {
+      try {
+        if (!new ExpressionEvaluator(value as string).dryRun()) {
+          return Promise.reject(new Error(i18n.t("node.invalidExpression")));
+        }
+      } catch (e) {
+        console.error(e);
+        return Promise.reject(new Error(i18n.t("node.invalidExpression")));
+      }
+    }
+  }
+  if (value && isJsonType(type)) {
+    try {
+      if (value !== "null") {
+        JSON.parse(value as string);
+      }
+    } catch (e) {
+      return Promise.reject(new Error(i18n.t("node.invalidValue")));
+    }
+  } else if (value === null && !required) {
+    value = undefined;
+  }
+  if (!checkNodeArgValue(node, arg, value, true)) {
+    return Promise.reject(new Error(i18n.t("node.invalidValue")));
+  }
+  return Promise.resolve(value);
+};
+
 const NodeInspector: FC = () => {
   const workspace = useWorkspace(
     useShallow((state) => ({
@@ -842,7 +882,9 @@ const NodeInspector: FC = () => {
               {
                 validator() {
                   if (def.group && !def.group.some((g) => usingGroups[g])) {
-                    return Promise.reject(new Error(t("node.invalidGroup", { group: def.group })));
+                    return Promise.reject(
+                      new Error(t("node.groupNotEnabled", { group: def.group }))
+                    );
                   }
                   return Promise.resolve();
                 },
@@ -1105,33 +1147,7 @@ const NodeInspector: FC = () => {
                                     },
                                     () => ({
                                       validator(_, value) {
-                                        if (usingVars && isExprType(type) && value) {
-                                          for (const v of parseExpr(value)) {
-                                            if (!usingVars![v]) {
-                                              return Promise.reject(
-                                                new Error(
-                                                  t("node.undefinedVariable", { variable: v })
-                                                )
-                                              );
-                                            }
-                                          }
-                                        }
-                                        if (isJsonType(type)) {
-                                          try {
-                                            if (value !== "null") {
-                                              JSON.parse(value);
-                                            }
-                                          } catch (e) {
-                                            return Promise.reject(
-                                              new Error(t("node.invalidValue"))
-                                            );
-                                          }
-                                        } else if (
-                                          !checkNodeArgValue(editingNode.data, arg, value, true)
-                                        ) {
-                                          return Promise.reject(new Error(t("node.invalidValue")));
-                                        }
-                                        return Promise.resolve();
+                                        return validateArg(editingNode.data, arg, value);
                                       },
                                     }),
                                   ]}
@@ -1228,59 +1244,39 @@ const NodeInspector: FC = () => {
                       rules={[
                         { required, message: t("fieldRequired", { field: arg.desc }) },
                         ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
-                          validator(_, value) {
-                            if (usingVars && isExprType(type) && value) {
-                              for (const v of parseExpr(value)) {
-                                if (!usingVars![v]) {
-                                  return Promise.reject(
-                                    new Error(t("node.undefinedVariable", { variable: v }))
-                                  );
-                                }
+                          async validator(_, value) {
+                            return validateArg(editingNode.data, arg, value).then((result) => {
+                              value = result;
+                              if (!arg.oneof) {
+                                return Promise.resolve();
                               }
-                            }
-                            if (value && isJsonType(type)) {
-                              try {
-                                if (value !== "null") {
-                                  JSON.parse(value);
-                                }
-                              } catch (e) {
-                                return Promise.reject(new Error(t("node.invalidValue")));
+                              const idx = def.input?.findIndex(
+                                (input) => input.replace("?", "") === arg.oneof
+                              );
+                              if (idx === undefined || idx < 0) {
+                                return Promise.reject(
+                                  new Error(t("node.oneof.inputNotfound", { input: arg.oneof }))
+                                );
                               }
-                            } else if (value === null && !required) {
-                              value = undefined;
-                            }
-                            if (!checkNodeArgValue(editingNode.data, arg, value)) {
-                              return Promise.reject(new Error(t("node.invalidValue")));
-                            }
-                            if (!arg.oneof) {
-                              return Promise.resolve();
-                            }
-                            const idx = def.input?.findIndex(
-                              (input) => input.replace("?", "") === arg.oneof
-                            );
-                            if (idx === undefined || idx < 0) {
-                              return Promise.reject(
-                                new Error(t("node.oneof.inputNotfound", { input: arg.oneof }))
-                              );
-                            }
-                            const inputName = `input.${idx}`;
-                            if (!isFieldValidating(inputName)) {
-                              setFieldValue(`args.${arg.name}`, value);
-                              validateFields([inputName]);
-                            }
-                            if (!checkOneof(getFieldValue(inputName) ?? "", value)) {
-                              return Promise.reject(
-                                new Error(
-                                  t("node.oneof.error", {
-                                    input: def.input![idx],
-                                    arg: arg.name,
-                                    desc: arg.desc ?? "",
-                                  })
-                                )
-                              );
-                            } else {
-                              return Promise.resolve();
-                            }
+                              const inputName = `input.${idx}`;
+                              if (!isFieldValidating(inputName)) {
+                                setFieldValue(`args.${arg.name}`, value);
+                                validateFields([inputName]);
+                              }
+                              if (!checkOneof(getFieldValue(inputName) ?? "", value)) {
+                                return Promise.reject(
+                                  new Error(
+                                    t("node.oneof.error", {
+                                      input: def.input![idx],
+                                      arg: arg.name,
+                                      desc: arg.desc ?? "",
+                                    })
+                                  )
+                                );
+                              } else {
+                                return Promise.resolve();
+                              }
+                            });
                           },
                         }),
                       ]}

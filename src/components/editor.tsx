@@ -1253,32 +1253,22 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       editor.size.height = editorSize.height;
     }
 
-    if (typeof editor.editNode === "number") {
-      const id = editor.editNode.toString();
-      selectNode(null);
+    if (editor.selectedId) {
+      const id = editor.selectedId;
       setTimeout(() => {
         editor.graph.focusItem(id);
         selectNode(id);
-      }, 100);
+      }, 50);
     }
-  });
+  }, [editorSize, workspace.editing]);
 
-  // check should subtree
+  // check should repaint node
   useEffect(() => {
     if (workspace.editing === editor) {
       checkSubtree();
       editor.graph && refresh();
     }
-  }, [workspace.editing]);
-
-  // check should repaint node
-  useEffect(() => {
-    if (editor.graph) {
-      editor.graph.changeData(editor.root);
-      editor.graph.layout();
-      restoreViewport();
-    }
-  }, [t]);
+  }, [workspace.editing, t]);
 
   const nextResult = () => {
     const { results, index } = filterOption;

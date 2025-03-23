@@ -18,16 +18,10 @@ import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
 import Path from "../misc/path";
 import { zhNodeDef } from "../misc/template";
-import { readJson, readTree, writeJson } from "../misc/util";
+import { readJson, readTree, readWorkspace, writeJson } from "../misc/util";
 import { useSetting } from "./setting-context";
 
 let buildDir: string | undefined;
-
-interface BatchScript {
-  processTree?(tree: TreeModel, path: string): TreeModel;
-
-  processNode?(node: NodeModel, tree: TreeModel): NodeModel;
-}
 
 export type EditEvent =
   | "save"
@@ -71,8 +65,6 @@ export class EditorStore {
   size = { width: 0, height: 0 };
   graphMatrix?: Matrix;
   graph!: TreeGraph;
-
-  editNode: EditNode | number | null = null;
 
   dispatch!: (event: EditEvent, data?: unknown) => void;
 
@@ -142,8 +134,12 @@ export type FileMeta = {
   exists?: boolean;
 };
 
-interface WorkspaceModel {
+export interface WorkspaceModel {
   files?: { path: string; desc: string }[];
+  settings: {
+    checkExpr?: boolean;
+    buildScript?: string;
+  };
 }
 
 export type WorkspaceStore = {
@@ -153,8 +149,13 @@ export type WorkspaceStore = {
   batchProject: () => void;
   buildProject: () => void;
 
+  settings: WorkspaceModel["settings"];
   workdir: string;
   path: string;
+
+  // settings
+  setCheckExpr: (checkExpr: boolean) => void;
+  setupBuildScript: () => void;
 
   loadWorkspace: () => void;
   saveWorkspace: () => void;
@@ -170,8 +171,8 @@ export type WorkspaceStore = {
   isShowingSearch: boolean;
   onShowingSearch: (isShowingSearch: boolean) => void;
 
-  open: (path: string, selectedNode?: number) => void;
-  edit: (path: string, selectedNode?: number) => void;
+  open: (path: string, selectedId?: number) => void;
+  edit: (path: string, selectedId?: number) => void;
   close: (path: string) => void;
   find: (path: string) => EditorStore | undefined;
   relative: (path: string) => string;
@@ -250,6 +251,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   modifiedEditors: [],
   workdir: "",
   path: "",
+  settings: {},
 
   init: (path) => {
     const workspace = get();
@@ -269,6 +271,40 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         }
         message.error(`load workspace error: ${path}`);
       }
+    }
+  },
+
+  // setting
+  setCheckExpr: (checkExpr: boolean) => {
+    const { settings, saveWorkspace } = get();
+    set({
+      settings: {
+        ...settings,
+        checkExpr,
+      },
+    });
+    b3util.setCheckExpr(checkExpr);
+    saveWorkspace();
+    useWorkspace.getState().editing?.dispatch("refresh");
+  },
+
+  setupBuildScript: () => {
+    const workspace = get();
+    let buildScript = dialog.showOpenDialogSync({
+      properties: ["openFile"],
+      defaultPath: workspace.workdir,
+      filters: [{ name: "Javascript", extensions: ["js"] }],
+    })?.[0];
+    if (buildScript) {
+      buildScript = Path.posixPath(buildScript);
+      const { settings, saveWorkspace, relative } = get();
+      set({
+        settings: {
+          ...settings,
+          buildScript: relative(buildScript),
+        },
+      });
+      saveWorkspace();
     }
   },
 
@@ -355,30 +391,46 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       for (const editor of workspace.editors) {
         editor.dispatch("save");
       }
+      const debug = console.debug;
+      console.debug = () => {};
       try {
         let hasError = false;
+
+        let buildScript: b3util.BuildScript | undefined;
+        if (workspace.settings.buildScript) {
+          const scriptPath = workspace.workdir + "/" + workspace.settings.buildScript;
+          if (fs.existsSync(scriptPath)) {
+            buildScript = eval(fs.readFileSync(scriptPath, "utf8"));
+          }
+        }
+
         workspace.allFiles.forEach((file) => {
           const buildpath = buildDir + "/" + workspace.relative(file.path);
-          const treeModel = b3util.createBuildData(file.path);
-          if (!treeModel) {
+          let tree = b3util.createBuildData(file.path);
+          if (buildScript) {
+            tree = b3util.processBatch(tree, file.path, buildScript);
+          }
+
+          if (!tree) {
             return;
           }
-          if (treeModel.export === false) {
+
+          if (tree.export === false) {
             console.log("skip:", buildpath);
             return;
           }
           console.log("build:", buildpath);
           const declare: FileVarDecl = {
-            import: treeModel.import.map((v) => ({ path: v, vars: [], depends: [] })),
-            declvar: treeModel.declvar.map((v) => ({ name: v.name, desc: v.desc })),
+            import: tree.import.map((v) => ({ path: v, vars: [], depends: [] })),
+            declvar: tree.declvar.map((v) => ({ name: v.name, desc: v.desc })),
             subtree: [],
           };
-          b3util.refreshDeclare(treeModel.root, treeModel.group, declare);
-          if (!b3util.checkNodeData(treeModel?.root)) {
+          b3util.refreshDeclare(tree.root, tree.group, declare);
+          if (!b3util.checkNodeData(tree?.root)) {
             hasError = true;
           }
           fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
-          fs.writeFileSync(buildpath, JSON.stringify(treeModel, null, 2));
+          fs.writeFileSync(buildpath, JSON.stringify(tree, null, 2));
         });
         if (hasError) {
           message.error(i18n.t("buildFailed"));
@@ -390,6 +442,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         console.error(error);
         message.error(i18n.t("buildFailed"));
       }
+      console.debug = debug;
     }
   },
 
@@ -405,28 +458,10 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       try {
         console.log("run script", scriptPath);
         const str = fs.readFileSync(scriptPath, "utf8");
-        const batch = eval(str) as BatchScript;
+        const batch = eval(str) as b3util.BuildScript;
         workspace.allFiles.forEach((file) => {
-          let tree: TreeModel | undefined = readTree(file.path);
-          if (batch.processTree && tree) {
-            tree = batch.processTree(tree, file.path);
-          }
-          if (tree && batch.processNode) {
-            const processNode = (node: NodeModel) => {
-              if (node.children) {
-                const children: NodeModel[] = [];
-                node.children?.forEach((child) => {
-                  const newChild = processNode(child);
-                  if (newChild) {
-                    children.push(newChild);
-                  }
-                });
-                node.children = children;
-              }
-              return batch.processNode?.(node, tree!);
-            };
-            tree.root = processNode(tree.root) ?? ({} as NodeModel);
-          }
+          let tree: TreeModel | null = readTree(file.path);
+          tree = b3util.processBatch(tree, file.path, batch);
           if (tree) {
             fs.writeFileSync(file.path, JSON.stringify(tree, null, 2));
           }
@@ -445,7 +480,9 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
 
   loadWorkspace: () => {
     const workspace = get();
-    const data = readJson(workspace.path) as WorkspaceModel;
+    const data = readWorkspace(workspace.path);
+    set({ settings: data.settings });
+    b3util.setCheckExpr(data.settings?.checkExpr ?? true);
     data.files?.forEach((file) => {
       workspace.allFiles.set(file.path, { path: file.path, desc: file.desc, exists: false });
     });
@@ -455,6 +492,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const workspace = get();
     const data: WorkspaceModel = {
       files: [],
+      settings: workspace.settings,
     };
     workspace.allFiles.forEach((file) => {
       data.files?.push({
@@ -484,7 +522,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     set({ isShowingSearch });
   },
 
-  open: (path, selectedNode) => {
+  open: (path, selectedId) => {
     path = Path.posixPath(path);
     const workspace = get();
     let editor = workspace.editors.find((v) => v.path === path);
@@ -494,7 +532,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         workspace.editors.push(editor);
         set({ editors: workspace.editors });
         workspace.updateFileMeta(editor);
-        workspace.edit(editor.path, selectedNode);
+        workspace.edit(editor.path, selectedId);
 
         if (b3util.isNewVersion(editor.data.version)) {
           message.warning(i18n.t("alertNewVersion", { version: editor.data.version }));
@@ -504,26 +542,20 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         message.error(`invalid file: ${path}`);
       }
     } else if (workspace.editing !== editor) {
-      workspace.edit(editor.path, selectedNode);
+      workspace.edit(editor.path, selectedId);
     }
   },
 
-  edit: (path, selectedNode) => {
+  edit: (path, selectedId) => {
     const workspace = get();
     const editor = workspace.editors.find((v) => v.path === path);
-    if (editor && selectedNode) {
-      editor.editNode = selectedNode;
+    if (editor && selectedId) {
+      editor.selectedId = selectedId.toString();
     }
     set({ editing: editor, editingNode: null, editingTree: null });
     if (editor) {
       workspace.refresh(editor.path);
-      if (!editor.editNode) {
-        workspace.onEditingTree(editor);
-      } else if (typeof editor.editNode === "object") {
-        workspace.onEditingNode(editor.editNode);
-      }
-    } else {
-      set({ editingNode: null, editingTree: null });
+      workspace.onEditingTree(editor);
     }
   },
 
@@ -675,27 +707,16 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
 
   // node edit
   onEditingNode: (node) => {
-    const workspace = get();
-    if (workspace.editing) {
-      workspace.editing.editNode = node;
-    }
     set({ editingNode: node, editingNodeDef: null, editingTree: null });
   },
 
   onEditingNodeDef: (nodeDef) => {
-    const workspace = get();
-    if (workspace.editing) {
-      workspace.editing.editNode = null;
-    }
     set({ editingNodeDef: nodeDef, editingNode: null, editingTree: null });
   },
 
   // tree edit
   onEditingTree: (editor) => {
     const workspace = get();
-    if (workspace.editing) {
-      workspace.editing.editNode = null;
-    }
     workspace.refresh(editor.path);
     set({
       editingTree: {
