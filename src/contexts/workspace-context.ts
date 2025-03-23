@@ -429,6 +429,9 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           if (!b3util.checkNodeData(tree?.root)) {
             hasError = true;
           }
+          if (buildScript?.writeFile) {
+            buildScript.writeFile(buildpath, tree);
+          }
           fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
           fs.writeFileSync(buildpath, JSON.stringify(tree, null, 2));
         });
