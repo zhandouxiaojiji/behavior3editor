@@ -36,18 +36,17 @@
     onComplete?(status: "success" | "failure"): void;
   }
 */
-({
-  processTree: (tree) => {
-    console.log(`processTree ${tree.name}`);
-    if (tree.name == "hero") {
-      return tree;
-    }
-  },
-  processNode: (node, tree) => {
-    console.log(`processNode ${tree.name}.${node.id}`);
-    if (node.name == "GetPos") {
-      return null;
-    }
-    return node;
-  },
-});
+
+export const onSetup = (env) => {
+  console.log(env);
+};
+
+export const processTree = (tree) => {
+  console.log(`processTree ${tree.name}`);
+  return tree;
+};
+
+export const processNode = (node, tree) => {
+  console.log(`processNode ${tree.name}.${node.id}`);
+  return node;
+};

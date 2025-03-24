@@ -9,7 +9,6 @@ import pkg from "./package.json";
 export default defineConfig(({ command }) => {
   rmSync("dist-electron", { recursive: true, force: true });
 
-  const isServe = command === "serve";
   const isBuild = false; //command === "build";
   const sourcemap = true; //isServe || !!process.env.VSCODE_DEBUG;
 
@@ -38,6 +37,7 @@ export default defineConfig(({ command }) => {
           vite: {
             build: {
               sourcemap,
+              target: ["chrome89", "edge89", "firefox89", "safari15"],
               minify: isBuild,
               outDir: "dist-electron/main",
               rollupOptions: {

@@ -59,7 +59,7 @@ if (buildOutput || buildProject || buildHelp) {
     b3util.initWorkdir(workdir, (msg) => {
       console.error(`${msg}`);
     });
-    const hasError = b3util.buildProject(project, buildDir);
+    const hasError = await b3util.buildProject(project, buildDir);
     if (hasError) {
       console.error("build failed***");
       app.quit();
@@ -142,7 +142,6 @@ async function createWindow(projectPath?: string) {
       // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
       nodeIntegration: true,
       contextIsolation: false,
-      webSecurity: false,
     },
   });
 

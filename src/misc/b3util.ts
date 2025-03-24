@@ -1,6 +1,5 @@
 import * as fs from "fs";
 import { ExpressionEvaluator, NodeDef } from "../behavior3/src/behavior3";
-import { type WorkspaceModel } from "../contexts/workspace-context";
 import {
   FileVarDecl,
   ImportDef,
@@ -19,7 +18,7 @@ import {
   VERSION,
 } from "./b3type";
 import Path from "./path";
-import { readJson, readTree } from "./util";
+import { readJson, readTree, readWorkspace } from "./util";
 
 export class NodeDefs extends Map<string, NodeDef> {
   get(key: string): NodeDef {
@@ -813,9 +812,9 @@ export const processBatch = (tree: TreeModel | null, path: string, batch: BatchS
   return tree;
 };
 
-export const buildProject = (project: string, buildDir: string) => {
+export const buildProject = async (project: string, buildDir: string) => {
   let hasError = false;
-  const settings = readJson<WorkspaceModel>(project).settings;
+  const settings = readWorkspace(project).settings;
   let buildScript: BatchScript | undefined;
   if (settings.checkExpr) {
     setCheckExpr(true);
@@ -823,7 +822,7 @@ export const buildProject = (project: string, buildDir: string) => {
   if (settings.buildScript) {
     const scriptPath = workdir + "/" + settings.buildScript;
     try {
-      buildScript = eval(fs.readFileSync(scriptPath, "utf8"));
+      buildScript = await loadModule(scriptPath);
     } catch (e) {
       console.error(`'${scriptPath}' is not a valid build script`);
     }
@@ -868,6 +867,16 @@ export const buildProject = (project: string, buildDir: string) => {
   }
   buildScript?.onComplete?.(hasError ? "failure" : "success");
   return hasError;
+};
+
+export const loadModule = async (path: string) => {
+  try {
+    const module = await import(path);
+    return module;
+  } catch (e) {
+    console.error(`load module error: ${path}`, e);
+  }
+  return null;
 };
 
 export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) => {

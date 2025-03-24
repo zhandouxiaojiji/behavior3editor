@@ -36,23 +36,24 @@
     onComplete?(status: "success" | "failure"): void;
   }
 */
-({
-  onSetup: (env) => {
-    console.log("onSetup", env);
-    console.log(env.workdir);
-    console.log(env.nodeDefs.get("Wait"));
-    console.log(env.path.dirname("sample/scripts/build.js"));
-    console.log(env.fs.readFileSync("sample/scripts/build.js", "utf8"));
-  },
-  processTree: (tree) => {
-    console.log(`processTree ${tree.name}`);
-    return tree;
-  },
-  processNode: (node, tree) => {
-    console.log(`processNode ${tree.name} ${node.name}#${node.id}`);
-    return node;
-  },
-  onComplete: (status) => {
-    console.log(`onComplete ${status}`);
-  },
-});
+export const onSetup = (env) => {
+  console.log("onSetup", env);
+  console.log(env.workdir);
+  console.log(env.nodeDefs.get("Wait"));
+  console.log(env.path.dirname("sample/scripts/build.js"));
+  console.log(env.fs.readFileSync("sample/scripts/build.js", "utf8"));
+};
+
+export const processTree = (tree) => {
+  console.log(`processTree ${tree.name}`);
+  return tree;
+};
+
+export const processNode = (node, tree) => {
+  console.log(`processNode ${tree.name} ${node.name}#${node.id}`);
+  return node;
+};
+
+export const onComplete = (status) => {
+  console.log(`onComplete ${status}`);
+};

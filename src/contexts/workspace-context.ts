@@ -377,7 +377,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     }
   },
 
-  buildProject: () => {
+  buildProject: async () => {
     const workspace = get();
     if (workspace.path) {
       if (!buildDir) {
@@ -394,7 +394,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       const debug = console.debug;
       console.debug = () => {};
       try {
-        const hasError = b3util.buildProject(workspace.path, buildDir);
+        const hasError = await b3util.buildProject(workspace.path, buildDir);
         if (hasError) {
           message.error(i18n.t("buildFailed"));
         } else {
@@ -409,7 +409,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     }
   },
 
-  batchProject: () => {
+  batchProject: async () => {
     const workspace = get();
     const scriptPath = dialog.showOpenDialogSync({
       properties: ["openFile"],
@@ -420,8 +420,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       let hasError = false;
       try {
         console.log("run script", scriptPath);
-        const str = fs.readFileSync(scriptPath, "utf8");
-        const batch = eval(str) as b3util.BatchScript;
+        const batch = await b3util.loadModule(scriptPath);
         batch.onSetup?.({
           fs,
           path: Path,
