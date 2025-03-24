@@ -21,20 +21,25 @@ import {
 import Path from "./path";
 import { readJson, readTree } from "./util";
 
-export interface BatchScript {
-  processTree?(tree: TreeModel, path: string): TreeModel | null;
-  processNode?(node: NodeModel, tree: TreeModel): NodeModel | null;
-}
-
-export interface BuildScript extends BatchScript {
-  onWriteFile?(path: string, tree: TreeModel): void;
-  onComplete?(status: "success" | "failure"): void;
-}
-
 export class NodeDefs extends Map<string, NodeDef> {
   get(key: string): NodeDef {
     return super.get(key) ?? unknownNodeDef;
   }
+}
+
+type Env = {
+  fs: typeof fs;
+  path: typeof Path;
+  workdir: string;
+  nodeDefs: NodeDefs;
+};
+
+export interface BatchScript {
+  onSetup?(env: Env): void;
+  processTree?(tree: TreeModel, path: string): TreeModel | null;
+  processNode?(node: NodeModel, tree: TreeModel): NodeModel | null;
+  onWriteFile?(path: string, tree: TreeModel): void;
+  onComplete?(status: "success" | "failure"): void;
 }
 
 export let nodeDefs: NodeDefs = new NodeDefs();
@@ -811,7 +816,7 @@ export const processBatch = (tree: TreeModel | null, path: string, batch: BatchS
 export const buildProject = (project: string, buildDir: string) => {
   let hasError = false;
   const settings = readJson<WorkspaceModel>(project).settings;
-  let buildScript: BuildScript | undefined;
+  let buildScript: BatchScript | undefined;
   if (settings.checkExpr) {
     setCheckExpr(true);
   }
@@ -823,6 +828,15 @@ export const buildProject = (project: string, buildDir: string) => {
       console.error(`'${scriptPath}' is not a valid build script`);
     }
   }
+  if (buildScript) {
+    buildScript.onSetup?.({
+      fs,
+      path: Path,
+      workdir,
+      nodeDefs,
+    });
+  }
+
   for (const path of Path.ls(Path.dirname(project), true)) {
     if (path.endsWith(".json")) {
       const buildpath = buildDir + "/" + path.substring(workdir.length + 1);

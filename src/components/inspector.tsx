@@ -1487,7 +1487,10 @@ const NodeDefInspector: FC = () => {
     form.setFieldValue("type", def.type);
     form.setFieldValue("desc", def.desc);
     form.setFieldValue("doc", def.doc);
-    form.setFieldValue("group", def.group);
+    form.setFieldValue(
+      "group",
+      def.group?.map((g) => ({ label: g, value: g }))
+    );
     if (def.children === undefined || def.children === -1) {
       form.setFieldValue("children", t("node.children.unlimited"));
     } else {
@@ -1526,7 +1529,12 @@ const NodeDefInspector: FC = () => {
           </Form.Item>
           {workspace.groupDefs.length > 0 && def.group?.length && (
             <Form.Item name="group" label={t("node.group")}>
-              <GroupDefItem disabled={true} />
+              <Select
+                style={{ fontSize: "13px" }}
+                mode="multiple"
+                suffixIcon={null}
+                disabled={true}
+              />
             </Form.Item>
           )}
           <Form.Item name="children" label={t("node.children")}>

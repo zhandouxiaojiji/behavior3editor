@@ -421,14 +421,22 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       try {
         console.log("run script", scriptPath);
         const str = fs.readFileSync(scriptPath, "utf8");
-        const batch = eval(str) as b3util.BuildScript;
+        const batch = eval(str) as b3util.BatchScript;
+        batch.onSetup?.({
+          fs,
+          path: Path,
+          workdir: workspace.workdir,
+          nodeDefs: get().nodeDefs,
+        });
         workspace.allFiles.forEach((file) => {
           let tree: TreeModel | null = readTree(file.path);
           tree = b3util.processBatch(tree, file.path, batch);
           if (tree) {
+            batch.onWriteFile?.(file.path, tree);
             fs.writeFileSync(file.path, JSON.stringify(tree, null, 2));
           }
         });
+        batch.onComplete?.("success");
       } catch (error) {
         hasError = true;
         console.error(error);
