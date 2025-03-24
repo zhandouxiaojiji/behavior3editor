@@ -573,12 +573,14 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
     }
     if (names.length === 0 && editor.searchingText) {
       const matrix = editor.graphMatrix;
+      const selectedId = editor.selectedId;
       onSearchChange({
         ...filterOption,
         filterType: "content",
         filterStr: editor.searchingText,
       });
       editor.graphMatrix = matrix;
+      selectNode(selectedId);
       restoreViewport();
     }
   };
@@ -801,8 +803,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
 
   const rename = (newPath: string) => {
     editor.path = newPath;
-    editor.size.width = 0;
-    editor.size.height = 0;
   };
 
   const save = () => {
@@ -876,13 +876,6 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       pushHistory();
       onChange();
     }, 200);
-  };
-
-  const destroyGraph = () => {
-    if (editor.graph) {
-      editor.graph.destroy();
-      editor.graph = undefined!;
-    }
   };
 
   const createGraph = (ref: React.MutableRefObject<null>) => {
@@ -1237,14 +1230,15 @@ export const Editor: FC<EditorProps> = ({ onUpdate: updateState, data: editor, .
       return;
     }
 
-    if (editor.size.width !== editorSize.width || editor.size.height !== editorSize.height) {
-      destroyGraph();
-    }
-
     if (!editor.graph) {
       createGraph(graphRef);
-      editor.size.width = editorSize.width;
-      editor.size.height = editorSize.height;
+    }
+
+    if (
+      editor.graph.getWidth() !== editorSize.width ||
+      editor.graph.getHeight() !== editorSize.height
+    ) {
+      editor.graph.changeSize(editorSize.width, editorSize.height);
     }
 
     if (editor.selectedId) {

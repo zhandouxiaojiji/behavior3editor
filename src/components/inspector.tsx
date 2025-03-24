@@ -355,8 +355,13 @@ const TreeInspector: FC = () => {
               <Divider orientation="left">
                 <h4>{t("tree.group")}</h4>
               </Divider>
-              <Form.Item name="group" style={{ marginLeft: 16 }}>
-                <GroupDefItem />
+              <Form.Item name="group">
+                <Select
+                  mode="multiple"
+                  suffixIcon={null}
+                  onChange={form.submit}
+                  options={workspace.groupDefs.map((g) => ({ label: g, value: g }))}
+                />
               </Form.Item>
             </>
           )}

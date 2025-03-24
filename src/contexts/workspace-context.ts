@@ -60,9 +60,8 @@ export class EditorStore {
 
   historyStack: string[] = [];
   historyIndex: number = 0;
-  selectedId?: string | null;
+  selectedId: string | null = null;
 
-  size = { width: 0, height: 0 };
   graphMatrix?: Matrix;
   graph!: TreeGraph;
 
