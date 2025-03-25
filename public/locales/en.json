@@ -86,6 +86,7 @@
   "tree.export": "Export",
   "tree.firstid": "First id",
   "tree.group": "Enable Node Grouping",
+  "tree.group.placeholder": "Select node groups",
   "tree.vars": "Define Variables",
   "tree.vars.name": "name",
   "tree.vars.invalidName": "Invalid variable name",

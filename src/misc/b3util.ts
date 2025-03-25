@@ -2,9 +2,9 @@ import * as fs from "fs";
 import { ExpressionEvaluator, NodeDef } from "../behavior3/src/behavior3";
 import {
   FileVarDecl,
+  hasArgOptions,
   ImportDef,
   isBoolType,
-  isEnumType,
   isExprType,
   isFloatType,
   isIntType,
@@ -67,13 +67,7 @@ export const initWorkdir = (path: string, handler: typeof alertError) => {
   nodeDefs = new NodeDefs();
   for (const v of nodeDefData) {
     nodeDefs.set(v.name, v);
-
-    const group = v.type.match(/\(([\w|]+)\)/)?.[1];
-    if (group) {
-      v.type = v.type.match(/^\w+/)![0] as NodeDef["type"];
-      v.group = group.split("|");
-      v.group.forEach((g) => groups.add(g));
-    }
+    v.group?.forEach((g) => groups.add(g));
   }
   groupDefs = Array.from(groups).sort();
 };
@@ -218,15 +212,6 @@ export const checkNodeArgValue = (
       }
       hasError = true;
     }
-  } else if (isEnumType(type)) {
-    const isEnum = !!arg.options?.find((option) => option.value === value);
-    const isOptional = value === undefined && isNodeArgOptional(arg);
-    if (!(isEnum || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a one of the option values`);
-      }
-      hasError = true;
-    }
   } else if (isExprType(type)) {
     const isExpr = typeof value === "string" && value;
     const isOptional = (value === undefined || value === "") && isNodeArgOptional(arg);
@@ -255,6 +240,17 @@ export const checkNodeArgValue = (
     }
   } else {
     error(data, `unknown arg type '${arg.type}'`);
+  }
+
+  if (hasArgOptions(arg)) {
+    const found = !!arg.options?.find((option) => option.value === value);
+    const isOptional = value === undefined && isNodeArgOptional(arg);
+    if (!(found || isOptional)) {
+      if (verbose) {
+        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a one of the option values`);
+      }
+      hasError = true;
+    }
   }
 
   return !hasError;

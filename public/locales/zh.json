@@ -86,6 +86,7 @@
   "tree.export": "导出",
   "tree.firstid": "起始标识",
   "tree.group": "启用节点分组",
+  "tree.group.placeholder": "选择节点分组",
   "tree.vars": "定义变量",
   "tree.vars.name": "变量名",
   "tree.vars.invalidName": "变量名不合法",

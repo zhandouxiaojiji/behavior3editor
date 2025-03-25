@@ -66,7 +66,7 @@
     "args": [
       {
         "name": "builtin",
-        "type": "enum",
+        "type": "string",
         "desc": "事件",
         "options": [
           {
@@ -332,7 +332,10 @@
   },
   {
     "name": "MoveToPos",
-    "type": "Action (Client)",
+    "type": "Action",
+    "group": [
+      "Client"
+    ],
     "args": [
       {
         "name": "x",
@@ -349,7 +352,10 @@
   },
   {
     "name": "MoveToTarget",
-    "type": "Action (Server)",
+    "type": "Action",
+    "group": [
+      "Server"
+    ],
     "input": [
       "{目标}"
     ],
@@ -357,7 +363,12 @@
   },
   {
     "name": "TestB3",
-    "type": "Action (Client|Server|Test)",
+    "type": "Action",
+    "group": [
+      "Client",
+      "Server",
+      "Test"
+    ],
     "args": [
       {
         "name": "time",
@@ -387,7 +398,7 @@
       {
         "name": "status",
         "desc": "状态",
-        "type": "enum",
+        "type": "string",
         "options": [
           {
             "name": "成功",

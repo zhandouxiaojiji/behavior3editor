@@ -1,16 +1,24 @@
 {
+  "version": "1.8.0",
   "name": "hero",
+  "desc": "英雄测试AI",
+  "firstid": 1,
+  "export": true,
+  "group": [
+    "Client",
+    "Server"
+  ],
+  "import": [],
+  "declvar": [],
   "root": {
     "id": 1,
     "name": "Selector",
     "desc": "英雄测试AI",
-    "args": {},
     "children": [
       {
         "id": 2,
         "name": "Sequence",
         "desc": "攻击",
-        "args": {},
         "children": [
           {
             "id": 3,
@@ -28,7 +36,6 @@
           {
             "id": 4,
             "name": "Attack",
-            "args": {},
             "input": [
               "enemy"
             ]
@@ -46,7 +53,6 @@
         "id": 6,
         "name": "Sequence",
         "desc": "移动",
-        "args": {},
         "children": [
           {
             "id": 7,
@@ -64,7 +70,6 @@
           {
             "id": 8,
             "name": "MoveToTarget",
-            "args": {},
             "input": [
               "enemy"
             ]
@@ -75,12 +80,10 @@
         "id": 9,
         "name": "Sequence",
         "desc": "逃跑",
-        "args": {},
         "children": [
           {
             "id": 10,
             "name": "GetHp",
-            "args": {},
             "output": [
               "hp"
             ]
@@ -110,11 +113,5 @@
         "name": "Idle"
       }
     ]
-  },
-  "desc": "英雄测试AI",
-  "version": "1.8.0",
-  "firstid": 1,
-  "group": [],
-  "import": [],
-  "declvar": []
+  }
 }

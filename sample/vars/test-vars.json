@@ -50,7 +50,7 @@
         "id": 6,
         "name": "Check",
         "args": {
-          "value": "target[0].x > 0 |"
+          "value": "target[0].x > 0 "
         }
       },
       {
@@ -95,6 +95,13 @@
         "output": [
           "context"
         ]
+      },
+      {
+        "id": 12,
+        "name": "Listen",
+        "args": {
+          "builtin": "afterRunFailure"
+        }
       }
     ]
   }

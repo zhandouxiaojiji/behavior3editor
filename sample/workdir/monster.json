@@ -1,5 +1,14 @@
 {
+  "version": "1.8.0",
   "name": "monster",
+  "desc": "怪物测试AI",
+  "firstid": 1,
+  "export": true,
+  "group": [
+    "Test"
+  ],
+  "import": [],
+  "declvar": [],
   "root": {
     "id": 1,
     "name": "Sequence",
@@ -26,26 +35,30 @@
             ]
           },
           {
-            "id": 7,
+            "id": 6,
             "name": "Cmp",
             "args": {
-              "gt": 50,
-              "value": "hp"
+              "value": "hp",
+              "gt": 50
             },
             "input": [
-              ""
+              "hp"
             ]
           },
           {
-            "id": 8,
+            "id": 7,
             "name": "TestB3",
             "desc": "攻击",
             "args": {
-              "str": "Attack!"
+              "time": 1,
+              "open": true,
+              "check": "1",
+              "name": "1",
+              "status": "FAILURE"
             }
           },
           {
-            "id": 9,
+            "id": 8,
             "name": "Sequence",
             "desc": "新建行为树",
             "path": "workdir/subtree1.json"
@@ -53,7 +66,7 @@
         ]
       },
       {
-        "id": 12,
+        "id": 11,
         "name": "Log",
         "desc": "逃跑",
         "args": {
@@ -61,10 +74,5 @@
         }
       }
     ]
-  },
-  "desc": "怪物测试AI",
-  "firstid": 1,
-  "group": [],
-  "import": [],
-  "declvar": []
+  }
 }

@@ -8,7 +8,6 @@ import {
 import {
   AutoComplete,
   Button,
-  Checkbox,
   Divider,
   Flex,
   Form,
@@ -29,9 +28,9 @@ import { useShallow } from "zustand/react/shallow";
 import { ExpressionEvaluator } from "../behavior3/src/behavior3";
 import { EditNode, EditTree, useWorkspace } from "../contexts/workspace-context";
 import {
+  hasArgOptions,
   ImportDef,
   isBoolType,
-  isEnumType,
   isExprType,
   isFloatType,
   isIntType,
@@ -137,49 +136,6 @@ const VarDefItem: FC<VarItemProps> = ({ name, onChange, onRemove, disabled, ...p
         />
       )}
       {disabled && <div style={{ width: 20 }} />}
-    </Flex>
-  );
-};
-
-interface GroupDefItemProps {
-  disabled?: boolean;
-  value?: string[];
-  onChange?: (value: string[]) => void;
-}
-
-const GroupDefItem: FC<GroupDefItemProps> = ({ disabled, onChange, ...props }) => {
-  const [value, setValue] = useState<string[]>(props.value ?? []);
-  const form = useFormInstance();
-  const workspace = useWorkspace(
-    useShallow((state) => ({
-      groupDefs: state.groupDefs,
-    }))
-  );
-  return (
-    <Flex
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        gap: 10,
-        rowGap: 2,
-        flexWrap: "wrap",
-      }}
-    >
-      {workspace.groupDefs.map((g) => (
-        <Checkbox
-          key={g}
-          disabled={disabled}
-          checked={value.includes(g)}
-          onChange={(e) => {
-            const arr = e.target.checked ? [...value, g] : value.filter((v) => v !== g);
-            setValue(arr);
-            onChange?.(arr);
-            form.submit();
-          }}
-        >
-          {g}
-        </Checkbox>
-      ))}
     </Flex>
   );
 };
@@ -360,6 +316,7 @@ const TreeInspector: FC = () => {
                   mode="multiple"
                   suffixIcon={null}
                   onChange={form.submit}
+                  placeholder={t("tree.group.placeholder")}
                   options={workspace.groupDefs.map((g) => ({ label: g, value: g }))}
                 />
               </Form.Item>
@@ -1160,29 +1117,29 @@ const NodeInspector: FC = () => {
                                     }),
                                   ]}
                                 >
-                                  {isStringType(type) && (
+                                  {!hasArgOptions(arg) && isStringType(type) && (
                                     <TextArea autoSize disabled={disabled} onBlur={form.submit} />
                                   )}
-                                  {isJsonType(type) && (
+                                  {!hasArgOptions(arg) && isJsonType(type) && (
                                     <TextArea autoSize disabled={disabled} onBlur={form.submit} />
                                   )}
-                                  {isIntType(type) && (
+                                  {!hasArgOptions(arg) && isIntType(type) && (
                                     <InputNumber
                                       disabled={disabled}
                                       onBlur={form.submit}
                                       precision={0}
                                     />
                                   )}
-                                  {isFloatType(type) && (
+                                  {!hasArgOptions(arg) && isFloatType(type) && (
                                     <InputNumber disabled={disabled} onBlur={form.submit} />
                                   )}
-                                  {isBoolType(type) && (
+                                  {!hasArgOptions(arg) && isBoolType(type) && (
                                     <Switch disabled={disabled} onChange={form.submit} />
                                   )}
-                                  {isExprType(type) && (
+                                  {!hasArgOptions(arg) && isExprType(type) && (
                                     <Input disabled={disabled} onBlur={form.submit} />
                                   )}
-                                  {isEnumType(type) && (
+                                  {hasArgOptions(arg) && (
                                     <Select
                                       showSearch
                                       disabled={disabled}
@@ -1289,21 +1246,25 @@ const NodeInspector: FC = () => {
                         }),
                       ]}
                     >
-                      {isStringType(type) && (
+                      {!hasArgOptions(arg) && isStringType(type) && (
                         <TextArea autoSize disabled={disabled} onBlur={form.submit} />
                       )}
-                      {isJsonType(type) && (
+                      {!hasArgOptions(arg) && isJsonType(type) && (
                         <TextArea autoSize disabled={disabled} onBlur={form.submit} />
                       )}
-                      {isIntType(type) && (
+                      {!hasArgOptions(arg) && isIntType(type) && (
                         <InputNumber disabled={disabled} onBlur={form.submit} precision={0} />
                       )}
-                      {isFloatType(type) && (
+                      {!hasArgOptions(arg) && isFloatType(type) && (
                         <InputNumber disabled={disabled} onBlur={form.submit} />
                       )}
-                      {isBoolType(type) && <Switch disabled={disabled} onChange={form.submit} />}
-                      {isExprType(type) && <Input disabled={disabled} onBlur={form.submit} />}
-                      {isEnumType(type) && (
+                      {!hasArgOptions(arg) && isBoolType(type) && (
+                        <Switch disabled={disabled} onChange={form.submit} />
+                      )}
+                      {!hasArgOptions(arg) && isExprType(type) && (
+                        <Input disabled={disabled} onBlur={form.submit} />
+                      )}
+                      {hasArgOptions(arg) && (
                         <Select
                           showSearch
                           disabled={disabled}
@@ -1584,7 +1545,7 @@ const NodeDefInspector: FC = () => {
                     rules={[{ required }]}
                   >
                     <Select disabled={true}>
-                      {["float", "int", "string", "code", "enum", "boolean"].map((value) => {
+                      {["float", "int", "string", "code", "boolean"].map((value) => {
                         return (
                           <Select.Option key={value} value={value}>
                             {value}

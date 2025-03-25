@@ -291,7 +291,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const workspace = get();
     let buildScript = dialog.showOpenDialogSync({
       properties: ["openFile"],
-      defaultPath: workspace.workdir,
+      defaultPath: workspace.workdir.replaceAll("/", Path.sep),
       filters: [{ name: "Javascript", extensions: ["js"] }],
     })?.[0];
     if (buildScript) {
@@ -412,7 +412,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const workspace = get();
     const scriptPath = dialog.showOpenDialogSync({
       properties: ["openFile"],
-      defaultPath: workspace.workdir,
+      defaultPath: workspace.workdir.replaceAll("/", Path.sep),
       filters: [{ name: "Javascript", extensions: ["js"] }],
     })?.[0];
     if (scriptPath) {

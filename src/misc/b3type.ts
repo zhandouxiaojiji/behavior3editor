@@ -1,13 +1,7 @@
 import type { TreeGraphData as G6TreeGraphData } from "@antv/g6";
 import { NodeDef } from "../behavior3/src/behavior3";
 
-declare module "../behavior3/src/behavior3" {
-  interface NodeDef {
-    group?: string[];
-  }
-}
-
-export const VERSION = "1.8.0";
+export const VERSION = "1.8.1";
 
 export type NodeType = NodeDef["type"] | "Other" | "Error";
 export type NodeArg = Exclude<NodeDef["args"], undefined>[number];
@@ -16,9 +10,9 @@ export const isIntType = (type: string) => type.startsWith("int");
 export const isFloatType = (type: string) => type.startsWith("float");
 export const isStringType = (type: string) => type.startsWith("string");
 export const isBoolType = (type: string) => type.startsWith("bool");
-export const isEnumType = (type: string) => type.startsWith("enum");
 export const isExprType = (type: string) => type.startsWith("expr") || type.startsWith("code");
 export const isJsonType = (type: string) => type.startsWith("json");
+export const hasArgOptions = (arg: NodeArg) => arg.options !== undefined;
 
 export interface NodeModel {
   id: number;

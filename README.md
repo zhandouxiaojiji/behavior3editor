@@ -45,14 +45,10 @@ export interface NodeDef {
             | "json?"
             | "json[]"
             | "json[]?"
-            | "enum"
-            | "enum?"
-            | "enum[]"
-            | "enum[]?"
-            | "code"
-            | "code?"
-            | "code[]"
-            | "code[]?";
+            | "expr"
+            | "expr?"
+            | "expr[]"
+            | "expr[]?";
         desc: string;
         default?: unknown;
         /** Input `value`, only one is allowed between `value` and this arg.*/
