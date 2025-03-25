@@ -455,6 +455,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     data.files?.forEach((file) => {
       workspace.allFiles.set(file.path, { path: file.path, desc: file.desc, exists: false });
     });
+    process.chdir(Path.dirname(workspace.path));
   },
 
   saveWorkspace: () => {

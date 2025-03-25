@@ -30,8 +30,8 @@
 
   interface BatchScript {
     onSetup?(env: Env): void;
-    processTree?(tree: TreeModel, path: string): TreeModel | null;
-    processNode?(node: NodeModel, tree: TreeModel): NodeModel | null;
+    onProcessTree?(tree: TreeModel, path: string): TreeModel | null;
+    onProcessNode?(node: NodeModel, tree: TreeModel): NodeModel | null;
     onWriteFile?(path: string, tree: TreeModel): void;
     onComplete?(status: "success" | "failure"): void;
   }
@@ -41,12 +41,12 @@ export const onSetup = (env) => {
   console.log(env);
 };
 
-export const processTree = (tree) => {
+export const onProcessTree = (tree) => {
   console.log(`processTree ${tree.name}`);
   return tree;
 };
 
-export const processNode = (node, tree) => {
+export const onProcessNode = (node, tree) => {
   console.log(`processNode ${tree.name}.${node.id}`);
   return node;
 };

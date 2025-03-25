@@ -35,8 +35,8 @@ type Env = {
 
 export interface BatchScript {
   onSetup?(env: Env): void;
-  processTree?(tree: TreeModel, path: string): TreeModel | null;
-  processNode?(node: NodeModel, tree: TreeModel): NodeModel | null;
+  onProcessTree?(tree: TreeModel, path: string): TreeModel | null;
+  onProcessNode?(node: NodeModel): NodeModel | null;
   onWriteFile?(path: string, tree: TreeModel): void;
   onComplete?(status: "success" | "failure"): void;
 }
@@ -787,13 +787,13 @@ export const processBatch = (tree: TreeModel | null, path: string, batch: BatchS
   if (!tree) {
     return null;
   }
-  if (batch.processTree) {
-    tree = batch.processTree(tree, path);
+  if (batch.onProcessTree) {
+    tree = batch.onProcessTree(tree, path);
   }
   if (!tree) {
     return null;
   }
-  if (batch.processNode) {
+  if (batch.onProcessNode) {
     const processNode = (node: NodeModel) => {
       if (node.children) {
         const children: NodeModel[] = [];
@@ -805,7 +805,7 @@ export const processBatch = (tree: TreeModel | null, path: string, batch: BatchS
         });
         node.children = children;
       }
-      return batch.processNode?.(node, tree);
+      return batch.onProcessNode?.(node);
     };
     tree.root = processNode(tree.root) ?? ({} as NodeModel);
   }
@@ -871,12 +871,14 @@ export const buildProject = async (project: string, buildDir: string) => {
 
 export const loadModule = async (path: string) => {
   try {
-    const module = await import(path);
-    return module;
+    if (typeof require !== "undefined" && require.cache) {
+      delete require.cache[require.resolve(path)];
+    }
+    return await import(`${path}?t=${Date.now()}`);
   } catch (e) {
-    console.error(`load module error: ${path}`, e);
+    console.error(`failed to load module: ${path}`, e);
+    return null;
   }
-  return null;
 };
 
 export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) => {
