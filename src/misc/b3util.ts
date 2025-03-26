@@ -239,6 +239,7 @@ export const checkNodeArgValue = (
       hasError = true;
     }
   } else {
+    hasError = true;
     error(data, `unknown arg type '${arg.type}'`);
   }
 
