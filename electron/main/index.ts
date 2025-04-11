@@ -137,6 +137,7 @@ async function createWindow(projectPath?: string) {
     trafficLightPosition: { x: 10, y: 10 },
     webPreferences: {
       preload,
+      webSecurity: false,
       // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
       // Consider using contextBridge.exposeInMainWorld
       // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation

@@ -267,11 +267,13 @@ export const checkNodeArg = (
   const arg = conf.args![i] as NodeArg;
   const value = data.args?.[arg.name];
   if (isNodeArgArray(arg)) {
-    if (!Array.isArray(value) || (!isNodeArgOptional(arg) && value.length === 0)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${JSON.stringify(value)}' is not an array or empty array`);
+    if (!Array.isArray(value) || value.length === 0) {
+      if (!isNodeArgOptional(arg)) {
+        if (verbose) {
+          error(data, `'${arg.name}=${JSON.stringify(value)}' is not an array or empty array`);
+        }
+        hasError = true;
       }
-      hasError = true;
     } else {
       for (let j = 0; j < value.length; j++) {
         if (!checkNodeArgValue(data, arg, value[j], verbose)) {
