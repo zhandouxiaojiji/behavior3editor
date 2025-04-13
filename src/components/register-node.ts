@@ -1,9 +1,22 @@
-import G6 from "@antv/g6";
-import { ExpressionEvaluator, NodeDef } from "../behavior3/src/behavior3";
+import { Image as GImage, Path as GPath, Rect as GRect, Text as GText } from "@antv/g";
+import { DisplayObject, Group } from "@antv/g-lite";
+import {
+  Badge,
+  CommonEvent,
+  ExtensionCategory,
+  NodeData as G6NodeData,
+  Rect,
+  RectStyleProps,
+  register,
+  UpsertHooks,
+} from "@antv/g6";
+import { NodeStyle } from "@antv/g6/lib/spec/element/node";
+import assert from "node:assert";
+import { Constructor, ExpressionEvaluator, NodeDef } from "../behavior3/src/behavior3";
 import { useSetting } from "../contexts/setting-context";
 import { useWorkspace } from "../contexts/workspace-context";
-import { TreeGraphData, getNodeType, isExprType } from "../misc/b3type";
-import { checkTreeData, nodeDefs, parseExpr, usingGroups, usingVars } from "../misc/b3util";
+import { getNodeType, isExprType, NodeData, NodeLayout } from "../misc/b3type";
+import * as b3util from "../misc/b3util";
 import i18n from "../misc/i18n";
 import { isMacos } from "../misc/keys";
 
@@ -98,14 +111,14 @@ const toBreakWord = (str: string, maxWidth: number, fontSize?: string) => {
 };
 
 const foundUndefined = (value?: string[]) => {
-  if (!value || !usingVars) {
+  if (!value || !b3util.usingVars) {
     return false;
   }
-  return value.some((v) => v && usingVars?.[v] === undefined);
+  return value.some((v) => v && b3util.usingVars?.[v] === undefined);
 };
 
-const foundUndefinedInArgs = (def: NodeDef, data: TreeGraphData) => {
-  if (!def.args || !data.args || !usingVars) {
+const foundUndefinedInArgs = (def: NodeDef, data: NodeData) => {
+  if (!def.args || !data.args || !b3util.usingVars) {
     return false;
   }
   for (const arg of def.args) {
@@ -117,12 +130,12 @@ const foundUndefinedInArgs = (def: NodeDef, data: TreeGraphData) => {
       continue;
     }
     if (typeof expr === "string") {
-      if (foundUndefined(parseExpr(expr))) {
+      if (foundUndefined(b3util.parseExpr(expr))) {
         return true;
       }
     } else if (Array.isArray(expr)) {
       for (const str of expr) {
-        if (foundUndefined(parseExpr(str))) {
+        if (foundUndefined(b3util.parseExpr(str))) {
           return true;
         }
       }
@@ -131,7 +144,7 @@ const foundUndefinedInArgs = (def: NodeDef, data: TreeGraphData) => {
   return false;
 };
 
-const hasErrorInArgExpr = (def: NodeDef, data: TreeGraphData) => {
+const hasErrorInArgExpr = (def: NodeDef, data: NodeData) => {
   const checkExpr = useWorkspace.getState().settings.checkExpr;
   if (!checkExpr || !def.args || !data.args) {
     return false;
@@ -163,7 +176,7 @@ const hasErrorInArgExpr = (def: NodeDef, data: TreeGraphData) => {
   return false;
 };
 
-export const calcTreeDataSize = (data: TreeGraphData) => {
+b3util.setSizeCalculator((data: NodeData) => {
   const width = useSetting.getState().data.layout === "compact" ? 220 : 260;
   let height = 50 + 2;
   const updateHeight = (obj: unknown) => {
@@ -179,7 +192,7 @@ export const calcTreeDataSize = (data: TreeGraphData) => {
   updateHeight(data.input);
   updateHeight(data.output);
   return [width, height];
-};
+});
 
 const NODE_COLORS = {
   ["Composite"]: "#34d800",
@@ -190,482 +203,639 @@ const NODE_COLORS = {
   ["Error"]: "#ff0000",
 };
 
-G6.registerNode(
-  "TreeNode",
-  {
-    options: {
-      type: "rect",
-      anchorPoints: [
-        [0, 0.5],
-        [1, 0.5],
-      ],
-      stateStyles: {
-        selected: {
-          "main-box-selected": {
-            fillOpacity: 0.2,
-          },
-        },
-        hover: {
-          "main-box-selected": {
-            fillOpacity: 0.1,
-          },
-        },
-        dragSrc: {
-          fill: "gray",
-        },
-        dragRight: {
-          "drag-right": {
-            fillOpacity: 0.8,
-            strokeOpacity: 0.8,
-          },
-        },
-        dragUp: {
-          "drag-up": {
-            fillOpacity: 0.8,
-            strokeOpacity: 0.8,
-          },
-        },
-        dragDown: {
-          "drag-down": {
-            fillOpacity: 0.8,
-            strokeOpacity: 0.8,
-          },
-        },
-      },
-    },
-    draw(cfg, group) {
-      const data = cfg as TreeGraphData;
-      const nodeDef = nodeDefs.get(data.name);
-      let classify = getNodeType(nodeDef);
-      let color = nodeDef.color || NODE_COLORS[classify] || NODE_COLORS["Other"];
+export type TreeNodeState =
+  | "dragdown"
+  | "dragright"
+  | "dragsrc"
+  | "dragup"
+  | "highlightargs"
+  | "highlightgray"
+  | "highlightinput"
+  | "highlightoutput"
+  | "selected";
 
-      const layoutStyle = useSetting.getState().data.layout;
+type ShapeName =
+  | "args-bg"
+  | "args-text"
+  | "collapse"
+  | "debug"
+  | "desc-text"
+  | "disabled"
+  | "drag-down"
+  | "drag-right"
+  | "drag-src"
+  | "drag-up"
+  | "icon"
+  | "id-text"
+  | "input-bg"
+  | "input-text"
+  | "key-shape"
+  | "name-bg"
+  | "name-line"
+  | "name-text"
+  | "output-bg"
+  | "output-text"
+  | "path-text"
+  | "status"
+  | "subtree";
 
-      if (
-        !nodeDefs.has(data.name) ||
-        (data.path && !data.children?.length) ||
-        (nodeDef.group && !nodeDef.group.some((g) => usingGroups[g])) ||
-        !checkTreeData(data) ||
-        foundUndefined(data.input) ||
-        foundUndefined(data.output) ||
-        foundUndefinedInArgs(nodeDef, data) ||
-        hasErrorInArgExpr(nodeDef, data)
-      ) {
-        classify = "Error";
-        color = NODE_COLORS[classify];
-      }
-      const [width, height] = data.size;
-      const radius = 4;
-
-      let bgColor = "white";
-      let textColor = "black";
-
-      if (data.highlightGray) {
-        bgColor = "#0d1117";
-        color = "#30363d";
-        textColor = "#666";
-      }
-
-      type ShapeCfg = Parameters<typeof group.addShape>[1];
-      const addShape = (type: string, shapeCfg: ShapeCfg, clickEnabled: boolean = false) => {
-        shapeCfg.draggable = clickEnabled;
-        shapeCfg.capture = clickEnabled;
-        return group.addShape(type, shapeCfg);
-      };
-
-      addShape("rect", {
-        attrs: {
-          x: -15,
-          y: -15,
-          width: width + 30,
-          height: height + 30,
-          fill: "#fff",
-          fillOpacity: 0,
-          radius: radius + 4,
-        },
-        name: "main-box-selected",
-        draggable: true,
-      });
-
-      const shape = addShape(
-        "rect",
-        {
-          attrs: {
-            x: 0,
-            y: 0,
-            width: width,
-            height: height,
-            stroke: color,
-            lineWidth: 2,
-            fill: bgColor,
-            radius: radius,
-          },
-          name: "main-box",
-          draggable: true,
-        },
-        true
-      );
-
-      if (layoutStyle === "normal") {
-        // name line
-        addShape("path", {
-          attrs: {
-            path: [
-              ["M", 46, 23],
-              ["L", width - 40, 23],
-            ],
-            stroke: "#666",
-            lineWidth: 1,
-          },
-        });
-      }
-
-      // is subtree
-      if (data.path && data.id !== "1") {
-        addShape("rect", {
-          attrs: {
-            x: -10,
-            y: -10,
-            width: width + 20,
-            height: height + 20,
-            stroke: "#a5b1be",
-            lineWidth: 2.5,
-            lineDash: [6, 6],
-            radius: [radius, radius, radius, radius],
-          },
-          name: "subtree",
-          draggable: true,
-        });
-      }
-
-      // name bg
-      addShape("rect", {
-        attrs: {
-          x: 0,
-          y: 0,
-          width: layoutStyle === "compact" ? width : 40,
-          height: layoutStyle === "compact" ? 25 : height,
-          fill: color,
-          radius: layoutStyle === "compact" ? [radius, radius, 0, 0] : [radius, 0, 0, radius],
-        },
-        name: "name-bg",
-        draggable: true,
-      });
-
-      // id text
-      addShape("text", {
-        attrs: {
-          textBaseline: "top",
-          x: -3,
-          y: height / 2 - 8,
-          fontSize: 20,
-          lineHeight: 20,
-          text: data.id,
-          textAlign: "right",
-          fill: "white",
-          stroke: textColor,
-          lineWidth: 2,
-        },
-        name: "id-text",
-      });
-
-      // icon
-      const img = nodeDef.icon
-        ? `file:///${useWorkspace.getState().workdir}/${nodeDef.icon}`
-        : `./icons/${classify}.svg`;
-      addShape("image", {
-        attrs: {
-          x: 5,
-          y: layoutStyle === "compact" ? 3 : height / 2 - 16,
-          height: layoutStyle === "compact" ? 18 : 30,
-          width: layoutStyle === "compact" ? 18 : 30,
-          img,
-        },
-        name: "node-icon",
-      });
-
-      // status
-      const status = ((data.status ?? 0) & 0b111).toString(2).padStart(3, "0");
-      addShape("image", {
-        attrs: {
-          x: width - 18,
-          y: 3,
-          height: layoutStyle === "compact" ? 18 : 20,
-          width: layoutStyle === "compact" ? 18 : 20,
-          img: `./icons/status${status}.svg`,
-        },
-        name: "status-icon",
-      });
-
-      // name text
-      addShape("text", {
-        attrs: {
-          textBaseline: "top",
-          x: layoutStyle === "compact" ? 26 : 46,
-          y: 5,
-          fontWeight: "bolder",
-          text: data.name,
-          fill: textColor,
-          fontSize: layoutStyle === "compact" ? 13 : 14,
-        },
-        name: "name-text",
-      });
-
-      // debug
-      if (data.debug) {
-        addShape("image", {
-          attrs: {
-            x: width - 30,
-            y: 4,
-            height: 16,
-            width: 16,
-            img: `./icons/Debug.svg`,
-          },
-          name: "node-debug-icon",
-        });
-      }
-
-      if (data.disabled) {
-        addShape("image", {
-          attrs: {
-            x: width - 30 - (data.debug ? 18 : 0),
-            y: 4,
-            height: 16,
-            width: 16,
-            img: `./icons/Disabled.svg`,
-          },
-          name: "node-disabled-icon",
-        });
-      }
-
-      const contentWidth = 220;
-      const contentX = layoutStyle === "compact" ? 6 : 46;
-      let contentY = 32;
-      // desc text
-      let desc = (data.desc || nodeDef.desc) as string;
-      if (desc || desc === "") {
-        desc = i18n.t("regnode.mark") + desc;
-        desc = cutWordTo(desc, contentWidth - 15);
-        addShape("text", {
-          attrs: {
-            textBaseline: "top",
-            x: contentX,
-            y: contentY,
-            lineHeight: 20,
-            fontWeight: "bolder",
-            text: `${desc}`,
-            fill: textColor,
-          },
-          name: "desc-text",
-        });
-      }
-
-      const args = data.args;
-      if (args && Object.keys(args).length > 0) {
-        const { str, line } = toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 200);
-        if (data.highlightArgs) {
-          addShape("rect", {
-            attrs: {
-              x: contentX - 2,
-              y: contentY + 17,
-              width: contentWidth - 6,
-              height: 18,
-              fill: "#0d1117",
-              radius: [radius, radius, radius, radius],
-            },
-            name: "args-text-bg",
-          });
-        }
-        addShape("text", {
-          attrs: {
-            textBaseline: "top",
-            x: contentX,
-            y: contentY + 20,
-            w: width,
-            lineHeight: 20,
-            text: str,
-            fill: data.highlightArgs ? "white" : textColor,
-            fontWeight: data.highlightArgs ? "bolder" : undefined,
-          },
-          name: "args-text",
-        });
-        contentY += 20 * line;
-      }
-
-      const input = data.input ?? [];
-      if (input.length > 0) {
-        const { str, line } = toBreakWord(
-          `${i18n.t("regnode.input")}${JSON.stringify(input)}`,
-          200
-        );
-        if (data.highlightInput) {
-          addShape("rect", {
-            attrs: {
-              x: contentX - 2,
-              y: contentY + 17,
-              width: contentWidth - 6,
-              height: 18,
-              fill: "#0d1117",
-              radius: [radius, radius, radius, radius],
-            },
-            name: "input-text-bg",
-          });
-        }
-        addShape(
-          "text",
-          {
-            attrs: {
-              textBaseline: "top",
-              x: contentX,
-              y: contentY + 20,
-              lineHeight: 20,
-              text: str,
-              fill: data.highlightInput ? "white" : textColor,
-              fontWeight: data.highlightInput ? "bolder" : undefined,
-            },
-            name: "input-text",
-          },
-          true
-        );
-        contentY += 20 * line;
-      }
-
-      const output = data.output ?? [];
-      if (output.length > 0) {
-        const { str, line } = toBreakWord(
-          `${i18n.t("regnode.output")}${JSON.stringify(output)}`,
-          200
-        );
-        if (data.highlightOutput) {
-          addShape("rect", {
-            attrs: {
-              x: contentX - 2,
-              y: contentY + 17,
-              width: contentWidth - 6,
-              height: 18,
-              fill: "#0d1117",
-              radius: [radius, radius, radius, radius],
-            },
-            name: "output-text-bg",
-          });
-        }
-        addShape(
-          "text",
-          {
-            attrs: {
-              textBaseline: "top",
-              x: contentX,
-              y: contentY + 20,
-              lineHeight: 20,
-              text: str,
-              fill: data.highlightOutput ? "white" : textColor,
-              fontWeight: data.highlightOutput ? "bolder" : undefined,
-            },
-            name: "output-text",
-          },
-          true
-        );
-        contentY += 20 * line;
-      }
-
-      if (data.path) {
-        let path = (i18n.t("regnode.subtree") + data.path) as string;
-        path = cutWordTo(path, contentWidth - 15);
-        addShape("text", {
-          attrs: {
-            textBaseline: "top",
-            x: contentX,
-            y: contentY + 20,
-            lineHeight: 20,
-            text: `${path}`,
-            fill: textColor,
-          },
-          name: "subtree-text",
-        });
-        contentY += 20;
-      }
-
-      addShape("rect", {
-        name: "drag-up",
-        attrs: {
-          x: 0,
-          y: 0,
-          width: width,
-          height: height / 2,
-          lineWidth: 2,
-          stroke: "#ff0000",
-          strokeOpacity: 0,
-          fill: "#ff0000",
-          fillOpacity: 0,
-          radius: [radius, radius, 0, 0],
-        },
-        draggable: true,
-      });
-
-      addShape("rect", {
-        name: "drag-down",
-        attrs: {
-          x: 0,
-          y: height / 2,
-          width: width,
-          height: height / 2,
-          lineWidth: 2,
-          stroke: "#ff0000",
-          strokeOpacity: 0,
-          fill: "#ff0000",
-          fillOpacity: 0,
-          radius: [0, 0, radius, radius],
-        },
-        draggable: true,
-      });
-
-      addShape("rect", {
-        name: "drag-right",
-        attrs: {
-          x: width / 2,
-          y: 0,
-          width: width / 2,
-          height: height,
-          lineWidth: 2,
-          stroke: "#ff0000",
-          strokeOpacity: 0,
-          fill: "#ff0000",
-          fillOpacity: 0,
-          radius: [0, radius, radius, 0],
-        },
-        draggable: true,
-      });
-
-      if (data.children?.length) {
-        addShape("marker", {
-          attrs: {
-            x: width,
-            y: height / 2,
-            r: 6,
-            symbol: G6.Marker.collapse,
-            stroke: "#666",
-            lineWidth: 1,
-            fill: "#fff",
-          },
-          name: "collapse-icon",
-        });
-      }
-
-      // restore stroke color and lineWidth
-      // after lose focus, the main box stroke and color is not the node color
-      addShape("path", {
-        attrs: {
-          path: [
-            ["M", 0, 0],
-            ["L", 0, 0],
-          ],
-          stroke: color,
-          lineWidth: 2,
-        },
-      });
-
-      return shape;
-    },
+export const TreeNodeStyle: { [s in TreeNodeState]?: { [n in ShapeName]?: NodeStyle } } = {
+  dragsrc: {
+    "drag-src": { visibility: "visible" },
   },
-  "single-node"
-);
+  dragup: {
+    "drag-up": { visibility: "visible" },
+  },
+  dragdown: {
+    "drag-down": { visibility: "visible" },
+  },
+  dragright: {
+    "drag-right": { visibility: "visible" },
+  },
+  highlightargs: {
+    "args-bg": { visibility: "visible" },
+    "args-text": { fill: "white", fontWeight: "bolder" },
+  },
+  highlightinput: {
+    "input-bg": { visibility: "visible" },
+    "input-text": { fill: "white", fontWeight: "bolder" },
+  },
+  highlightoutput: {
+    "output-bg": { visibility: "visible" },
+    "output-text": { fill: "white", fontWeight: "bolder" },
+  },
+  highlightgray: {
+    "args-text": { fill: "#666" },
+    "desc-text": { fill: "#666" },
+    "id-text": { fill: "#666" },
+    "input-text": { fill: "#666" },
+    "key-shape": { fill: "#0d1117", stroke: "#30363d" },
+    "name-bg": { fill: "#30363d" },
+    "name-text": { fill: "#666" },
+    "output-text": { fill: "#666" },
+    "path-text": { fill: "#666" },
+  },
+};
+
+class TreeNode extends Rect {
+  private _x = 0;
+  private _y = 0;
+  private _width = 0;
+  private _height = 0;
+  private _radius = 0;
+  private _nodeLayout: NodeLayout = "compact";
+  private _nodeDef!: NodeDef;
+  private _data!: NodeData;
+  private _prefix = "";
+  private _classify = "";
+  private _contentWidth = 220;
+  private _contentX = 0;
+  private _contentY = 0;
+  private _states: TreeNodeState[] = [];
+
+  private drawBackground(attributes: Required<RectStyleProps>, container: Group) {
+    attributes.size = [this._width, this._height];
+    attributes.lineWidth = 2;
+    this.applyStyle("key-shape", attributes);
+    this.drawKeyShape(attributes, container);
+    this.drawHaloShape(attributes, container);
+  }
+
+  private drawNameBackground(attributes: Required<RectStyleProps>, container: Group) {
+    this.upsert(
+      "name-bg",
+      GRect,
+      {
+        x: this._x,
+        y: this._y,
+        width: this._nodeLayout === "compact" ? this._width : 40,
+        height: this._nodeLayout === "compact" ? 25 : this._height,
+        fill: attributes.stroke,
+        radius:
+          this._nodeLayout === "compact"
+            ? [this._radius, this._radius, 0, 0]
+            : [this._radius, 0, 0, this._radius],
+      },
+      container
+    );
+
+    this.upsert(
+      "name-line",
+      GPath,
+      {
+        d: [
+          ["M", this._x + 46, this._y + 23],
+          ["L", this._x + this._width - 40, this._y + 23],
+        ],
+        stroke: "#666",
+        lineWidth: 1,
+        visibility: this._nodeLayout === "normal" ? "visible" : "hidden",
+      },
+      container
+    );
+  }
+
+  private drawIdText(attributes: Required<RectStyleProps>, container: Group) {
+    this.upsert(
+      "id-text",
+      GText,
+      {
+        fill: "white",
+        fontSize: 20,
+        lineHeight: 20,
+        lineWidth: 2,
+        stroke: "black",
+        text: this._prefix + this.id,
+        textAlign: "right",
+        textBaseline: "top",
+        x: this._x - 3,
+        y: this._y + this._height / 2 - 8,
+      },
+      container
+    );
+  }
+
+  private drawTypeIcon(attributes: Required<RectStyleProps>, container: Group) {
+    const img = this._nodeDef.icon
+      ? `file:///${useWorkspace.getState().workdir}/${this._nodeDef.icon}`
+      : `./icons/${this._classify}.svg`;
+    this.upsert(
+      "icon",
+      GImage,
+      {
+        x: this._x + 5,
+        y: this._y + (this._nodeLayout === "compact" ? 3 : this._height / 2 - 16),
+        height: this._nodeLayout === "compact" ? 18 : 30,
+        width: this._nodeLayout === "compact" ? 18 : 30,
+        src: img,
+      },
+      container
+    );
+  }
+
+  private drawStatusIcon(attributes: Required<RectStyleProps>, container: Group) {
+    const status = ((this._data.status ?? 0) & 0b111).toString(2).padStart(3, "0");
+    this.upsert(
+      "status",
+      GImage,
+      {
+        x: this._x + this._width - 18,
+        y: this._y + 3,
+        height: this._nodeLayout === "compact" ? 18 : 20,
+        width: this._nodeLayout === "compact" ? 18 : 20,
+        src: `./icons/status${status}.svg`,
+      },
+      container
+    );
+  }
+
+  private drawNameText(attributes: Required<RectStyleProps>, container: Group) {
+    this.upsert(
+      "name-text",
+      GText,
+      {
+        fill: "black",
+        fontSize: this._nodeLayout === "compact" ? 13 : 14,
+        fontWeight: "bolder",
+        text: this._data.name,
+        textBaseline: "top",
+        x: this._x + (this._nodeLayout === "compact" ? 26 : 46),
+        y: this._y + 5,
+      },
+      container
+    );
+  }
+
+  private drawDebugIcon(attributes: Required<RectStyleProps>, container: Group) {
+    this.upsert(
+      "debug",
+      GImage,
+      {
+        x: this._x + this._width - 30,
+        y: this._y + 4,
+        height: 16,
+        width: 16,
+        src: `./icons/Debug.svg`,
+        visibility: this._data.debug ? "visible" : "hidden",
+      },
+      container
+    );
+  }
+
+  private drawDisabledIcon(attributes: Required<RectStyleProps>, container: Group) {
+    this.upsert(
+      "disabled",
+      GImage,
+      {
+        x: this._x + this._width - 30 - (this._data.debug ? 18 : 0),
+        y: this._y + 4,
+        height: 16,
+        width: 16,
+        src: `./icons/Disabled.svg`,
+        visibility: this._data.disabled ? "visible" : "hidden",
+      },
+      container
+    );
+  }
+
+  private drawDescText(attributes: Required<RectStyleProps>, container: Group) {
+    let desc = (this._data.desc || this._nodeDef.desc || "") as string;
+    desc = i18n.t("regnode.mark") + desc;
+    desc = cutWordTo(desc, this._contentWidth - 15);
+    this.upsert(
+      "desc-text",
+      GText,
+      {
+        fill: "black",
+        fontSize: 12,
+        fontWeight: "bolder",
+        lineHeight: 20,
+        text: `${desc}`,
+        textBaseline: "top",
+        x: this._contentX,
+        y: this._contentY,
+      },
+      container
+    );
+  }
+
+  private drawArgsText(attributes: Required<RectStyleProps>, container: Group) {
+    const args = this._data.args;
+    const { str, line } =
+      args && Object.keys(args).length > 0
+        ? toBreakWord(`${i18n.t("regnode.args")}${JSON.stringify(args)}`, 200)
+        : { str: "", line: 0 };
+    this.upsert(
+      "args-bg",
+      GRect,
+      {
+        x: this._contentX - 2,
+        y: this._contentY + 21,
+        width: this._contentWidth - 6,
+        height: 18,
+        fill: "#0d1117",
+        radius: this._radius,
+        visibility: "hidden",
+      },
+      container
+    );
+    this.upsert(
+      "args-text",
+      GText,
+      {
+        fill: "black",
+        fontSize: 12,
+        fontWeight: "normal",
+        lineHeight: 20,
+        text: str,
+        textBaseline: "top",
+        x: this._contentX,
+        y: this._contentY + 20,
+        visibility: str ? "visible" : "hidden",
+      },
+      container
+    );
+    this._contentY += 20 * line;
+  }
+
+  private drawInputText(attributes: Required<RectStyleProps>, container: Group) {
+    const input = this._data.input ?? [];
+    const { str, line } =
+      input.length > 0
+        ? toBreakWord(`${i18n.t("regnode.input")}${JSON.stringify(input)}`, 200)
+        : { str: "", line: 0 };
+    this.upsert(
+      "input-bg",
+      GRect,
+      {
+        fill: "#0d1117",
+        height: 18,
+        radius: this._radius,
+        visibility: "hidden",
+        width: this._contentWidth - 6,
+        x: this._contentX - 2,
+        y: this._contentY + 21,
+      },
+      container
+    );
+    this.upsert(
+      "input-text",
+      GText,
+      {
+        fill: "black",
+        fontSize: 12,
+        fontWeight: "normal",
+        lineHeight: 20,
+        text: str,
+        textBaseline: "top",
+        x: this._contentX,
+        y: this._contentY + 20,
+        visibility: str ? "visible" : "hidden",
+      },
+      container
+    );
+    this._contentY += 20 * line;
+  }
+
+  private drawOutputText(attributes: Required<RectStyleProps>, container: Group) {
+    const output = this._data.output ?? [];
+    const { str, line } =
+      output.length > 0
+        ? toBreakWord(`${i18n.t("regnode.output")}${JSON.stringify(output)}`, 200)
+        : { str: "", line: 0 };
+    this.upsert(
+      "output-bg",
+      GRect,
+      {
+        fill: "#0d1117",
+        height: 18,
+        radius: this._radius,
+        visibility: "hidden",
+        width: this._contentWidth - 6,
+        x: this._contentX - 2,
+        y: this._contentY + 21,
+      },
+      container
+    );
+    this.upsert(
+      "output-text",
+      GText,
+      {
+        fill: "black",
+        fontSize: 12,
+        fontWeight: "normal",
+        lineHeight: 20,
+        text: str,
+        textBaseline: "top",
+        x: this._contentX,
+        y: this._contentY + 20,
+        visibility: str ? "visible" : "hidden",
+      },
+      container
+    );
+    this._contentY += 20 * line;
+  }
+
+  private drawSubtreeShape(attributes: Required<RectStyleProps>, container: Group) {
+    const isSubtree = this._data.path && this.id !== "1";
+    this.upsert(
+      "subtree",
+      GRect,
+      {
+        x: this._x - 10,
+        y: this._y - 10,
+        width: this._width + 20,
+        height: this._height + 20,
+        stroke: "#a5b1be",
+        lineWidth: 2.5,
+        lineDash: [6, 6],
+        radius: this._radius,
+        visibility: isSubtree ? "visible" : "hidden",
+      },
+      container
+    );
+    let path = (i18n.t("regnode.subtree") + this._data.path) as string;
+    path = cutWordTo(path, this._contentWidth - 15);
+    this.upsert(
+      "path-text",
+      GText,
+      {
+        fill: "black",
+        fontSize: 12,
+        lineHeight: 20,
+        text: `${path}`,
+        textBaseline: "top",
+        x: this._contentX,
+        y: this._contentY + 20,
+        visibility: isSubtree ? "visible" : "hidden",
+      },
+      container
+    );
+    this._contentY += isSubtree ? 20 : 0;
+  }
+
+  private drawDragShape(attributes: Required<RectStyleProps>, container: Group) {
+    this.upsert(
+      "drag-src",
+      GRect,
+      {
+        x: this._x,
+        y: this._y,
+        width: this._width,
+        height: this._height,
+        lineWidth: 0,
+        fillOpacity: 0.8,
+        fill: "orange",
+        radius: this._radius,
+        visibility: "hidden",
+      },
+      container
+    );
+
+    this.upsert(
+      "drag-up",
+      GRect,
+      {
+        x: this._x,
+        y: this._y,
+        width: this._width,
+        height: this._height / 2,
+        lineWidth: 2,
+        stroke: "#ff0000",
+        strokeOpacity: 0.8,
+        fill: "#ff0000",
+        fillOpacity: 0.8,
+        radius: [this._radius, this._radius, 0, 0],
+        visibility: "hidden",
+      },
+      container
+    );
+
+    this.upsert(
+      "drag-down",
+      GRect,
+      {
+        x: this._x,
+        y: this._y + this._height / 2,
+        width: this._width,
+        height: this._height / 2,
+        lineWidth: 2,
+        stroke: "#ff0000",
+        strokeOpacity: 0.8,
+        fill: "#ff0000",
+        fillOpacity: 0.8,
+        radius: [0, 0, this._radius, this._radius],
+        visibility: "hidden",
+      },
+      container
+    );
+
+    this.upsert(
+      "drag-right",
+      GRect,
+      {
+        x: this._x + this._width / 2,
+        y: this._y,
+        width: this._width / 2,
+        height: this._height,
+        lineWidth: 2,
+        stroke: "#ff0000",
+        strokeOpacity: 0.8,
+        fill: "#ff0000",
+        fillOpacity: 0.8,
+        radius: [0, this._radius, this._radius, 0],
+        visibility: "hidden",
+      },
+      container
+    );
+  }
+
+  private drawPortShape(attributes: Required<RectStyleProps>, container: Group) {
+    const GREY_COLOR = "#666";
+    const size = 14;
+    const btn = this.upsert(
+      "collapse",
+      Badge,
+      {
+        backgroundFill: "#fff",
+        backgroundHeight: size,
+        backgroundLineWidth: 1,
+        backgroundRadius: size / 2,
+        backgroundStroke: GREY_COLOR,
+        backgroundWidth: size,
+        cursor: "pointer",
+        fill: GREY_COLOR,
+        fontSize: 16,
+        text: attributes.collapsed ? "+" : "-",
+        textAlign: "center",
+        textBaseline: "middle",
+        x: this._width / 2,
+        y: 0,
+        visibility: this._data.children?.length ? "visible" : "hidden",
+      },
+      container
+    );
+    if (btn && !Reflect.has(btn, "__bind__")) {
+      Reflect.set(btn, "__bind__", true);
+      btn.addEventListener(CommonEvent.CLICK, () => {
+        const { collapsed } = this.attributes;
+        const graph = this.context.graph;
+        if (collapsed) {
+          graph.expandElement(this.id);
+        } else {
+          graph.collapseElement(this.id);
+        }
+      });
+    }
+  }
+
+  render(attributes?: Required<RectStyleProps> | undefined, container?: Group): void {
+    const node = this.context.model.getNodeLikeDatum(this.id) as G6NodeData;
+    const data = node.data as unknown as NodeData;
+    const nodeDef = b3util.nodeDefs.get(data.name);
+    let classify = getNodeType(nodeDef);
+    let color = nodeDef.color || NODE_COLORS[classify] || NODE_COLORS["Other"];
+
+    if (
+      !b3util.nodeDefs.has(data.name) ||
+      (data.path && !node.children?.length) ||
+      (nodeDef.group && !nodeDef.group.some((g) => b3util.usingGroups?.[g])) ||
+      !b3util.checkTreeData(data) ||
+      foundUndefined(data.input) ||
+      foundUndefined(data.output) ||
+      foundUndefinedInArgs(nodeDef, data) ||
+      hasErrorInArgExpr(nodeDef, data)
+    ) {
+      classify = "Error";
+      color = NODE_COLORS[classify];
+    }
+
+    assert(data.size);
+    const [width, height] = data.size;
+
+    this._prefix = (node.prefix as string) ?? "";
+    this._x = -width / 2;
+    this._y = -height / 2;
+    this._width = width;
+    this._height = height;
+    this._radius = 4;
+    this._nodeDef = nodeDef;
+    this._data = data;
+    this._classify = classify;
+    this._nodeLayout = useSetting.getState().data.layout;
+    this._contentWidth = 220;
+    this._contentX = this._x + (this._nodeLayout === "compact" ? 6 : 46);
+    this._contentY = this._y + 28;
+
+    this._states = this.context.graph.getElementState(this.id) as TreeNodeState[];
+    this.resetStyle();
+
+    assert(attributes && container);
+    attributes.fill = "white";
+    attributes.stroke = color;
+
+    // console.log(this.id, this.states);
+
+    this.drawBackground(attributes, container);
+    this.drawNameBackground(attributes, container);
+    this.drawNameText(attributes, container);
+    this.drawTypeIcon(attributes, container);
+    this.drawStatusIcon(attributes, container);
+    this.drawDebugIcon(attributes, container);
+    this.drawDisabledIcon(attributes, container);
+    this.drawDescText(attributes, container);
+    this.drawArgsText(attributes, container);
+    this.drawInputText(attributes, container);
+    this.drawOutputText(attributes, container);
+    this.drawSubtreeShape(attributes, container);
+    this.drawDragShape(attributes, container);
+    this.drawPortShape(attributes, container);
+    this.drawIdText(attributes, container);
+  }
+
+  protected upsert<T extends DisplayObject>(
+    name: ShapeName,
+    Ctor: Constructor<T>,
+    style: T["attributes"] | false,
+    container: DisplayObject,
+    hooks?: UpsertHooks
+  ): T | undefined {
+    this.applyStyle(name, style);
+    const obj = super.upsert(name, Ctor, style, container, hooks);
+    // if (obj && obj.className !== "key") {
+    // obj.interactive = false;
+    // }
+    return obj;
+  }
+
+  private applyStyle(name: ShapeName, style: DisplayObject["attributes"] | false) {
+    if (style) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const shapeStyle = (this.attributes as any)[name] ?? {};
+      for (const key in shapeStyle) {
+        style[key] = shapeStyle[key];
+      }
+    }
+  }
+
+  private resetStyle() {
+    const style = this.context.graph.getOptions().node!.state!;
+    const keys: Set<string> = new Set();
+    Object.keys(style).forEach((s) => {
+      for (const key in style[s]) {
+        keys.add(key);
+      }
+    });
+    this._states.forEach((s) => {
+      for (const key in style[s]) {
+        keys.delete(key);
+      }
+    });
+    for (const key of keys) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.attributes as any)[key] = undefined;
+    }
+  }
+}
+
+register(ExtensionCategory.NODE, "TreeNode", TreeNode);

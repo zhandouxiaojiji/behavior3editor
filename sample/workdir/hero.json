@@ -4,12 +4,9 @@
   "desc": "英雄测试AI",
   "firstid": 1,
   "export": true,
-  "group": [
-    "Client",
-    "Server"
-  ],
+  "group": ["Client", "Server"],
   "import": [],
-  "declvar": [],
+  "vars": [],
   "root": {
     "id": 1,
     "name": "Selector",
@@ -29,16 +26,12 @@
               "w": 100,
               "h": 50
             },
-            "output": [
-              "enemy"
-            ]
+            "output": ["enemy"]
           },
           {
             "id": 4,
             "name": "Attack",
-            "input": [
-              "enemy"
-            ]
+            "input": ["enemy"]
           },
           {
             "id": 5,
@@ -63,16 +56,12 @@
               "x": 0,
               "y": 0
             },
-            "output": [
-              "enemy"
-            ]
+            "output": ["enemy"]
           },
           {
             "id": 8,
             "name": "MoveToTarget",
-            "input": [
-              "enemy"
-            ]
+            "input": ["enemy"]
           }
         ]
       },
@@ -84,9 +73,7 @@
           {
             "id": 10,
             "name": "GetHp",
-            "output": [
-              "hp"
-            ]
+            "output": ["hp"]
           },
           {
             "id": 11,
@@ -94,9 +81,7 @@
             "args": {
               "lt": 50
             },
-            "input": [
-              "hp"
-            ]
+            "input": ["hp"]
           },
           {
             "id": 12,

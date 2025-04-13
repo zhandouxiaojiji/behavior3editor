@@ -64,7 +64,7 @@ export const Workspace: FC = () => {
   useKeyDown(Hotkey.CloseEditor, null, (event) => {
     if (workspace.editing) {
       event.preventDefault();
-      if (workspace.editing.unsave) {
+      if (workspace.editing.changed) {
         showSaveDialog(workspace.editing);
       } else {
         workspace.close(workspace.editing.path);
@@ -266,7 +266,7 @@ export const Workspace: FC = () => {
   };
 
   window.onbeforeunload = (e) => {
-    const unsaves = workspace.editors.filter((editor) => editor.unsave);
+    const unsaves = workspace.editors.filter((editor) => editor.changed);
     if (unsaves.length) {
       showSaveAllDialog(unsaves);
       return false;
@@ -441,7 +441,7 @@ export const Workspace: FC = () => {
                 if (action === "remove") {
                   const path = activeKey as string;
                   const editor = workspace.find(path);
-                  if (editor && editor.unsave) {
+                  if (editor && editor.changed) {
                     showSaveDialog(editor);
                   } else {
                     workspace.close(path);
@@ -470,11 +470,11 @@ export const Workspace: FC = () => {
                       }}
                       title={<div style={{ width: "max-content" }}>{v.path}</div>}
                     >
-                      {`${Path.basename(v.path)}${v.unsave ? "*" : ""}`}
+                      {`${Path.basename(v.path)}${v.changed ? "*" : ""}`}
                     </Tooltip>
                   ),
                   key: v.path,
-                  children: <Editor data={v} onUpdate={forceUpdate} />,
+                  children: <Editor data={v} onChange={forceUpdate} />,
                 };
               })}
             />

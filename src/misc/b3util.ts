@@ -1,9 +1,11 @@
+import assert from "assert";
 import * as fs from "fs";
 import { ExpressionEvaluator, NodeDef } from "../behavior3/src/behavior3";
+import "./array";
 import {
   FileVarDecl,
   hasArgOptions,
-  ImportDef,
+  ImportDecl,
   isBoolType,
   isExprType,
   isFloatType,
@@ -11,10 +13,9 @@ import {
   isJsonType,
   isStringType,
   NodeArg,
-  NodeModel,
-  TreeGraphData,
-  TreeModel,
-  VarDef,
+  NodeData,
+  TreeData,
+  VarDecl,
   VERSION,
 } from "./b3type";
 import Path from "./path";
@@ -35,19 +36,20 @@ type Env = {
 
 export interface BatchScript {
   onSetup?(env: Env): void;
-  onProcessTree?(tree: TreeModel, path: string): TreeModel | null;
-  onProcessNode?(node: NodeModel): NodeModel | null;
-  onWriteFile?(path: string, tree: TreeModel): void;
+  onProcessTree?(tree: TreeData, path: string): TreeData | null;
+  onProcessNode?(node: NodeData): NodeData | null;
+  onWriteFile?(path: string, tree: TreeData): void;
   onComplete?(status: "success" | "failure"): void;
 }
 
+export let calcSize: (d: NodeData) => number[] = () => [0, 0];
 export let nodeDefs: NodeDefs = new NodeDefs();
 export let groupDefs: string[] = [];
-export let usingGroups: Record<string, boolean> = {};
-export let usingVars: Record<string, VarDef> | null = null;
+export let usingGroups: Record<string, boolean> | null = null;
+export let usingVars: Record<string, VarDecl> | null = null;
 export const files: Record<string, number> = {};
 
-const parsedVarDefs: Record<string, ImportDef> = {};
+const parsedVarDecl: Record<string, ImportDecl> = {};
 const parsedExprs: Record<string, string[]> = {};
 let checkExpr: boolean = false;
 let workdir: string = "";
@@ -72,15 +74,19 @@ export const initWorkdir = (path: string, handler: typeof alertError) => {
   groupDefs = Array.from(groups).sort();
 };
 
+export const setSizeCalculator = (calc: (d: NodeData) => number[]) => {
+  calcSize = calc;
+};
+
 export const updateUsingGroups = (group: string[]) => {
-  usingGroups = {};
+  usingGroups = null;
   for (const g of group) {
     usingGroups ??= {};
     usingGroups[g] = true;
   }
 };
 
-export const updateUsingVars = (vars: VarDef[]) => {
+export const updateUsingVars = (vars: VarDecl[]) => {
   usingVars = null;
   for (const v of vars) {
     usingVars ??= {};
@@ -104,6 +110,26 @@ export const parseExpr = (expr: string) => {
   return result;
 };
 
+export const dfs = <T extends { children?: T[] }>(
+  node: T,
+  visitor: (node: T, depth: number) => unknown,
+  depth: number = 0
+) => {
+  const traverse = (n: T, d: number) => {
+    if (visitor(n, d) === false) {
+      return false;
+    }
+    if (n.children) {
+      for (const child of n.children) {
+        if (traverse(child, d + 1) === false) {
+          return false;
+        }
+      }
+    }
+  };
+  traverse(node, depth);
+};
+
 export const isNewVersion = (version: string) => {
   const [major, minor, patch] = version.split(".").map(Number);
   const [major2, minor2, patch2] = VERSION.split(".").map(Number);
@@ -118,11 +144,11 @@ export const isValidVariableName = (name: string) => {
   return /^[a-zA-Z_]/.test(name);
 };
 
-export const isSubtreeRoot = (data: TreeGraphData) => {
-  return data.path && data.id.toString() !== "1";
+export const isSubtreeRoot = (data: NodeData) => {
+  return data.path && data.id !== "1";
 };
 
-export const isNodeEqual = (node1: NodeModel, node2: NodeModel) => {
+export const isNodeEqual = (node1: NodeData, node2: NodeData) => {
   if (
     node1.name === node2.name &&
     node1.desc === node2.desc &&
@@ -161,7 +187,7 @@ export const isNodeEqual = (node1: NodeModel, node2: NodeModel) => {
   return false;
 };
 
-const error = (data: NodeModel | TreeGraphData, msg: string) => {
+const error = (data: NodeData, msg: string) => {
   console.error(`check ${data.id}|${data.name}: ${msg}`);
 };
 
@@ -178,7 +204,7 @@ export const isNodeArgOptional = (arg: NodeArg) => {
 };
 
 export const checkNodeArgValue = (
-  data: NodeModel | TreeGraphData,
+  data: NodeData,
   arg: NodeArg,
   value: unknown,
   verbose?: boolean
@@ -257,12 +283,7 @@ export const checkNodeArgValue = (
   return !hasError;
 };
 
-export const checkNodeArg = (
-  data: NodeModel | TreeGraphData,
-  conf: NodeDef,
-  i: number,
-  verbose?: boolean
-) => {
+export const checkNodeArg = (data: NodeData, conf: NodeDef, i: number, verbose?: boolean) => {
   let hasError = false;
   const arg = conf.args![i] as NodeArg;
   const value = data.args?.[arg.name];
@@ -306,7 +327,7 @@ export const checkOneof = (argValue: unknown, inputValue: unknown) => {
   return (argValue !== "" && inputValue === "") || (argValue === "" && inputValue !== "");
 };
 
-export const checkNodeData = (data: NodeModel | null | undefined) => {
+export const checkNodeData = (data: NodeData | null | undefined) => {
   if (!data) {
     return false;
   }
@@ -319,7 +340,7 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   let hasError = false;
 
   if (conf.group) {
-    if (!conf.group.some((g) => usingGroups[g])) {
+    if (!conf.group.some((g) => usingGroups?.[g])) {
       error(data, `node group '${conf.group}' is not enabled`);
       hasError = true;
     }
@@ -489,22 +510,11 @@ export const checkNodeData = (data: NodeModel | null | undefined) => {
   return !hasError;
 };
 
-export const copyFromNode = (data: TreeGraphData, node: NodeModel) => {
-  data.name = node.name;
-  data.debug = node.debug;
-  data.disabled = node.disabled;
-  data.desc = node.desc;
-  data.path = node.path;
-  data.args = node.args;
-  data.input = node.input;
-  data.output = node.output;
-};
-
 const parsingStack: string[] = [];
 
-export const createNode = (data: TreeGraphData, includeChildren: boolean = true) => {
-  const node: NodeModel = {
-    id: Number(data.id),
+export const createNode = (data: NodeData, includeChildren: boolean = true) => {
+  const node: NodeData = {
+    id: data.id,
     name: data.name,
     desc: data.desc,
     path: data.path,
@@ -549,9 +559,10 @@ const enum StatusFlag {
   FAILURE_ZERO = 4,
 }
 
-const toStatusFlag = (data: TreeGraphData) => {
+const toStatusFlag = (data: NodeData) => {
   let status = 0;
-  data.def.status?.forEach((s) => {
+  const def = nodeDefs.get(data.name);
+  def.status?.forEach((s) => {
     switch (s) {
       case "success":
         status |= 1 << StatusFlag.SUCCESS;
@@ -580,15 +591,16 @@ const appendStatusFlag = (status: number, childStatus: number) => {
   return status;
 };
 
-const buildStatusFlag = (data: TreeGraphData, childStatus: number) => {
+const buildStatusFlag = (data: NodeData, childStatus: number) => {
   let status = data.status!;
-  if (data.def.status?.length) {
+  const def = nodeDefs.get(data.name);
+  if (def.status?.length) {
     const childSuccess = (childStatus >> StatusFlag.SUCCESS) & 1;
     const childFailure = (childStatus >> StatusFlag.FAILURE) & 1;
     const childRunning = (childStatus >> StatusFlag.RUNNING) & 1;
     const childHasZeroSuccess = (childStatus >> StatusFlag.SUCCESS_ZERO) & 1;
     const childHasZeroFailure = (childStatus >> StatusFlag.FAILURE_ZERO) & 1;
-    data.def.status?.forEach((s) => {
+    def.status?.forEach((s) => {
       switch (s) {
         case "!success":
           status |= childFailure << StatusFlag.SUCCESS;
@@ -627,31 +639,10 @@ const buildStatusFlag = (data: TreeGraphData, childStatus: number) => {
   }
 };
 
-export const refreshTreeDataId = (data: TreeGraphData, id?: number) => {
-  if (!id) {
-    id = 1;
-  }
-  const status = toStatusFlag(data);
-  data.id = (id++).toString();
-  data.status = status;
-  if (data.children) {
-    let childStatus = 0;
-    data.children.forEach((child) => {
-      child.parent = data.id;
-      id = refreshTreeDataId(child, id);
-      if (child.status && !child.disabled) {
-        childStatus = appendStatusFlag(childStatus, child.status);
-      }
-    });
-    buildStatusFlag(data, childStatus);
-  }
-  return id;
-};
-
-export const checkChildrenLimit = (data: TreeGraphData) => {
-  const conf = data.def;
-  if (conf.children !== undefined && conf.children !== -1) {
-    return (data.children?.length || 0) === conf.children;
+export const isValidChildren = (data: NodeData) => {
+  const def = nodeDefs.get(data.name);
+  if (def.children !== undefined && def.children !== -1) {
+    return (data.children?.length || 0) === def.children;
   }
   return true;
 };
@@ -667,28 +658,28 @@ const isValidInputOrOutput = (def: string[], data: string[] | undefined, index: 
   return def[index].includes("?") || data?.[index] || isVariadic(def, index);
 };
 
-export const checkTreeData = (data: TreeGraphData) => {
-  const conf = data.def;
-  if (conf.input) {
-    for (let i = 0; i < conf.input.length; i++) {
-      if (!isValidInputOrOutput(conf.input, data.input, i)) {
+export const checkTreeData = (data: NodeData) => {
+  const def = nodeDefs.get(data.name);
+  if (def.input) {
+    for (let i = 0; i < def.input.length; i++) {
+      if (!isValidInputOrOutput(def.input, data.input, i)) {
         return false;
       }
     }
   }
-  if (conf.output) {
-    for (let i = 0; i < conf.output.length; i++) {
-      if (!isValidInputOrOutput(conf.output, data.output, i)) {
+  if (def.output) {
+    for (let i = 0; i < def.output.length; i++) {
+      if (!isValidInputOrOutput(def.output, data.output, i)) {
         return false;
       }
     }
   }
-  if (!checkChildrenLimit(data)) {
+  if (!isValidChildren(data)) {
     return false;
   }
-  if (conf.args) {
-    for (let i = 0; i < conf.args.length; i++) {
-      if (!checkNodeArg(data, conf, i, false)) {
+  if (def.args) {
+    for (let i = 0; i < def.args.length; i++) {
+      if (!checkNodeArg(data, def, i, false)) {
         return false;
       }
     }
@@ -697,92 +688,80 @@ export const checkTreeData = (data: TreeGraphData) => {
   return true;
 };
 
-export const createTreeData = (
-  node: NodeModel,
-  parent?: string,
-  calcSize?: (d: TreeGraphData) => number[]
-) => {
-  let treeData: TreeGraphData = {
-    id: node.id.toFixed(),
-    name: node.name,
-    desc: node.desc,
-    args: node.args,
-    input: node.input,
-    output: node.output,
-    debug: node.debug,
-    disabled: node.disabled,
-    def: nodeDefs.get(node.name),
-    parent: parent,
-    size: [0, 0],
-  };
+export const refreshNodeData = (node: NodeData, id: number) => {
+  node.id = (id++).toString();
+  node.size = calcSize(node);
 
-  treeData.def.args?.forEach((arg) => {
-    treeData.args ||= {};
-    if (treeData.args[arg.name] === undefined && arg.default !== undefined) {
-      treeData.args[arg.name] = arg.default;
-    }
-  });
+  const def = nodeDefs.get(node.name);
 
-  if (calcSize) {
-    treeData.size = calcSize(treeData);
-  }
-
-  if (!parent) {
-    parsingStack.length = 0;
+  if (def.args) {
+    node.args ||= {};
+    def.args.forEach((arg) => {
+      assert(node.args);
+      if (node.args[arg.name] === undefined && arg.default !== undefined) {
+        node.args[arg.name] = arg.default;
+      }
+    });
   }
 
   if (node.path) {
     if (parsingStack.indexOf(node.path) >= 0) {
-      treeData.path = node.path;
-      if (calcSize) {
-        treeData.size = calcSize(treeData);
-      }
       alertError(`循环引用节点：${node.path}`, 4);
-      return treeData;
+      return id;
     }
     parsingStack.push(node.path);
     try {
       const subtreePath = workdir + "/" + node.path;
-      treeData = createTreeData(readTree(subtreePath).root, treeData.id, calcSize);
-      treeData.lastModified = fs.statSync(subtreePath).mtimeMs;
-      treeData.path = node.path;
-      treeData.debug = node.debug;
-      treeData.disabled = node.disabled;
-      treeData.parent = parent;
-      treeData.id = node.id.toFixed();
-      if (calcSize) {
-        treeData.size = calcSize(treeData);
-      }
+      const subtree = readTree(subtreePath).root;
+      id = refreshNodeData(subtree, --id);
+      node.name = subtree.name;
+      node.desc = subtree.desc;
+      node.args = subtree.args;
+      node.input = subtree.input;
+      node.output = subtree.output;
+      node.children = subtree.children;
+      node.mtime = fs.statSync(subtreePath).mtimeMs;
+      node.size = calcSize(node);
     } catch (e) {
       alertError(`解析子树失败：${node.path}`);
       console.log("parse subtree:", e);
     }
     parsingStack.pop();
   } else if (node.children?.length) {
-    treeData.children = [];
-    node.children.forEach((child) => {
-      treeData.children!.push(createTreeData(child, treeData.id, calcSize));
-    });
+    for (let i = 0; i < node.children.length; i++) {
+      id = refreshNodeData(node.children[i], id);
+    }
   }
 
-  return treeData;
+  node.status = toStatusFlag(node);
+  if (node.children) {
+    let childStatus = 0;
+    node.children.forEach((child) => {
+      if (child.status && !child.disabled) {
+        childStatus = appendStatusFlag(childStatus, child.status);
+      }
+    });
+    buildStatusFlag(node, childStatus);
+  }
+
+  return id;
 };
 
 export const createBuildData = (path: string) => {
   try {
-    const treeModel: TreeModel = readTree(path);
-    const data = createTreeData(treeModel.root);
-    refreshTreeDataId(data, treeModel.firstid ?? 1);
+    const treeModel: TreeData = readTree(path);
+    refreshNodeData(treeModel.root, 1);
+    dfs(treeModel.root, (node) => (node.id = treeModel.prefix + node.id));
     treeModel.name = Path.basenameWithoutExt(path);
-    treeModel.root = createFileData(data, true);
-    return treeModel as TreeModel;
+    treeModel.root = createFileData(treeModel.root, true);
+    return treeModel as TreeData;
   } catch (e) {
     console.log("build error:", path, e);
   }
   return null;
 };
 
-export const processBatch = (tree: TreeModel | null, path: string, batch: BatchScript) => {
+export const processBatch = (tree: TreeData | null, path: string, batch: BatchScript) => {
   if (!tree) {
     return null;
   }
@@ -793,9 +772,9 @@ export const processBatch = (tree: TreeModel | null, path: string, batch: BatchS
     return null;
   }
   if (batch.onProcessNode) {
-    const processNode = (node: NodeModel) => {
+    const processNode = (node: NodeData) => {
       if (node.children) {
-        const children: NodeModel[] = [];
+        const children: NodeData[] = [];
         node.children?.forEach((child) => {
           const newChild = processNode(child);
           if (newChild) {
@@ -806,7 +785,7 @@ export const processBatch = (tree: TreeModel | null, path: string, batch: BatchS
       }
       return batch.onProcessNode?.(node);
     };
-    tree.root = processNode(tree.root) ?? ({} as NodeModel);
+    tree.root = processNode(tree.root) ?? ({} as NodeData);
   }
   return tree;
 };
@@ -852,10 +831,10 @@ export const buildProject = async (project: string, buildDir: string) => {
       console.log("build:", buildpath);
       const declare: FileVarDecl = {
         import: tree.import.map((v) => ({ path: v, vars: [], depends: [] })),
-        declvar: tree.declvar.map((v) => ({ name: v.name, desc: v.desc })),
+        vars: tree.vars.map((v) => ({ name: v.name, desc: v.desc })),
         subtree: [],
       };
-      refreshDeclare(tree.root, tree.group, declare);
+      refreshVarDecl(tree.root, tree.group, declare);
       if (!checkNodeData(tree?.root)) {
         hasError = true;
       }
@@ -873,16 +852,16 @@ export const loadModule = async (path: string) => {
     if (typeof require !== "undefined" && require.cache) {
       delete require.cache[require.resolve(path)];
     }
-    return await import(`${path}?t=${Date.now()}`);
+    return await import(/* @vite-ignore */ `${path}?t=${Date.now()}`);
   } catch (e) {
     console.error(`failed to load module: ${path}`, e);
     return null;
   }
 };
 
-export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) => {
-  const nodeData: NodeModel = {
-    id: Number(data.id),
+export const createFileData = (data: NodeData, includeSubtree?: boolean) => {
+  const nodeData: NodeData = {
+    id: data.id,
     name: data.name,
     desc: data.desc || undefined,
     args: data.args || undefined,
@@ -913,15 +892,15 @@ export const createFileData = (data: TreeGraphData, includeSubtree?: boolean) =>
 };
 
 export const createNewTree = (path: string) => {
-  const tree: TreeModel = {
+  const tree: TreeData = {
     version: VERSION,
     name: Path.basenameWithoutExt(path),
-    firstid: 1,
+    prefix: "",
     group: [],
     import: [],
-    declvar: [],
+    vars: [],
     root: {
-      id: 1,
+      id: "1",
       name: "Sequence",
     },
   };
@@ -932,7 +911,7 @@ export const isTreeFile = (path: string) => {
   return path.toLocaleLowerCase().endsWith(".json");
 };
 
-const loadVarDef = (list: ImportDef[], arr: Array<VarDef>) => {
+const loadVarDecl = (list: ImportDecl[], arr: Array<VarDecl>) => {
   for (const entry of list) {
     if (!files[entry.path]) {
       console.warn(`file not found:${workdir}/${entry.path}`);
@@ -956,14 +935,14 @@ const loadVarDef = (list: ImportDef[], arr: Array<VarDef>) => {
     entry.depends = [];
     entry.modified = files[entry.path];
 
-    const vars: Set<VarDef> = new Set();
+    const vars: Set<VarDecl> = new Set();
     const depends: Set<string> = new Set();
     const load = (path: string) => {
       if (parsingStack.includes(path)) {
         return;
       }
 
-      const parsedEntry: ImportDef | undefined = parsedVarDefs[path];
+      const parsedEntry: ImportDecl | undefined = parsedVarDecl[path];
       if (parsedEntry && files[path] === parsedEntry.modified) {
         parsedEntry.depends.forEach((v) => depends.add(v.path));
         parsedEntry.vars.forEach((v) => vars.add(v));
@@ -972,8 +951,8 @@ const loadVarDef = (list: ImportDef[], arr: Array<VarDef>) => {
 
       parsingStack.push(path);
       try {
-        const model: TreeModel = readTree(`${workdir}/${path}`);
-        model.declvar.forEach((v) => vars.add(v));
+        const model: TreeData = readTree(`${workdir}/${path}`);
+        model.vars.forEach((v) => vars.add(v));
         model.import.forEach((v) => {
           load(v);
           depends.add(v);
@@ -987,7 +966,7 @@ const loadVarDef = (list: ImportDef[], arr: Array<VarDef>) => {
     load(entry.path);
     entry.vars = Array.from(vars).sort((a, b) => a.name.localeCompare(b.name));
     entry.depends = Array.from(depends).map((v) => ({ path: v, modified: files[v] }));
-    parsedVarDefs[entry.path] = {
+    parsedVarDecl[entry.path] = {
       path: entry.path,
       vars: entry.vars.map((v) => ({ name: v.name, desc: v.desc })),
       depends: entry.depends.slice(),
@@ -997,24 +976,20 @@ const loadVarDef = (list: ImportDef[], arr: Array<VarDef>) => {
   list.forEach((entry) => arr.push(...entry.vars));
 };
 
-const collectSubtree = (data: TreeGraphData | NodeModel, list: string[] = []) => {
-  if (data.path) {
-    list.push(data.path);
-  }
-  if (data.children) {
-    data.children.forEach((child) => collectSubtree(child, list));
-  }
+const collectSubtree = (data: NodeData) => {
+  const list: string[] = [];
+  dfs(data, (node) => {
+    if (node.path) {
+      list.push(node.path);
+    }
+  });
   return list;
 };
 
-export const refreshDeclare = (
-  root: TreeGraphData | NodeModel,
-  group: string[],
-  declare: FileVarDecl
-) => {
+export const refreshVarDecl = (root: NodeData, group: string[], declare: FileVarDecl) => {
   const filter: Record<string, boolean> = {};
-  const vars: Array<VarDef> = new (class extends Array {
-    push(...items: VarDef[]): number {
+  const vars: Array<VarDecl> = new (class extends Array {
+    push(...items: VarDecl[]): number {
       for (const v of items) {
         if (filter[v.name]) {
           continue;
@@ -1025,18 +1000,18 @@ export const refreshDeclare = (
       return this.length;
     }
   })();
-  vars.push(...declare.declvar);
+  vars.push(...declare.vars);
   parsingStack.length = 0;
   declare.subtree = collectSubtree(root).map((v) => ({
     path: v,
     vars: [],
     depends: [],
   }));
-  loadVarDef(declare.import, vars);
-  loadVarDef(declare.subtree, vars);
+  loadVarDecl(declare.import, vars);
+  loadVarDecl(declare.subtree, vars);
 
   let changed = false;
-  const lastGroup = Array.from(Object.keys(usingGroups)).sort();
+  const lastGroup = Array.from(Object.keys(usingGroups ?? {})).sort();
   group.sort();
   if (lastGroup.length !== group.length || lastGroup.some((v, i) => v !== group[i])) {
     changed = true;

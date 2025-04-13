@@ -29,7 +29,7 @@ import { ExpressionEvaluator } from "../behavior3/src/behavior3";
 import { EditNode, EditTree, useWorkspace } from "../contexts/workspace-context";
 import {
   hasArgOptions,
-  ImportDef,
+  ImportDecl,
   isBoolType,
   isExprType,
   isFloatType,
@@ -37,9 +37,8 @@ import {
   isJsonType,
   isStringType,
   NodeArg,
-  NodeModel,
-  TreeGraphData,
-  VarDef,
+  NodeData,
+  VarDecl,
 } from "../misc/b3type";
 import {
   checkNodeArgValue,
@@ -47,12 +46,12 @@ import {
   getNodeArgRawType,
   isNodeArgArray,
   isNodeArgOptional,
+  isValidChildren,
   isValidVariableName,
   isVariadic,
   parseExpr,
-  usingGroups,
-  usingVars,
 } from "../misc/b3util";
+import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
 import { Hotkey, isMacos } from "../misc/keys";
 import { mergeClassNames } from "../misc/util";
@@ -61,7 +60,7 @@ interface OptionType extends DefaultOptionType {
   value: string;
 }
 
-interface VarItem extends VarDef {
+interface VarItem extends VarDecl {
   count?: number;
 }
 
@@ -69,11 +68,11 @@ interface VarItemProps {
   name: number;
   disabled?: boolean;
   value?: VarItem;
-  onChange?: (vardef: VarItem) => void;
+  onChange?: (value: VarItem) => void;
   onRemove?: (name: number | number[]) => void;
 }
 
-const VarDefItem: FC<VarItemProps> = ({ name, onChange, onRemove, disabled, ...props }) => {
+const VarDeclItem: FC<VarItemProps> = ({ name, onChange, onRemove, disabled, ...props }) => {
   const { t } = useTranslation();
   const form = useFormInstance();
   const [value, setValue] = useState<VarItem>(props.value ?? { name: "", desc: "" });
@@ -152,6 +151,7 @@ const TreeInspector: FC = () => {
       relative: state.relative,
       open: state.open,
       workdir: state.workdir,
+      usingVars: state.usingVars,
     }))
   );
   const { t } = useTranslation();
@@ -160,7 +160,7 @@ const TreeInspector: FC = () => {
   // using count
   const usingCount: Record<string, number> = useMemo(() => {
     const count: Record<string, number> = {};
-    const collect = (node: TreeGraphData) => {
+    const collect = (node: NodeData) => {
       const def = workspace.nodeDefs.get(node.name);
       if (def.input) {
         node.input?.forEach((v) => {
@@ -195,7 +195,7 @@ const TreeInspector: FC = () => {
     };
     collect(workspace.editingTree.root);
     return count;
-  }, [workspace.editingTree, workspace.nodeDefs]);
+  }, [workspace.editingTree, workspace.nodeDefs, workspace.usingVars]);
 
   // auto complete for subtree
   const subtreeOptions = useMemo(() => {
@@ -218,11 +218,11 @@ const TreeInspector: FC = () => {
     form.setFieldValue("name", workspace.editingTree.name);
     form.setFieldValue("desc", workspace.editingTree.desc);
     form.setFieldValue("export", workspace.editingTree.export !== false);
-    form.setFieldValue("firstid", workspace.editingTree.firstid);
+    form.setFieldValue("prefix", workspace.editingTree.prefix);
     form.setFieldValue("group", workspace.editingTree.group);
     form.setFieldValue(
-      "declvar",
-      workspace.editingTree.declvar.map((v) => ({
+      "vars",
+      workspace.editingTree.vars.map((v) => ({
         name: v.name,
         desc: v.desc,
         count: usingCount[v.name] ?? 0,
@@ -258,16 +258,16 @@ const TreeInspector: FC = () => {
       name: values.name,
       desc: values.desc,
       export: values.export,
-      firstid: Number(values.firstid),
+      prefix: values.prefix,
       group: ((values.group ?? []) as string[]).filter((g) => g).sort((a, b) => a.localeCompare(b)),
-      declvar: (values.declvar as VarDef[])
+      vars: (values.vars as VarDecl[])
         .filter((v) => v && v.name)
         .map((v) => ({
           name: v.name,
           desc: v.desc,
         }))
         .sort((a, b) => a.name.localeCompare(b.name)),
-      import: (values.import as ImportDef[])
+      import: (values.import as ImportDecl[])
         .filter((v) => v && v.path)
         .sort((a, b) => a.path.localeCompare(b.path))
         .map((v) => ({
@@ -299,8 +299,8 @@ const TreeInspector: FC = () => {
             <Form.Item name="desc" label={t("tree.desc")}>
               <TextArea autoSize onBlur={form.submit} />
             </Form.Item>
-            <Form.Item name="firstid" label={t("tree.firstid")}>
-              <InputNumber min={1} onBlur={form.submit} />
+            <Form.Item name="prefix" label={t("tree.prefix")}>
+              <Input onBlur={form.submit} />
             </Form.Item>
             <Form.Item name="export" label={t("tree.export")} valuePropName="checked">
               <Switch onChange={() => form.submit()} />
@@ -326,7 +326,7 @@ const TreeInspector: FC = () => {
             <Divider orientation="left">
               <h4>{t("tree.vars")}</h4>
             </Divider>
-            <Form.List name="declvar">
+            <Form.List name="vars">
               {(fields, { add, remove }, { errors }) => (
                 <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
                   {fields.map((item) => (
@@ -351,7 +351,7 @@ const TreeInspector: FC = () => {
                         },
                       ]}
                     >
-                      <VarDefItem name={item.name} onRemove={remove} />
+                      <VarDeclItem name={item.name} onRemove={remove} />
                     </Form.Item>
                   ))}
                   <Form.Item
@@ -421,7 +421,7 @@ const TreeInspector: FC = () => {
                             <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
                               {vars.map((v) => (
                                 <Form.Item key={v.key} name={v.name} style={{ marginBottom: 2 }}>
-                                  <VarDefItem name={v.name} disabled={true} />
+                                  <VarDeclItem name={v.name} disabled={true} />
                                 </Form.Item>
                               ))}
                             </div>
@@ -477,7 +477,7 @@ const TreeInspector: FC = () => {
                           <div style={{ display: "flex", flexDirection: "column", rowGap: 0 }}>
                             {vars.map((v) => (
                               <Form.Item key={v.key} name={v.name} style={{ marginBottom: 2 }}>
-                                <VarDefItem name={v.name} disabled={true} />
+                                <VarDeclItem name={v.name} disabled={true} />
                               </Form.Item>
                             ))}
                           </div>
@@ -513,7 +513,12 @@ const TreeInspector: FC = () => {
   );
 };
 
-const validateArg = (node: NodeModel, arg: NodeArg, value: unknown) => {
+const validateArg = (
+  node: NodeData,
+  arg: NodeArg,
+  value: unknown,
+  usingVars: Record<string, VarDecl> | null
+) => {
   const type = getNodeArgRawType(arg);
   const required = !isNodeArgOptional(arg);
   if (isExprType(type) && value) {
@@ -559,6 +564,8 @@ const NodeInspector: FC = () => {
       fileTree: state.fileTree,
       groupDefs: state.groupDefs,
       nodeDefs: state.nodeDefs,
+      usingGroups: state.usingGroups,
+      usingVars: state.usingVars,
       onEditingNode: state.onEditingNode,
       relative: state.relative,
     }))
@@ -572,12 +579,22 @@ const NodeInspector: FC = () => {
     100
   );
 
+  const submit = () => {
+    if (form.getFieldsError().some((e) => e.errors.length > 0)) {
+      const data = workspace.editingNode.data;
+      const editor = workspace.editing!;
+      const name = `${editor.data.prefix}${data.id} ${data.name}`;
+      message.error(t("node.editFailed", { name }));
+    }
+    form.submit();
+  };
+
   // set form values
   useEffect(() => {
     const data = workspace.editingNode.data;
     const def = workspace.nodeDefs.get(workspace.editingNode.data.name);
     form.resetFields();
-    form.setFieldValue("id", data.id);
+    form.setFieldValue("id", workspace.editingNode.prefix + data.id);
     form.setFieldValue("name", data.name);
     form.setFieldValue("type", def.type);
     form.setFieldValue("desc", data.desc || def.desc);
@@ -647,11 +664,12 @@ const NodeInspector: FC = () => {
   const inoutVarOptions = useMemo(() => {
     const options: OptionType[] = [];
     const filter: Record<string, boolean> = {};
-    const collect = (node?: TreeGraphData) => {
+    const collect = (node?: NodeData) => {
       if (node) {
+        const def = workspace.nodeDefs.get(node.name);
         node.input?.forEach((v, i) => {
           let desc: string;
-          const inputDef = node.def.input;
+          const inputDef = def.input;
           if (inputDef && i >= inputDef.length && isVariadic(inputDef, -1)) {
             desc = inputDef[inputDef.length - 1];
           } else {
@@ -664,7 +682,7 @@ const NodeInspector: FC = () => {
         });
         node.output?.forEach((v, i) => {
           let desc: string;
-          const outputDef = node.def.output;
+          const outputDef = def.output;
           if (outputDef && i >= outputDef.length && isVariadic(outputDef, -1)) {
             desc = outputDef[outputDef.length - 1];
           } else {
@@ -678,18 +696,18 @@ const NodeInspector: FC = () => {
         node.children?.forEach((child) => collect(child));
       }
     };
-    if (usingVars) {
-      Object.values(usingVars ?? {}).forEach((v) => {
+    if (workspace.usingVars) {
+      Object.values(workspace.usingVars).forEach((v) => {
         if (!filter[v.name]) {
           options.push({ label: `${v.name}(${v.desc})`, value: v.name });
           filter[v.name] = true;
         }
       });
     } else {
-      collect(workspace.editing?.root);
+      collect(workspace.editing?.data.root);
     }
     return options;
-  }, [workspace.editing, usingVars]);
+  }, [workspace.editing, workspace.usingVars]);
 
   // auto complete for subtree
   const subtreeOptions = useMemo(() => {
@@ -708,12 +726,12 @@ const NodeInspector: FC = () => {
 
   const editingNode = workspace.editingNode;
   const def = workspace.nodeDefs.get(editingNode.data.name);
-  const disabled = !editingNode.editable;
+  const disabled = editingNode.disabled;
 
   // update value
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finish = (values: any) => {
-    const data = {} as NodeModel;
+    const data = {} as NodeData;
     data.id = editingNode.data.id;
     data.name = values.name;
     data.debug = values.debug || undefined;
@@ -804,7 +822,8 @@ const NodeInspector: FC = () => {
           debug: editingNode.data.debug,
           disabled: editingNode.data.disabled,
         },
-        editable: editingNode.editable,
+        prefix: editingNode.prefix,
+        disabled: editingNode.disabled,
       });
       finish(form.getFieldsValue());
     } else {
@@ -835,6 +854,9 @@ const NodeInspector: FC = () => {
           labelCol={{ span: "auto" }}
           onFinish={finish}
         >
+          <Form.Item name="id" label={t("node.id")}>
+            <Input disabled={true} />
+          </Form.Item>
           <Form.Item name="type" label={t("node.type")}>
             <Input disabled={true} />
           </Form.Item>
@@ -845,7 +867,7 @@ const NodeInspector: FC = () => {
               rules={[
                 {
                   validator() {
-                    if (def.group && !def.group.some((g) => usingGroups[g])) {
+                    if (def.group && !def.group.some((g) => workspace.usingGroups?.[g])) {
                       return Promise.reject(
                         new Error(t("node.groupNotEnabled", { group: def.group }))
                       );
@@ -869,7 +891,7 @@ const NodeInspector: FC = () => {
             rules={[
               {
                 validator() {
-                  if (editingNode.limitError) {
+                  if (!isValidChildren(editingNode.data)) {
                     return Promise.reject(new Error(t("node.invalidChildren")));
                   }
                   return Promise.resolve();
@@ -908,17 +930,17 @@ const NodeInspector: FC = () => {
             />
           </Form.Item>
           <Form.Item name="desc" label={t("node.desc")}>
-            <TextArea autoSize disabled={disabled} onBlur={form.submit} />
+            <TextArea autoSize disabled={disabled} onBlur={submit} />
           </Form.Item>
           <Form.Item label={t("node.debug")} name="debug" valuePropName="checked">
-            <Switch disabled={disabled && !editingNode.data.path} onChange={form.submit} />
+            <Switch disabled={disabled && !editingNode.data.path} onChange={submit} />
           </Form.Item>
           <Form.Item label={t("node.disabled")} name="disabled" valuePropName="checked">
-            <Switch disabled={disabled && !editingNode.data.path} onChange={form.submit} />
+            <Switch disabled={disabled && !editingNode.data.path} onChange={submit} />
           </Form.Item>
           <Form.Item label={t("node.subtree")} name="path">
             <AutoComplete
-              disabled={disabled && !editingNode.data.path}
+              disabled={disabled && !editingNode.subtreeEditable}
               options={subtreeOptions}
               onBlur={changeSubtree}
               onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
@@ -958,7 +980,11 @@ const NodeInspector: FC = () => {
                                   rules={[
                                     {
                                       validator(_, value) {
-                                        if (value && usingVars && !usingVars[value]) {
+                                        if (
+                                          value &&
+                                          workspace.usingVars &&
+                                          !workspace.usingVars[value]
+                                        ) {
                                           return Promise.reject(
                                             new Error(
                                               t("node.undefinedVariable", { variable: value })
@@ -978,7 +1004,7 @@ const NodeInspector: FC = () => {
                                   <AutoComplete
                                     disabled={disabled}
                                     options={inoutVarOptions}
-                                    onBlur={form.submit}
+                                    onBlur={submit}
                                     onInputKeyDown={(e) =>
                                       e.code === Hotkey.Escape && e.preventDefault()
                                     }
@@ -994,7 +1020,7 @@ const NodeInspector: FC = () => {
                                   style={{ marginBottom: "6px" }}
                                   onClick={() => {
                                     remove(field.name);
-                                    form.submit();
+                                    submit();
                                   }}
                                 />
                               </Flex>
@@ -1027,7 +1053,7 @@ const NodeInspector: FC = () => {
                         { required, message: t("fieldRequired", { field: desc }) },
                         ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                           validator(_, value) {
-                            if (value && usingVars && !usingVars[value]) {
+                            if (value && workspace.usingVars && !workspace.usingVars[value]) {
                               return Promise.reject(
                                 new Error(t("node.undefinedVariable", { variable: value }))
                               );
@@ -1067,7 +1093,7 @@ const NodeInspector: FC = () => {
                       <AutoComplete
                         disabled={disabled}
                         options={inoutVarOptions}
-                        onBlur={form.submit}
+                        onBlur={submit}
                         onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
                         filterOption={(inputValue: string, option?: OptionType) => {
                           const label = option!.label as string;
@@ -1112,39 +1138,44 @@ const NodeInspector: FC = () => {
                                     },
                                     () => ({
                                       validator(_, value) {
-                                        return validateArg(editingNode.data, arg, value);
+                                        return validateArg(
+                                          editingNode.data,
+                                          arg,
+                                          value,
+                                          workspace.usingVars
+                                        );
                                       },
                                     }),
                                   ]}
                                 >
                                   {!hasArgOptions(arg) && isStringType(type) && (
-                                    <TextArea autoSize disabled={disabled} onBlur={form.submit} />
+                                    <TextArea autoSize disabled={disabled} onBlur={submit} />
                                   )}
                                   {!hasArgOptions(arg) && isJsonType(type) && (
-                                    <TextArea autoSize disabled={disabled} onBlur={form.submit} />
+                                    <TextArea autoSize disabled={disabled} onBlur={submit} />
                                   )}
                                   {!hasArgOptions(arg) && isIntType(type) && (
                                     <InputNumber
                                       disabled={disabled}
-                                      onBlur={form.submit}
+                                      onBlur={submit}
                                       precision={0}
                                     />
                                   )}
                                   {!hasArgOptions(arg) && isFloatType(type) && (
-                                    <InputNumber disabled={disabled} onBlur={form.submit} />
+                                    <InputNumber disabled={disabled} onBlur={submit} />
                                   )}
                                   {!hasArgOptions(arg) && isBoolType(type) && (
-                                    <Switch disabled={disabled} onChange={form.submit} />
+                                    <Switch disabled={disabled} onChange={submit} />
                                   )}
                                   {!hasArgOptions(arg) && isExprType(type) && (
-                                    <Input disabled={disabled} onBlur={form.submit} />
+                                    <Input disabled={disabled} onBlur={submit} />
                                   )}
                                   {hasArgOptions(arg) && (
                                     <Select
                                       showSearch
                                       disabled={disabled}
-                                      onBlur={form.submit}
-                                      onChange={form.submit}
+                                      onBlur={submit}
+                                      onChange={submit}
                                       options={(arg.options ?? []).map((option) => {
                                         return {
                                           value: option.value,
@@ -1164,7 +1195,7 @@ const NodeInspector: FC = () => {
                                   style={{ marginBottom: "6px" }}
                                   onClick={() => {
                                     remove(item.name);
-                                    form.submit();
+                                    submit();
                                   }}
                                 />
                               </Flex>
@@ -1182,7 +1213,7 @@ const NodeInspector: FC = () => {
                                 onClick={() => {
                                   add(arg.default ?? isBoolType(type) ? false : "");
                                   if (isBoolType(type)) {
-                                    form.submit();
+                                    submit();
                                   }
                                 }}
                                 style={{ width: "100%" }}
@@ -1210,7 +1241,12 @@ const NodeInspector: FC = () => {
                         { required, message: t("fieldRequired", { field: arg.desc }) },
                         ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                           async validator(_, value) {
-                            return validateArg(editingNode.data, arg, value).then((result) => {
+                            return validateArg(
+                              editingNode.data,
+                              arg,
+                              value,
+                              workspace.usingVars
+                            ).then((result) => {
                               value = result;
                               if (!arg.oneof) {
                                 return Promise.resolve();
@@ -1247,29 +1283,29 @@ const NodeInspector: FC = () => {
                       ]}
                     >
                       {!hasArgOptions(arg) && isStringType(type) && (
-                        <TextArea autoSize disabled={disabled} onBlur={form.submit} />
+                        <TextArea autoSize disabled={disabled} onBlur={submit} />
                       )}
                       {!hasArgOptions(arg) && isJsonType(type) && (
-                        <TextArea autoSize disabled={disabled} onBlur={form.submit} />
+                        <TextArea autoSize disabled={disabled} onBlur={submit} />
                       )}
                       {!hasArgOptions(arg) && isIntType(type) && (
-                        <InputNumber disabled={disabled} onBlur={form.submit} precision={0} />
+                        <InputNumber disabled={disabled} onBlur={submit} precision={0} />
                       )}
                       {!hasArgOptions(arg) && isFloatType(type) && (
-                        <InputNumber disabled={disabled} onBlur={form.submit} />
+                        <InputNumber disabled={disabled} onBlur={submit} />
                       )}
                       {!hasArgOptions(arg) && isBoolType(type) && (
-                        <Switch disabled={disabled} onChange={form.submit} />
+                        <Switch disabled={disabled} onChange={submit} />
                       )}
                       {!hasArgOptions(arg) && isExprType(type) && (
-                        <Input disabled={disabled} onBlur={form.submit} />
+                        <Input disabled={disabled} onBlur={submit} />
                       )}
                       {hasArgOptions(arg) && (
                         <Select
                           showSearch
                           disabled={disabled}
-                          onBlur={form.submit}
-                          onChange={form.submit}
+                          onBlur={submit}
+                          onChange={submit}
                           options={(arg.options ?? []).map((option) => {
                             return {
                               value: option.value,
@@ -1319,7 +1355,11 @@ const NodeInspector: FC = () => {
                                   rules={[
                                     {
                                       validator(_, value) {
-                                        if (value && usingVars && !usingVars[value]) {
+                                        if (
+                                          value &&
+                                          workspace.usingVars &&
+                                          !workspace.usingVars[value]
+                                        ) {
                                           return Promise.reject(
                                             new Error(
                                               t("node.undefinedVariable", { variable: value })
@@ -1339,7 +1379,7 @@ const NodeInspector: FC = () => {
                                   <AutoComplete
                                     disabled={disabled}
                                     options={inoutVarOptions}
-                                    onBlur={form.submit}
+                                    onBlur={submit}
                                     onInputKeyDown={(e) =>
                                       e.code === Hotkey.Escape && e.preventDefault()
                                     }
@@ -1355,7 +1395,7 @@ const NodeInspector: FC = () => {
                                   style={{ marginBottom: "6px" }}
                                   onClick={() => {
                                     remove(field.name);
-                                    form.submit();
+                                    submit();
                                   }}
                                 />
                               </Flex>
@@ -1388,7 +1428,7 @@ const NodeInspector: FC = () => {
                         { required, message: t("fieldRequired", { field: desc }) },
                         {
                           validator(_, value) {
-                            if (value && usingVars && !usingVars[value]) {
+                            if (value && workspace.usingVars && !workspace.usingVars[value]) {
                               return Promise.reject(
                                 new Error(t("node.undefinedVariable", { variable: value }))
                               );
@@ -1404,7 +1444,7 @@ const NodeInspector: FC = () => {
                       <AutoComplete
                         disabled={disabled}
                         options={inoutVarOptions}
-                        onBlur={form.submit}
+                        onBlur={submit}
                         onInputKeyDown={(e) => e.code === Hotkey.Escape && e.preventDefault()}
                         filterOption={(value: string, option?: OptionType) => {
                           const label = option!.label as string;

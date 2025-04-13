@@ -11,7 +11,7 @@
     firstid: number;
     group: string[];
     import: string[];
-    declvar: VarDef[];
+    vars: { name: string; desc: string }[];
     root: NodeModel;
   }
 

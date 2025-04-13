@@ -1,21 +1,23 @@
 {
+  "version": "1.8.1",
   "name": "test-subtree",
   "desc": "",
   "firstid": 1,
   "export": true,
+  "group": [],
   "import": ["vars/declare-core.json"],
-  "declvar": [
+  "vars": [
     {
       "name": "test",
       "desc": "测试"
     }
   ],
   "root": {
-    "id": 1,
+    "id": "1",
     "name": "Sequence",
     "children": [
       {
-        "id": 2,
+        "id": "2",
         "name": "Log",
         "args": {
           "message": "hello"

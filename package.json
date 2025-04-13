@@ -1,6 +1,6 @@
 {
   "name": "behavior3editor",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "main": "dist-electron/main/index.js",
   "description": "行为树编辑器",
   "author": "zhandouxiaojiji & codetypes",
@@ -27,7 +27,7 @@
   "homepage": "https://github.com/zhandouxiaojiji/behavior3editor#readme",
   "dependencies": {
     "@ant-design/icons": "^5.4.0",
-    "@antv/g6": "^4.8.24",
+    "@antv/g6": "^5.0.45",
     "@electron/remote": "github:electron/remote",
     "@types/electron-localshortcut": "^3.1.3",
     "@types/node": "^20.14.14",

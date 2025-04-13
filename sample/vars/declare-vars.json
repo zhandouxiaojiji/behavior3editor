@@ -1,12 +1,12 @@
 {
+  "version": "1.8.1",
   "name": "declare-vars",
   "desc": "",
   "firstid": 1,
   "export": true,
-  "import": [
-    "vars/declare-core.json"
-  ],
-  "declvar": [
+  "group": [],
+  "import": ["vars/declare-core.json"],
+  "vars": [
     {
       "name": "owner",
       "desc": "所有者"
@@ -17,8 +17,7 @@
     }
   ],
   "root": {
-    "id": 1,
+    "id": "1",
     "name": "Sequence"
-  },
-  "group": []
+  }
 }
