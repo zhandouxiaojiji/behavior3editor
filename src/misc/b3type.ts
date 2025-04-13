@@ -1,4 +1,3 @@
-import type { TreeGraphData as G6TreeGraphData } from "@antv/g6";
 import { NodeDef } from "../behavior3/src/behavior3";
 
 export const VERSION = "1.8.1";
@@ -14,33 +13,40 @@ export const isExprType = (type: string) => type.startsWith("expr") || type.star
 export const isJsonType = (type: string) => type.startsWith("json");
 export const hasArgOptions = (arg: NodeArg) => arg.options !== undefined;
 
-export interface NodeModel {
-  id: number;
+export interface NodeData {
+  id: string;
   name: string;
   desc?: string;
   args?: { [key: string]: unknown };
   input?: string[];
   output?: string[];
-  children?: NodeModel[];
+  children?: NodeData[];
   debug?: boolean;
   disabled?: boolean;
   path?: string;
+
+  // for runtime
+  mtime?: number;
+  size?: number[];
+  status?: number;
 }
 
-export interface VarDef {
+export type NodeLayout = "compact" | "normal";
+
+export interface VarDecl {
   name: string;
   desc: string;
 }
 
-export interface GroupDef {
+export interface GroupDecl {
   name: string;
   value: boolean;
 }
 
-export interface ImportDef {
+export interface ImportDecl {
   path: string;
   modified?: number;
-  vars: VarDef[];
+  vars: VarDecl[];
   depends: {
     path: string;
     modified: number;
@@ -48,43 +54,21 @@ export interface ImportDef {
 }
 
 export interface FileVarDecl {
-  import: ImportDef[];
-  subtree: ImportDef[];
-  declvar: VarDef[];
+  import: ImportDecl[];
+  subtree: ImportDecl[];
+  vars: VarDecl[];
 }
 
-export interface TreeModel {
+export interface TreeData {
   version: string;
   name: string;
+  prefix: string;
   desc?: string;
   export?: boolean;
-  firstid: number;
   group: string[];
   import: string[];
-  declvar: VarDef[];
-  root: NodeModel;
-}
-
-export interface TreeGraphData extends G6TreeGraphData {
-  name: string;
-  desc?: string;
-  args?: { [key: string]: unknown };
-  input?: string[];
-  output?: string[];
-  children?: TreeGraphData[];
-  def: NodeDef;
-  debug?: boolean;
-  disabled?: boolean;
-  parent?: string;
-  path?: string;
-  lastModified?: number;
-
-  size: number[];
-  highlightInput?: boolean;
-  highlightOutput?: boolean;
-  highlightArgs?: boolean;
-  highlightGray?: boolean;
-  status?: number;
+  vars: VarDecl[];
+  root: NodeData;
 }
 
 export const getNodeType = (def: NodeDef): NodeType => {

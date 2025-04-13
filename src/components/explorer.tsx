@@ -857,6 +857,7 @@ export const Explorer: FC = () => {
         <Dropdown menu={{ items: contextMenu, onClick }} trigger={["contextMenu"]}>
           <div>
             <DirectoryTree
+              virtual
               tabIndex={-1}
               treeData={workspace.fileTree ? [workspace.fileTree] : []}
               fieldNames={{ key: "path", title: "path" }}
@@ -955,6 +956,7 @@ export const Explorer: FC = () => {
           </div>
         </Dropdown>
         <DirectoryTree
+          virtual
           tabIndex={-1}
           fieldNames={{ key: "path", title: "path" }}
           treeData={[nodeTree]}

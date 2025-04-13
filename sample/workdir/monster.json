@@ -4,11 +4,9 @@
   "desc": "怪物测试AI",
   "firstid": 1,
   "export": true,
-  "group": [
-    "Test"
-  ],
+  "group": ["Test"],
   "import": [],
-  "declvar": [],
+  "vars": [],
   "root": {
     "id": 1,
     "name": "Sequence",
@@ -22,9 +20,7 @@
           {
             "id": 3,
             "name": "GetHp",
-            "output": [
-              "hp"
-            ],
+            "output": ["hp"],
             "children": [
               {
                 "id": 4,
@@ -41,9 +37,7 @@
               "value": "hp",
               "gt": 50
             },
-            "input": [
-              "hp"
-            ]
+            "input": ["hp"]
           },
           {
             "id": 7,

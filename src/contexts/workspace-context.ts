@@ -1,18 +1,10 @@
-import { Matrix, TreeGraph } from "@antv/g6";
 import { BrowserWindow, dialog } from "@electron/remote";
 import { ipcRenderer } from "electron";
 import * as fs from "fs";
 import React from "react";
 import { create } from "zustand";
 import { NodeDef } from "../behavior3/src/behavior3";
-import {
-  FileVarDecl,
-  ImportDef,
-  NodeModel,
-  TreeGraphData,
-  TreeModel,
-  VarDef,
-} from "../misc/b3type";
+import { FileVarDecl, ImportDecl, NodeData, TreeData, VarDecl } from "../misc/b3type";
 import * as b3util from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
@@ -24,6 +16,7 @@ import { useSetting } from "./setting-context";
 let buildDir: string | undefined;
 
 export type EditEvent =
+  | "close"
   | "save"
   | "copy"
   | "paste"
@@ -45,25 +38,14 @@ export type EditEvent =
 
 export class EditorStore {
   path: string;
-  data: TreeModel;
+  data: TreeData;
 
-  root: TreeGraphData;
   declare: FileVarDecl;
 
-  autoId: number = 1;
-  dragSrcId?: string;
-  dragDstId?: string;
-  unsave: boolean = false;
-  modifiedTime: number = Date.now();
+  changed: boolean = false;
+  mtime: number;
   alertReload: boolean = false;
-  searchingText?: string;
-
-  historyStack: string[] = [];
-  historyIndex: number = 0;
-  selectedId: string | null = null;
-
-  graphMatrix?: Matrix;
-  graph!: TreeGraph;
+  focusId?: string | null;
 
   dispatch!: (event: EditEvent, data?: unknown) => void;
 
@@ -71,25 +53,12 @@ export class EditorStore {
     this.path = path;
     this.data = readTree(path);
     this.data.name = Path.basenameWithoutExt(path);
-    this.root = b3util.createTreeData(this.data.root);
-    this.modifiedTime = fs.statSync(path).mtimeMs;
+    this.mtime = fs.statSync(path).mtimeMs;
     this.declare = {
       import: this.data.import.map((v) => ({ path: v, vars: [], depends: [] })),
       subtree: [],
-      declvar: this.data.declvar.map((v) => ({ ...v })),
+      vars: this.data.vars.map((v) => ({ ...v })),
     };
-    this.autoId = b3util.refreshTreeDataId(this.root, this.data.firstid);
-    this.historyStack.push(
-      JSON.stringify(
-        {
-          ...this.data,
-          root: b3util.createNode(this.root),
-        },
-        null,
-        2
-      )
-    );
-    this.historyIndex = 0;
   }
 }
 
@@ -105,9 +74,11 @@ export type FileTreeType = {
 };
 
 export type EditNode = {
-  data: NodeModel;
-  editable: boolean;
-  limitError?: boolean;
+  data: NodeData;
+  error?: boolean;
+  prefix: string;
+  disabled: boolean;
+  subtreeEditable?: boolean;
 };
 
 export type EditNodeDef = {
@@ -119,12 +90,12 @@ export type EditTree = {
   name: string;
   desc?: string;
   export?: boolean;
-  firstid?: number;
+  prefix?: string;
   group: string[];
-  import: ImportDef[];
-  declvar: VarDef[];
-  subtree: ImportDef[];
-  root: TreeGraphData;
+  import: ImportDecl[];
+  vars: VarDecl[];
+  subtree: ImportDecl[];
+  root: NodeData;
 };
 
 export type FileMeta = {
@@ -170,12 +141,12 @@ export type WorkspaceStore = {
   isShowingSearch: boolean;
   onShowingSearch: (isShowingSearch: boolean) => void;
 
-  open: (path: string, selectedId?: number) => void;
-  edit: (path: string, selectedId?: number) => void;
+  open: (path: string, focusId?: string) => void;
+  edit: (path: string, focusId?: string) => void;
   close: (path: string) => void;
   find: (path: string) => EditorStore | undefined;
   relative: (path: string) => string;
-  refresh: (path: string) => boolean;
+  refresh: (path: string) => void;
 
   save: () => void;
   saveAs: () => void;
@@ -187,6 +158,8 @@ export type WorkspaceStore = {
   loadNodeDefs: () => void;
   nodeDefs: b3util.NodeDefs;
   groupDefs: string[];
+  usingGroups: typeof b3util.usingGroups;
+  usingVars: typeof b3util.usingVars;
 
   // edit node
   editingNode?: EditNode | null;
@@ -238,7 +211,7 @@ const loadFileTree = (workdir: string, filename: string) => {
 };
 
 const saveFile = (editor?: EditorStore) => {
-  if (editor?.unsave) {
+  if (editor?.changed) {
     editor.dispatch("save");
   }
 };
@@ -427,7 +400,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           nodeDefs: get().nodeDefs,
         });
         workspace.allFiles.forEach((file) => {
-          let tree: TreeModel | null = readTree(file.path);
+          let tree: TreeData | null = readTree(file.path);
           tree = b3util.processBatch(tree, file.path, batch);
           if (tree) {
             batch.onWriteFile?.(file.path, tree);
@@ -492,7 +465,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     set({ isShowingSearch });
   },
 
-  open: (path, selectedId) => {
+  open: (path, focusId) => {
     path = Path.posixPath(path);
     const workspace = get();
     let editor = workspace.editors.find((v) => v.path === path);
@@ -502,7 +475,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         workspace.editors.push(editor);
         set({ editors: workspace.editors });
         workspace.updateFileMeta(editor);
-        workspace.edit(editor.path, selectedId);
+        workspace.edit(editor.path, focusId);
 
         if (b3util.isNewVersion(editor.data.version)) {
           message.warning(i18n.t("alertNewVersion", { version: editor.data.version }));
@@ -512,19 +485,18 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         message.error(`invalid file: ${path}`);
       }
     } else if (workspace.editing !== editor) {
-      workspace.edit(editor.path, selectedId);
+      workspace.edit(editor.path, focusId);
     }
   },
 
-  edit: (path, selectedId) => {
+  edit: (path, focusId) => {
     const workspace = get();
     const editor = workspace.editors.find((v) => v.path === path);
-    if (editor && selectedId) {
-      editor.selectedId = selectedId.toString();
+    if (editor) {
+      editor.focusId = focusId;
     }
     set({ editing: editor, editingNode: null, editingTree: null });
     if (editor) {
-      workspace.refresh(editor.path);
       workspace.onEditingTree(editor);
     }
   },
@@ -533,7 +505,9 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const workspace = get();
     const idx = workspace.editors.findIndex((v) => v.path === path);
     const editors = workspace.editors.filter((v) => v.path !== path);
+    const editor = workspace.editors.find((v) => v.path === path);
     let editting = workspace.editing;
+    editor?.dispatch?.("close");
     if (editors.length && path === editting?.path) {
       editting = editors[idx === editors.length ? idx - 1 : idx];
       workspace.onEditingTree(editting);
@@ -561,7 +535,11 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     if (!editor) {
       return false;
     }
-    return b3util.refreshDeclare(editor.root, editor.data.group, editor.declare);
+    b3util.refreshVarDecl(editor.data.root, editor.data.group, editor.declare);
+    set({
+      usingGroups: b3util.usingGroups,
+      usingVars: b3util.usingVars,
+    });
   },
 
   save: () => {
@@ -592,7 +570,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
             hasEvent = true;
           }
         }
-        if (event === "change" && filename) {
+        if (filename && (event === "change" || workspace.allFiles.has(filename))) {
           if (filename === "node-config.b3-setting") {
             workspace.loadNodeDefs();
           } else {
@@ -600,8 +578,8 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
             const editor = workspace.find(fullpath);
             const modified = fs.statSync(fullpath).mtimeMs;
             b3util.files[Path.posixPath(filename)] = modified;
-            if (editor && editor.modifiedTime + 500 < modified) {
-              if (editor.unsave) {
+            if (editor && editor.mtime + 500 < modified) {
+              if (editor.changed) {
                 editor.alertReload = true;
                 set({ modifiedTime: Date.now() });
               } else {
@@ -642,7 +620,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         }
         fileMeta.exists = fs.existsSync(fileNode.path);
         if (fileMeta.desc === undefined) {
-          const file = readJson(fileNode.path) as TreeModel;
+          const file = readJson(fileNode.path) as TreeData;
           fileMeta.desc = file.desc ?? "";
           updated = true;
         }
@@ -668,6 +646,8 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
 
   nodeDefs: new b3util.NodeDefs(),
   groupDefs: [],
+  usingGroups: null,
+  usingVars: null,
   loadNodeDefs: () => {
     const workspace = get();
     b3util.initWorkdir(workspace.workdir, message.error.bind(message));
@@ -691,10 +671,10 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     set({
       editingTree: {
         ...editor.data,
-        root: editor.root,
+        root: editor.data.root,
         import: editor.declare.import,
-        declvar: editor.declare.declvar,
         subtree: editor.declare.subtree,
+        vars: editor.declare.vars,
       },
       editingNodeDef: null,
       editingNode: null,

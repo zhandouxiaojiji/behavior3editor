@@ -6,7 +6,7 @@
   "export": true,
   "group": [],
   "import": [],
-  "declvar": [
+  "vars": [
     {
       "name": "context",
       "desc": "上下文"
@@ -22,8 +22,6 @@
     "args": {
       "time": 1
     },
-    "input": [
-      "version"
-    ]
+    "input": ["version"]
   }
 }

@@ -5,7 +5,7 @@
   "firstid": 1,
   "group": [],
   "import": [],
-  "declvar": [],
+  "vars": [],
   "root": {
     "id": 1,
     "name": "Sequence",
@@ -15,9 +15,7 @@
         "id": 2,
         "name": "Cmp",
         "args": {},
-        "input": [
-          "x"
-        ]
+        "input": ["x"]
       }
     ]
   }

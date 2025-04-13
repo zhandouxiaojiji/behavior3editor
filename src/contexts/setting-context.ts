@@ -1,6 +1,7 @@
 import { app } from "@electron/remote";
 import * as fs from "fs";
 import { create } from "zustand";
+import { NodeLayout } from "../misc/b3type";
 import { readJson, writeJson } from "../misc/util";
 import { useWorkspace } from "./workspace-context";
 
@@ -9,7 +10,7 @@ const settingPath = app.getPath("userData") + "/settings.json";
 export type SettingModel = {
   recent: string[];
   buildDir: string;
-  layout?: "compact" | "normal";
+  layout: NodeLayout;
 };
 
 export type SettingStore = {

@@ -5,7 +5,7 @@
   "firstid": 1,
   "group": [],
   "import": [],
-  "declvar": [],
+  "vars": [],
   "root": {
     "id": 1,
     "name": "Sequence",
