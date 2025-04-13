@@ -580,6 +580,12 @@ const NodeInspector: FC = () => {
   );
 
   const submit = () => {
+    if (form.isFieldsValidating()) {
+      setTimeout(() => {
+        submit();
+      }, 10);
+      return;
+    }
     if (form.getFieldsError().some((e) => e.errors.length > 0)) {
       const data = workspace.editingNode.data;
       const editor = workspace.editing!;
@@ -827,7 +833,7 @@ const NodeInspector: FC = () => {
       });
       finish(form.getFieldsValue());
     } else {
-      form.submit();
+      submit();
     }
   };
 
@@ -835,7 +841,7 @@ const NodeInspector: FC = () => {
     if (form.getFieldValue("path") !== editingNode.data.path) {
       finish(form.getFieldsValue());
     } else {
-      form.submit();
+      submit();
     }
   };
 
