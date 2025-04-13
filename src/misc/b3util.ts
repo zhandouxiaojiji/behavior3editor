@@ -307,7 +307,7 @@ export const checkNodeArg = (data: NodeData, conf: NodeDef, i: number, verbose?:
   }
   if (arg.oneof !== undefined) {
     const idx = conf.input?.findIndex((v) => v.startsWith(arg.oneof!)) ?? -1;
-    if (!checkOneof(data.args?.[arg.name], data.input?.[idx])) {
+    if (!checkOneof(arg, data.args?.[arg.name], data.input?.[idx])) {
       if (verbose) {
         error(
           data,
@@ -321,7 +321,12 @@ export const checkNodeArg = (data: NodeData, conf: NodeDef, i: number, verbose?:
   return !hasError;
 };
 
-export const checkOneof = (argValue: unknown, inputValue: unknown) => {
+export const checkOneof = (arg: NodeArg, argValue: unknown, inputValue: unknown) => {
+  if (isNodeArgArray(arg)) {
+    if (argValue instanceof Array && argValue.length === 0) {
+      argValue = undefined;
+    }
+  }
   argValue = argValue === undefined ? "" : argValue;
   inputValue = inputValue ?? "";
   return (argValue !== "" && inputValue === "") || (argValue === "" && inputValue !== "");

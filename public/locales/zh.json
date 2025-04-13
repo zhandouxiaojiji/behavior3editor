@@ -121,7 +121,7 @@
   "node.name": "节点名称",
   "node.noNodeSelected": "未选择任务节点",
   "node.notFound": "节点 “{{name}}” 不存在",
-  "node.oneof.error": "输入项 “{{input}}” 和参数 “{{arg}}({{desc}})” 之中，只能选择设置其中之一",
+  "node.oneof.error": "输入项 “{{input}}” 和参数 “{{desc}}({{arg}})” 之中，只能选择设置其中之一",
   "node.oneof.inputNotfound": "输入项“{{input}}”不存在",
   "node.outputVariable": "输出变量",
   "node.pasteDataError": "粘贴数据出错",

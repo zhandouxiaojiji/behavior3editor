@@ -104,6 +104,15 @@
         "args": {
           "builtin": "afterRunFailure"
         }
+      },
+      {
+        "id": "13",
+        "name": "TestOneof",
+        "input": [
+          "context"
+        ],
+        "output": [],
+        "args": {}
       }
     ]
   }

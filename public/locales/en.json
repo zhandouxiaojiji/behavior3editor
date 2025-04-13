@@ -121,7 +121,7 @@
   "node.name": "Node name",
   "node.noNodeSelected": "No node selected",
   "node.notFound": "Node '{{name}}' not found",
-  "node.oneof.error": "Only one is allowed between input '{{input}}' and argument '{{arg}}({{desc}})'",
+  "node.oneof.error": "Only one is allowed between input '{{input}}' and argument '{{desc}}({{arg}})'",
   "node.oneof.inputNotfound": "Input '{{input}}' not found",
   "node.outputVariable": "Output variables",
   "node.pasteDataError": "Paste data error",

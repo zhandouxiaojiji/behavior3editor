@@ -416,5 +416,19 @@
       }
     ],
     "desc": "等待"
+  },
+  {
+    "name": "TestOneof",
+    "desc": "测试oneof",
+    "type": "Action",
+    "input": ["选项?"],
+    "args": [
+      {
+        "name": "option",
+        "desc": "选项",
+        "type": "int[]?",
+        "oneof": "选项"
+      }
+    ]
   }
 ]
