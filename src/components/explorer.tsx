@@ -481,7 +481,7 @@ const alertDeleteFile = (path: string) => {
               if (path === workspace.editing?.path) {
                 workspace.close(path);
               }
-              ipcRenderer.invoke("trashItem", path);
+              ipcRenderer.invoke("trash-item", path);
             }}
           >
             {i18n.t("moveToTrash")}
@@ -526,7 +526,7 @@ const alertDeleteFolder = (path: string) => {
                   workspace.close(editor.path);
                 }
               });
-              ipcRenderer.invoke("trashItem", path);
+              ipcRenderer.invoke("trash-item", path);
               alert.destroy();
             }}
           >
@@ -812,7 +812,7 @@ export const Explorer: FC = () => {
         break;
       }
       case "revealFile":
-        ipcRenderer.invoke("showItemInFolder", node.path);
+        ipcRenderer.invoke("show-item-in-folder", node.path);
         break;
       case "rename": {
         if (b3util.isTreeFile(node.path)) {

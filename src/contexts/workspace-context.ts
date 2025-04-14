@@ -113,7 +113,7 @@ export interface WorkspaceModel {
 }
 
 export type WorkspaceStore = {
-  init: (project: string) => void;
+  init: (project: string, files?: { path: string; active: boolean }[]) => void;
   createProject: () => void;
   openProject: (project?: string) => void;
   batchProject: () => void;
@@ -225,7 +225,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   path: "",
   settings: {},
 
-  init: (path) => {
+  init: (path, files) => {
     const workspace = get();
     if (!workspace.workdir) {
       try {
@@ -236,6 +236,20 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         workspace.loadNodeDefs();
         workspace.watch();
         useSetting.getState().appendRecent(path);
+        if (files?.length) {
+          for (const entry of files) {
+            try {
+              const editor = new EditorStore(entry.path);
+              workspace.editors.push(editor);
+              if (entry.active) {
+                workspace.open(editor.path);
+              }
+            } catch (error) {
+              console.error(error);
+              message.error(`invalid file: ${path}`);
+            }
+          }
+        }
       } catch (error) {
         console.error(error);
         if (!fs.existsSync(path)) {
@@ -505,6 +519,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     if (editor) {
       workspace.onEditingTree(editor);
     }
+    ipcRenderer.invoke("open-file", path);
   },
 
   close: (path) => {
@@ -523,6 +538,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       set({ editingNode: undefined, editingTree: undefined });
     }
     set({ editing: editting, editors: editors });
+    ipcRenderer.invoke("close-file", path);
   },
 
   find: (path) => {

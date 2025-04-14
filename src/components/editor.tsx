@@ -351,7 +351,13 @@ export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) =>
         }
       });
     }
-  }, [editorSize, workspace.editing, graph, t]);
+  }, [editorSize, workspace.editing, graph]);
+
+  useEffect(() => {
+    if (graph) {
+      graph.refresh();
+    }
+  }, [t]);
 
   return (
     <div

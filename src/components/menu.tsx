@@ -29,8 +29,8 @@ const getFocusedWebContents = () => {
   return BrowserWindow.getFocusedWindow()?.webContents;
 };
 
-ipcRenderer.on("open-project", (_, dir) => {
-  useWorkspace.getState().init(dir);
+ipcRenderer.on("open-project", (_, dir, files) => {
+  useWorkspace.getState().init(dir, files);
 });
 
 ipcRenderer.on("refresh-app-men", () => {

@@ -109,6 +109,7 @@ if (!app.requestSingleInstanceLock()) {
 
 interface Workspace {
   projectPath?: string;
+  files: { path: string; active: boolean }[];
   window: BrowserWindow;
 }
 
@@ -146,7 +147,7 @@ async function createWindow(projectPath?: string) {
     },
   });
 
-  const workspace = { projectPath, window: win };
+  const workspace = { projectPath, window: win, files: [] };
   windows.push(workspace);
 
   win.maximizable = true;
@@ -164,9 +165,6 @@ async function createWindow(projectPath?: string) {
   // Test actively push message to the Electron-Renderer
   win.webContents.on("did-finish-load", () => {
     win.webContents.setZoomFactor(1);
-    if (workspace.projectPath) {
-      win?.webContents.send("open-project", workspace.projectPath);
-    }
 
     const nextWin = BrowserWindow.getAllWindows().at(-1);
     if (nextWin) {
@@ -224,7 +222,7 @@ app.on("activate", () => {
 });
 
 // New window example arg: new windows url
-ipcMain.handle("open-win", (event, arg) => {
+ipcMain.handle("open-win", (e, arg) => {
   if (arg) {
     let workspace = windows.find((v) => v.projectPath === arg);
     if (workspace) {
@@ -232,7 +230,7 @@ ipcMain.handle("open-win", (event, arg) => {
       return;
     }
 
-    workspace = windows.find((v) => v.window.webContents.id === event.sender.id);
+    workspace = windows.find((v) => v.window.webContents.id === e.sender.id);
     if (workspace && !workspace.projectPath) {
       workspace.projectPath = arg;
       workspace.window.webContents.send("open-project", arg);
@@ -243,12 +241,39 @@ ipcMain.handle("open-win", (event, arg) => {
   createWindow(arg);
 });
 
-ipcMain.handle("trashItem", (_, arg) => {
+ipcMain.handle("ready-to-show", (e) => {
+  const workspace = windows.find((v) => v.window.webContents.id === e.sender.id);
+  if (workspace && workspace.projectPath) {
+    workspace.window.webContents.send("open-project", workspace.projectPath, workspace.files);
+  }
+});
+
+ipcMain.handle("open-file", (e, path: string) => {
+  const workspace = windows.find((v) => v.window.webContents.id === e.sender.id);
+  if (workspace) {
+    const entry = workspace.files.find((v) => v.path === path);
+    workspace.files.forEach((v) => (v.active = false));
+    if (entry) {
+      entry.active = true;
+    } else {
+      workspace.files.push({ path, active: true });
+    }
+  }
+});
+
+ipcMain.handle("close-file", (e, path: string) => {
+  const workspace = windows.find((v) => v.window.webContents.id === e.sender.id);
+  if (workspace) {
+    workspace.files = workspace.files.filter((v) => v.path !== path);
+  }
+});
+
+ipcMain.handle("trash-item", (_, arg) => {
   arg = arg.replace(/\//g, path.sep);
   shell.trashItem(arg).catch((e) => console.error(e));
 });
 
-ipcMain.handle("showItemInFolder", (_, arg) => {
+ipcMain.handle("show-item-in-folder", (_, arg) => {
   arg = arg.replace(/\//g, path.sep);
   shell.showItemInFolder(arg);
 });

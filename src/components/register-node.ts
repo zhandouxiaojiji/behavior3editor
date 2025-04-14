@@ -50,7 +50,7 @@ const calcTextWith = (text: string, fontSize?: string) => {
       const metrics = ctx.measureText(text);
       width = metrics.width;
       // width = width - (isMacos ? 1.6 : 0.8);
-      width *= isMacos ? 0.88 : 0.95;
+      width *= isMacos ? 0.88 : 0.98;
       textWidthMap.set(key, width);
     }
   }
