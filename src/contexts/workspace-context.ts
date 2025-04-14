@@ -10,7 +10,7 @@ import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
 import Path from "../misc/path";
 import { zhNodeDef } from "../misc/template";
-import { readJson, readTree, readWorkspace, writeJson } from "../misc/util";
+import { readJson, readTree, readWorkspace, writeJson, writeTree } from "../misc/util";
 import { useSetting } from "./setting-context";
 
 let buildDir: string | undefined;
@@ -377,6 +377,9 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         console.error(error);
         message.error(i18n.t("buildFailed"));
       }
+      if (workspace.editing) {
+        workspace.refresh(workspace.editing.path);
+      }
       console.debug = debug;
     }
   },
@@ -404,13 +407,16 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
           tree = b3util.processBatch(tree, file.path, batch);
           if (tree) {
             batch.onWriteFile?.(file.path, tree);
-            fs.writeFileSync(file.path, JSON.stringify(tree, null, 2));
+            writeTree(file.path, tree);
           }
         });
         batch.onComplete?.("success");
       } catch (error) {
         hasError = true;
         console.error(error);
+      }
+      if (workspace.editing) {
+        workspace.refresh(workspace.editing.path);
       }
       if (hasError) {
         message.error(i18n.t("batchFailed"));
