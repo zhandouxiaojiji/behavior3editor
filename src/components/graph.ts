@@ -633,8 +633,8 @@ export class Graph {
     const pos = this._graph.getElementPosition(id);
     const data = this._graph.getNodeData(id).data as unknown as NodeData;
     const [w, h] = data.size!;
-    const x = e.canvas.x - pos[0] + w / 2;
-    const y = e.canvas.y - pos[1] + h / 2;
+    const x = e.canvas.x - pos[0];
+    const y = e.canvas.y - pos[1];
     const states = this._getState(id);
     let dragto: TreeNodeState | undefined;
     if (x > w / 2) {
