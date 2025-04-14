@@ -338,7 +338,7 @@ const TreeInspector: FC = () => {
                       rules={[
                         {
                           validator(_, value: VarItem) {
-                            if (!value.name || !/^[_\w]+\w*$/.test(value.name)) {
+                            if (!value.name || !isValidVariableName(value.name)) {
                               return Promise.reject(new Error(t("tree.vars.invalidName")));
                             }
                             if (!value.desc) {
