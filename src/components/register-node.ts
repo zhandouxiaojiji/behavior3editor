@@ -278,8 +278,6 @@ export const TreeNodeStyle: { [s in TreeNodeState]?: { [n in ShapeName]?: NodeSt
 };
 
 class TreeNode extends Rect {
-  private _x = 0;
-  private _y = 0;
   private _width = 0;
   private _height = 0;
   private _radius = 0;
@@ -292,6 +290,24 @@ class TreeNode extends Rect {
   private _contentX = 0;
   private _contentY = 0;
   private _states: TreeNodeState[] = [];
+
+  protected override getKeyStyle(attributes: Required<RectStyleProps>) {
+    const style = super.getKeyStyle(attributes);
+    if (style) {
+      style.x = 0;
+      style.y = 0;
+    }
+    return style;
+  }
+
+  protected override getHaloStyle(attributes: Required<RectStyleProps>) {
+    const style = super.getHaloStyle(attributes);
+    if (style) {
+      style.x = 0;
+      style.y = 0;
+    }
+    return style;
+  }
 
   private drawBackground(attributes: Required<RectStyleProps>, container: Group) {
     attributes.size = [this._width, this._height];
@@ -306,8 +322,6 @@ class TreeNode extends Rect {
       "name-bg",
       GRect,
       {
-        x: this._x,
-        y: this._y,
         width: this._nodeLayout === "compact" ? this._width : 40,
         height: this._nodeLayout === "compact" ? 25 : this._height,
         fill: attributes.stroke,
@@ -324,8 +338,8 @@ class TreeNode extends Rect {
       GPath,
       {
         d: [
-          ["M", this._x + 46, this._y + 23],
-          ["L", this._x + this._width - 40, this._y + 23],
+          ["M", 46, 23],
+          ["L", this._width - 40, 23],
         ],
         stroke: "#666",
         lineWidth: 1,
@@ -348,8 +362,8 @@ class TreeNode extends Rect {
         text: this._prefix + this.id,
         textAlign: "right",
         textBaseline: "top",
-        x: this._x - 3,
-        y: this._y + this._height / 2 - 8,
+        x: -3,
+        y: this._height / 2 - 8,
       },
       container
     );
@@ -363,8 +377,8 @@ class TreeNode extends Rect {
       "icon",
       GImage,
       {
-        x: this._x + 5,
-        y: this._y + (this._nodeLayout === "compact" ? 3 : this._height / 2 - 16),
+        x: 5,
+        y: this._nodeLayout === "compact" ? 3 : this._height / 2 - 16,
         height: this._nodeLayout === "compact" ? 18 : 30,
         width: this._nodeLayout === "compact" ? 18 : 30,
         src: img,
@@ -379,8 +393,8 @@ class TreeNode extends Rect {
       "status",
       GImage,
       {
-        x: this._x + this._width - 18,
-        y: this._y + 3,
+        x: this._width - 18,
+        y: 3,
         height: this._nodeLayout === "compact" ? 18 : 20,
         width: this._nodeLayout === "compact" ? 18 : 20,
         src: `./icons/status${status}.svg`,
@@ -399,8 +413,8 @@ class TreeNode extends Rect {
         fontWeight: "bolder",
         text: this._data.name,
         textBaseline: "top",
-        x: this._x + (this._nodeLayout === "compact" ? 26 : 46),
-        y: this._y + 5,
+        x: this._nodeLayout === "compact" ? 26 : 46,
+        y: 5,
       },
       container
     );
@@ -411,8 +425,8 @@ class TreeNode extends Rect {
       "debug",
       GImage,
       {
-        x: this._x + this._width - 30,
-        y: this._y + 4,
+        x: this._width - 30,
+        y: 4,
         height: 16,
         width: 16,
         src: `./icons/Debug.svg`,
@@ -427,8 +441,8 @@ class TreeNode extends Rect {
       "disabled",
       GImage,
       {
-        x: this._x + this._width - 30 - (this._data.debug ? 18 : 0),
-        y: this._y + 4,
+        x: this._width - 30 - (this._data.debug ? 18 : 0),
+        y: 4,
         height: 16,
         width: 16,
         src: `./icons/Disabled.svg`,
@@ -582,8 +596,8 @@ class TreeNode extends Rect {
       "subtree",
       GRect,
       {
-        x: this._x - 10,
-        y: this._y - 10,
+        x: -10,
+        y: -10,
         width: this._width + 20,
         height: this._height + 20,
         stroke: "#a5b1be",
@@ -619,8 +633,6 @@ class TreeNode extends Rect {
       "drag-src",
       GRect,
       {
-        x: this._x,
-        y: this._y,
         width: this._width,
         height: this._height,
         lineWidth: 0,
@@ -636,8 +648,6 @@ class TreeNode extends Rect {
       "drag-up",
       GRect,
       {
-        x: this._x,
-        y: this._y,
         width: this._width,
         height: this._height / 2,
         lineWidth: 2,
@@ -655,8 +665,7 @@ class TreeNode extends Rect {
       "drag-down",
       GRect,
       {
-        x: this._x,
-        y: this._y + this._height / 2,
+        y: this._height / 2,
         width: this._width,
         height: this._height / 2,
         lineWidth: 2,
@@ -674,8 +683,7 @@ class TreeNode extends Rect {
       "drag-right",
       GRect,
       {
-        x: this._x + this._width / 2,
-        y: this._y,
+        x: this._width / 2,
         width: this._width / 2,
         height: this._height,
         lineWidth: 2,
@@ -709,8 +717,8 @@ class TreeNode extends Rect {
         text: attributes.collapsed ? "+" : "-",
         textAlign: "center",
         textBaseline: "middle",
-        x: this._width / 2,
-        y: 0,
+        x: this._width,
+        y: this._height / 2,
         visibility: this._data.children?.length ? "visible" : "hidden",
       },
       container
@@ -754,8 +762,6 @@ class TreeNode extends Rect {
     const [width, height] = data.size;
 
     this._prefix = (node.prefix as string) ?? "";
-    this._x = -width / 2;
-    this._y = -height / 2;
     this._width = width;
     this._height = height;
     this._radius = 4;
@@ -764,8 +770,8 @@ class TreeNode extends Rect {
     this._classify = classify;
     this._nodeLayout = useSetting.getState().data.layout;
     this._contentWidth = 220;
-    this._contentX = this._x + (this._nodeLayout === "compact" ? 6 : 46);
-    this._contentY = this._y + 28;
+    this._contentX = this._nodeLayout === "compact" ? 6 : 46;
+    this._contentY = 28;
 
     this._states = this.context.graph.getElementState(this.id) as TreeNodeState[];
     this.resetStyle();

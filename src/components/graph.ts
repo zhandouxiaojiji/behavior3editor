@@ -91,7 +91,7 @@ export class Graph {
         },
         getHeight: ({ data }: { data: NodeData }) => data.size![1],
         getWidth: ({ data }: { data: NodeData }) => data.size![0],
-        getVGap: () => 20,
+        getVGap: () => 10,
         getHGap: () => 30,
       },
     });
