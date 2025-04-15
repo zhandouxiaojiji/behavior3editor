@@ -105,11 +105,11 @@ const renameFile = (oldPath: string, newPath: string) => {
       for (const editor of workspace.editors) {
         if (isDirectory) {
           if (editor.path.startsWith(oldPath)) {
-            editor.dispatch("rename", editor.path.replace(oldPath, newPath));
+            editor.dispatch?.("rename", editor.path.replace(oldPath, newPath));
           }
         } else {
           if (editor.path === oldPath) {
-            editor.dispatch("rename", newPath);
+            editor.dispatch?.("rename", newPath);
           }
         }
       }
@@ -406,12 +406,12 @@ const doMoveFile = (path: string, newPath: string) => {
     fs.renameSync(path, newPath);
     for (const editor of workspace.editors) {
       if (editor.path.startsWith(path)) {
-        editor.dispatch("rename", destDir + "/" + Path.basename(editor.path));
+        editor.dispatch?.("rename", destDir + "/" + Path.basename(editor.path));
       }
       console.log("editor move", editor.path === newPath, editor.path, newPath);
       if (editor.path.startsWith(newPath)) {
         console.log("editor reload", editor.path === newPath, editor.path, newPath);
-        editor.dispatch("refresh");
+        editor.dispatch?.("refresh");
       }
     }
   };

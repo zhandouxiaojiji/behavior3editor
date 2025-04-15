@@ -80,12 +80,12 @@ export const Workspace: FC = () => {
 
   useKeyDown(Hotkey.SearchNode, keysRef, (event) => {
     event.preventDefault();
-    workspace.editing?.dispatch("searchNode");
+    workspace.editing?.dispatch?.("searchNode");
   });
 
   useKeyDown(Hotkey.JumpNode, keysRef, (event) => {
     event.preventDefault();
-    workspace.editing?.dispatch("jumpNode");
+    workspace.editing?.dispatch?.("jumpNode");
   });
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export const Workspace: FC = () => {
                 type="primary"
                 onClick={() => {
                   editor.alertReload = false;
-                  editor.dispatch("reload");
+                  editor.dispatch?.("reload");
                   alert.destroy();
                   keysRef.current?.focus();
                   setShowingAlert(false);
@@ -164,7 +164,7 @@ export const Workspace: FC = () => {
             <Button
               type="primary"
               onClick={() => {
-                editor.dispatch("save");
+                editor.dispatch?.("save");
                 workspace.close(editor.path);
                 alert.destroy();
                 keysRef.current?.focus();
@@ -232,7 +232,7 @@ export const Workspace: FC = () => {
             <Button
               type="primary"
               onClick={() => {
-                unsaves.forEach((editor) => editor.dispatch("save"));
+                unsaves.forEach((editor) => editor.dispatch?.("save"));
                 alert.destroy();
                 window.close();
                 setShowingAlert(false);

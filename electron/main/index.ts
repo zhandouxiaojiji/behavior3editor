@@ -109,7 +109,6 @@ if (!app.requestSingleInstanceLock()) {
 
 interface Workspace {
   projectPath?: string;
-  files: { path: string; active: boolean }[];
   window: BrowserWindow;
 }
 
@@ -244,27 +243,7 @@ ipcMain.handle("open-win", (e, arg) => {
 ipcMain.handle("ready-to-show", (e) => {
   const workspace = windows.find((v) => v.window.webContents.id === e.sender.id);
   if (workspace && workspace.projectPath) {
-    workspace.window.webContents.send("open-project", workspace.projectPath, workspace.files);
-  }
-});
-
-ipcMain.handle("open-file", (e, path: string) => {
-  const workspace = windows.find((v) => v.window.webContents.id === e.sender.id);
-  if (workspace) {
-    const entry = workspace.files.find((v) => v.path === path);
-    workspace.files.forEach((v) => (v.active = false));
-    if (entry) {
-      entry.active = true;
-    } else {
-      workspace.files.push({ path, active: true });
-    }
-  }
-});
-
-ipcMain.handle("close-file", (e, path: string) => {
-  const workspace = windows.find((v) => v.window.webContents.id === e.sender.id);
-  if (workspace) {
-    workspace.files = workspace.files.filter((v) => v.path !== path);
+    workspace.window.webContents.send("open-project", workspace.projectPath);
   }
 });
 

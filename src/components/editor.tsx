@@ -144,7 +144,7 @@ export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) =>
       e.preventDefault();
       e.stopImmediatePropagation();
       e.stopPropagation();
-      editor.dispatch(hotkeyMap[key]);
+      editor.dispatch?.(hotkeyMap[key]);
     }
   );
 
@@ -153,7 +153,7 @@ export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) =>
       return;
     }
     e.stopPropagation();
-    editor.dispatch(hotkeyMap[key]);
+    editor.dispatch?.(hotkeyMap[key]);
   });
 
   const searchInputRef = useRef<InputRef>(null);
@@ -493,7 +493,7 @@ export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) =>
       )}
 
       <Dropdown
-        menu={{ items: menuItems, onClick: (info) => editor.dispatch(info.key as EditEvent) }}
+        menu={{ items: menuItems, onClick: (info) => editor.dispatch?.(info.key as EditEvent) }}
         trigger={["contextMenu"]}
       >
         <div tabIndex={-1} style={{ width: "100%", height: "100%" }} ref={graphRef} />

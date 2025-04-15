@@ -105,7 +105,7 @@ const VarDeclItem: FC<VarItemProps> = ({ name, onChange, onRemove, disabled, ...
             borderTop: "1px solid #3d506c",
             borderBottom: "1px solid #3d506c",
           }}
-          onClick={() => value.name && editing?.dispatch("clickVar", value.name)}
+          onClick={() => value.name && editing?.dispatch?.("clickVar", value.name)}
         >
           <AimOutlined />
           <span style={{ marginLeft: 4 }}>{value?.count ?? 0}</span>
@@ -254,7 +254,7 @@ const TreeInspector: FC = () => {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finish = (values: any) => {
-    workspace.editing?.dispatch("updateTree", {
+    workspace.editing?.dispatch?.("updateTree", {
       name: values.name,
       desc: values.desc,
       export: values.export,
@@ -812,7 +812,7 @@ const NodeInspector: FC = () => {
       data.output = [];
     }
 
-    workspace.editing?.dispatch("updateNode", {
+    workspace.editing?.dispatch?.("updateNode", {
       data: data,
     } as EditNode);
   };
@@ -1500,7 +1500,7 @@ const NodeInspector: FC = () => {
               type="primary"
               style={{ width: "100%" }}
               icon={<EditOutlined />}
-              onClick={() => workspace.editing?.dispatch("editSubtree")}
+              onClick={() => workspace.editing?.dispatch?.("editSubtree")}
             >
               {t("editSubtree")}
             </Button>

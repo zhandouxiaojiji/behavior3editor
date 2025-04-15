@@ -47,7 +47,7 @@ export class EditorStore {
   alertReload: boolean = false;
   focusId?: string | null;
 
-  dispatch!: (event: EditEvent, data?: unknown) => void;
+  dispatch?: (event: EditEvent, data?: unknown) => void;
 
   constructor(path: string) {
     this.path = path;
@@ -113,7 +113,7 @@ export interface WorkspaceModel {
 }
 
 export type WorkspaceStore = {
-  init: (project: string, files?: { path: string; active: boolean }[]) => void;
+  init: (project: string) => void;
   createProject: () => void;
   openProject: (project?: string) => void;
   batchProject: () => void;
@@ -212,7 +212,7 @@ const loadFileTree = (workdir: string, filename: string) => {
 
 const saveFile = (editor?: EditorStore) => {
   if (editor?.changed) {
-    editor.dispatch("save");
+    editor.dispatch?.("save");
   }
 };
 
@@ -225,8 +225,9 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   path: "",
   settings: {},
 
-  init: (path, files) => {
+  init: (path) => {
     const workspace = get();
+    const files = useSetting.getState().getEditors(path);
     if (!workspace.workdir) {
       try {
         workspace.workdir = Path.dirname(path).replaceAll(Path.sep, "/");
@@ -236,9 +237,10 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         workspace.loadNodeDefs();
         workspace.watch();
         useSetting.getState().appendRecent(path);
-        if (files?.length) {
+        if (files.length) {
           for (const entry of files) {
             try {
+              entry.path = Path.posixPath(entry.path);
               const editor = new EditorStore(entry.path);
               workspace.editors.push(editor);
               if (entry.active) {
@@ -271,7 +273,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     });
     b3util.setCheckExpr(checkExpr);
     saveWorkspace();
-    useWorkspace.getState().editing?.dispatch("refresh");
+    get().editing?.dispatch?.("refresh");
   },
 
   setupBuildScript: () => {
@@ -365,17 +367,18 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
 
   buildProject: async () => {
     const workspace = get();
+    const setting = useSetting.getState();
     if (workspace.path) {
       if (!buildDir) {
         buildDir = dialog.showOpenDialogSync({
           properties: ["openDirectory", "createDirectory"],
-          defaultPath: useSetting.getState().data.buildDir,
+          defaultPath: setting.getBuildDir(workspace.path),
         })?.[0];
       }
     }
     if (buildDir) {
       for (const editor of workspace.editors) {
-        editor.dispatch("save");
+        editor.dispatch?.("save");
       }
       const debug = console.debug;
       console.debug = () => {};
@@ -386,7 +389,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         } else {
           message.success(i18n.t("buildCompleted"));
         }
-        useSetting.getState().setBuildDir(buildDir);
+        setting.setBuildDir(workspace.path, buildDir);
       } catch (error) {
         console.error(error);
         message.error(i18n.t("buildFailed"));
@@ -511,6 +514,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
 
   edit: (path, focusId) => {
     const workspace = get();
+    const setting = useSetting.getState();
     const editor = workspace.editors.find((v) => v.path === path);
     if (editor) {
       editor.focusId = focusId;
@@ -519,11 +523,11 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     if (editor) {
       workspace.onEditingTree(editor);
     }
-    ipcRenderer.invoke("open-file", path);
   },
 
   close: (path) => {
     const workspace = get();
+    const setting = useSetting.getState();
     const idx = workspace.editors.findIndex((v) => v.path === path);
     const editors = workspace.editors.filter((v) => v.path !== path);
     const editor = workspace.editors.find((v) => v.path === path);
@@ -538,7 +542,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       set({ editingNode: undefined, editingTree: undefined });
     }
     set({ editing: editting, editors: editors });
-    ipcRenderer.invoke("close-file", path);
+    setting.closeEditor(workspace.path, path);
   },
 
   find: (path) => {
@@ -605,7 +609,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
                 editor.alertReload = true;
                 set({ modifiedTime: Date.now() });
               } else {
-                editor.dispatch("reload");
+                editor.dispatch?.("reload");
               }
             }
           }
@@ -674,7 +678,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const workspace = get();
     b3util.initWorkdir(workspace.workdir, message.error.bind(message));
     set({ nodeDefs: b3util.nodeDefs, groupDefs: b3util.groupDefs });
-    workspace.editing?.dispatch("refresh");
+    workspace.editing?.dispatch?.("refresh");
   },
 
   // node edit
@@ -689,7 +693,9 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   // tree edit
   onEditingTree: (editor) => {
     const workspace = get();
+    const setting = useSetting.getState();
     workspace.refresh(editor.path);
+    setting.openEditor(workspace.path, editor.path);
     set({
       editingTree: {
         ...editor.data,
