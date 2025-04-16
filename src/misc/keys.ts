@@ -1,5 +1,5 @@
 import { BrowserWindow } from "@electron/remote";
-import useKeyPress, { KeyFilter, KeyType, Options, Target } from "ahooks/lib/useKeyPress";
+import _useKeyPress, { KeyFilter, KeyType, Options, Target } from "ahooks/lib/useKeyPress";
 import { Key } from "ts-key-enum";
 
 export const isMacos = process.platform === "darwin";
@@ -13,7 +13,7 @@ const hotkey = (key: string) => {
   return key.toLowerCase();
 };
 
-export const useKeyDown = (
+export const useKeyPress = (
   keyFilter: KeyFilter,
   target: Target,
   eventHandler: (event: KeyboardEvent, key: KeyType) => void,
@@ -22,7 +22,7 @@ export const useKeyDown = (
   option = option || {};
   option.target = target;
   option.exactMatch = true;
-  return useKeyPress(keyFilter, (e, key) => !e.repeat && eventHandler(e, key), option);
+  return _useKeyPress(keyFilter, (e, key) => !e.repeat && eventHandler(e, key), option);
 };
 
 export const Hotkey = {

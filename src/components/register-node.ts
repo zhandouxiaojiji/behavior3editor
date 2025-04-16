@@ -254,15 +254,15 @@ export const TreeNodeStyle: { [s in TreeNodeState]?: { [n in ShapeName]?: NodeSt
   },
   highlightargs: {
     "args-bg": { visibility: "visible" },
-    "args-text": { fill: "white", fontWeight: "bolder" },
+    "args-text": { fill: "white" },
   },
   highlightinput: {
     "input-bg": { visibility: "visible" },
-    "input-text": { fill: "white", fontWeight: "bolder" },
+    "input-text": { fill: "white" },
   },
   highlightoutput: {
     "output-bg": { visibility: "visible" },
-    "output-text": { fill: "white", fontWeight: "bolder" },
+    "output-text": { fill: "white" },
   },
   highlightgray: {
     "args-text": { fill: "#666" },
@@ -414,7 +414,7 @@ class TreeNode extends Rect {
         text: this._data.name,
         textBaseline: "top",
         x: this._nodeLayout === "compact" ? 26 : 46,
-        y: 5,
+        y: isMacos ? 3 : 2,
       },
       container
     );

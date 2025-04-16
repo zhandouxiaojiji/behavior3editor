@@ -17,7 +17,7 @@ import { getNodeType } from "../misc/b3type";
 import * as b3util from "../misc/b3util";
 import { modal } from "../misc/hooks";
 import i18n from "../misc/i18n";
-import { Hotkey, isMacos, useKeyDown } from "../misc/keys";
+import { Hotkey, isMacos, useKeyPress } from "../misc/keys";
 import Path from "../misc/path";
 
 const { DirectoryTree } = Tree;
@@ -631,7 +631,7 @@ export const Explorer: FC = () => {
 
   const keysRef = useRef<HTMLDivElement>(null);
 
-  useKeyDown([Hotkey.F2, isMacos ? Hotkey.Enter : ""], keysRef, (event) => {
+  useKeyPress([Hotkey.F2, isMacos ? Hotkey.Enter : ""], keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node && node !== workspace.fileTree && !node.editing) {
@@ -639,7 +639,7 @@ export const Explorer: FC = () => {
     }
   });
 
-  useKeyDown([Hotkey.Delete, isMacos ? Hotkey.MacDelete : ""], keysRef, (event) => {
+  useKeyPress([Hotkey.Delete, isMacos ? Hotkey.MacDelete : ""], keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node && node !== workspace.fileTree) {
@@ -647,7 +647,7 @@ export const Explorer: FC = () => {
     }
   });
 
-  useKeyDown(Hotkey.Escape, keysRef, (event) => {
+  useKeyPress(Hotkey.Escape, keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node) {
@@ -656,7 +656,7 @@ export const Explorer: FC = () => {
     }
   });
 
-  useKeyDown(Hotkey.Duplicate, keysRef, (event) => {
+  useKeyPress(Hotkey.Duplicate, keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node && node.isLeaf) {
@@ -664,7 +664,7 @@ export const Explorer: FC = () => {
     }
   });
 
-  useKeyDown(Hotkey.Copy, keysRef, (event) => {
+  useKeyPress(Hotkey.Copy, keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node && node.isLeaf) {
@@ -672,7 +672,7 @@ export const Explorer: FC = () => {
     }
   });
 
-  useKeyDown(Hotkey.Paste, keysRef, (event) => {
+  useKeyPress(Hotkey.Paste, keysRef, (event) => {
     event.preventDefault();
     const node = findFile(selectedKeys[0], workspace.fileTree!);
     if (node) {

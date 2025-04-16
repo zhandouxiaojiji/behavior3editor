@@ -19,7 +19,7 @@ import {
   useWorkspace,
 } from "../contexts/workspace-context";
 import i18n from "../misc/i18n";
-import { Hotkey, isMacos, useKeyDown } from "../misc/keys";
+import { Hotkey, isMacos, useKeyPress } from "../misc/keys";
 import { mergeClassNames } from "../misc/util";
 import { FilterOption, Graph } from "./graph";
 import "./register-node";
@@ -129,7 +129,7 @@ export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) =>
   );
 
   const keysRef = useRef<HTMLDivElement>(null);
-  useKeyDown(
+  useKeyPress(
     [
       Hotkey.Copy,
       Hotkey.Replace,
@@ -148,7 +148,7 @@ export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) =>
     }
   );
 
-  useKeyDown([Hotkey.Undo, Hotkey.Redo], null, (e, key) => {
+  useKeyPress([Hotkey.Undo, Hotkey.Redo], null, (e, key) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
       return;
     }

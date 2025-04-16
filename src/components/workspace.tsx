@@ -1,5 +1,4 @@
 import { app } from "@electron/remote";
-import { useKeyPress } from "ahooks";
 import { Button, Flex, Layout, Space, Tabs, Tag, Tooltip } from "antd";
 import { FC, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,7 +11,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useSetting } from "../contexts/setting-context";
 import { EditorStore, useWorkspace } from "../contexts/workspace-context";
 import { modal } from "../misc/hooks";
-import { Hotkey, isMacos, setInputFocus, useKeyDown } from "../misc/keys";
+import { Hotkey, isMacos, setInputFocus, useKeyPress } from "../misc/keys";
 import Path from "../misc/path";
 import { Editor } from "./editor";
 import { Explorer } from "./explorer";
@@ -47,21 +46,21 @@ export const Workspace: FC = () => {
 
   const keysRef = useRef<HTMLDivElement>(null);
 
-  useKeyDown(Hotkey.Build, keysRef, (event) => {
+  useKeyPress(Hotkey.Build, keysRef, (event) => {
     event.preventDefault();
     workspace.buildProject();
   });
 
-  useKeyDown(Hotkey.Save, keysRef, (event) => {
+  useKeyPress(Hotkey.Save, keysRef, (event) => {
     event.preventDefault();
     workspace.save();
   });
 
-  useKeyPress(Hotkey.CloseEditor, (event) => {
+  useKeyPress(Hotkey.CloseEditor, null, (event) => {
     event.preventDefault();
   });
 
-  useKeyDown(Hotkey.CloseEditor, null, (event) => {
+  useKeyPress(Hotkey.CloseEditor, null, (event) => {
     if (workspace.editing) {
       event.preventDefault();
       if (workspace.editing.changed) {
@@ -73,17 +72,17 @@ export const Workspace: FC = () => {
     keysRef.current?.focus();
   });
 
-  useKeyDown(Hotkey.SearchTree, keysRef, (event) => {
+  useKeyPress(Hotkey.SearchTree, keysRef, (event) => {
     event.preventDefault();
     workspace.onShowingSearch(true);
   });
 
-  useKeyDown(Hotkey.SearchNode, keysRef, (event) => {
+  useKeyPress(Hotkey.SearchNode, keysRef, (event) => {
     event.preventDefault();
     workspace.editing?.dispatch?.("searchNode");
   });
 
-  useKeyDown(Hotkey.JumpNode, keysRef, (event) => {
+  useKeyPress(Hotkey.JumpNode, keysRef, (event) => {
     event.preventDefault();
     workspace.editing?.dispatch?.("jumpNode");
   });
