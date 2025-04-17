@@ -227,7 +227,8 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
 
   init: (path) => {
     const workspace = get();
-    const files = useSetting.getState().getEditors(path);
+    const setting = useSetting.getState();
+    const files = setting.getEditors(path);
     if (!workspace.workdir) {
       try {
         workspace.workdir = Path.dirname(path).replaceAll(Path.sep, "/");
@@ -236,15 +237,19 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         workspace.loadTrees();
         workspace.loadNodeDefs();
         workspace.watch();
-        useSetting.getState().appendRecent(path);
+        setting.appendRecent(path);
         if (files.length) {
           for (const entry of files) {
             try {
-              entry.path = Path.posixPath(entry.path);
-              const editor = new EditorStore(entry.path);
-              workspace.editors.push(editor);
-              if (entry.active) {
-                workspace.open(editor.path);
+              if (fs.existsSync(entry.path)) {
+                entry.path = Path.posixPath(entry.path);
+                const editor = new EditorStore(entry.path);
+                workspace.editors.push(editor);
+                if (entry.active) {
+                  workspace.open(editor.path);
+                }
+              } else {
+                setting.closeEditor(workspace.path, entry.path);
               }
             } catch (error) {
               console.error(error);
