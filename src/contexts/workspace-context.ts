@@ -519,7 +519,6 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
 
   edit: (path, focusId) => {
     const workspace = get();
-    const setting = useSetting.getState();
     const editor = workspace.editors.find((v) => v.path === path);
     if (editor) {
       editor.focusId = focusId;

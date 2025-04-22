@@ -329,6 +329,20 @@ export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) =>
     };
   }
 
+  const refreshGraph = async () => {
+    if (graph.hasSubtreeUpdated()) {
+      await graph.refreshSubtree();
+    } else {
+      await graph.refresh();
+    }
+    if (editor.focusId) {
+      graph.focusNode(editor.focusId);
+      editor.focusId = null;
+    } else if (graph.selectedId) {
+      graph.selectNode(graph.selectedId);
+    }
+  };
+
   // check should rebuild graph
   useEffect(() => {
     if (!editorSize || (editorSize.width === 0 && editorSize.height === 0)) {
@@ -341,15 +355,7 @@ export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) =>
 
     if (graph && workspace.editing === editor) {
       graph.setSize(editorSize.width, editorSize.height);
-
-      graph.refreshSubtree().then(() => {
-        if (editor.focusId) {
-          graph.focusNode(editor.focusId);
-          editor.focusId = null;
-        } else if (graph.selectedId) {
-          graph.selectNode(graph.selectedId);
-        }
-      });
+      refreshGraph();
     }
   }, [editorSize, workspace.editing, graph]);
 

@@ -137,19 +137,21 @@ export class Graph {
     const data = JSON.parse(str) as TreeData;
     this.editor.declare.import = data.import.map((v) => ({ path: v, vars: [], depends: [] }));
     this.editor.declare.vars = data.vars.map((v) => ({ ...v }));
-    await this._update(data);
+    await this._update(data, true, true);
     // update tree inspector
     this.selectNode(null);
     this.onChange?.();
   }
 
-  private async _update(data: TreeData, refreshId: boolean = true) {
+  private async _update(data: TreeData, refreshId: boolean = true, refreshVars: boolean = false) {
     this.editor.data = data;
     if (refreshId) {
       b3util.refreshNodeData(this.data.root, 1);
     }
 
-    workspace.refresh(this.editor.path);
+    if (refreshVars) {
+      workspace.refresh(this.editor.path);
+    }
 
     // clear current target avoid hover error
     const graph = this._graph as unknown as IGraph;
@@ -909,9 +911,9 @@ export class Graph {
     this._storeHistory();
   }
 
-  private _isSubtreeUpdated(data: NodeData) {
+  hasSubtreeUpdated() {
     let updated = false;
-    b3util.dfs(data, (node) => {
+    b3util.dfs(this.data.root, (node) => {
       if (node.path && b3util.files[node.path] !== node.mtime) {
         updated = true;
       }
@@ -920,11 +922,8 @@ export class Graph {
   }
 
   async refreshSubtree() {
-    if (this._isSubtreeUpdated(this.data.root)) {
-      this.selectNode(null);
-      await this.refresh();
-      this._storeHistory();
-    }
+    await this.refresh();
+    this._storeHistory();
   }
 
   async save() {
