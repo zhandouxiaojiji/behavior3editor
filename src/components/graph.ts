@@ -98,6 +98,7 @@ export class Graph {
     this._graph.on(G6CanvasEvent.CLICK, this._onCanvasClick.bind(this));
     this._graph.on(G6NodeEvent.CONTEXT_MENU, this._onContextMenu.bind(this));
     this._graph.on(G6NodeEvent.CLICK, this._onClick.bind(this));
+    this._graph.on(G6NodeEvent.DBLCLICK, this._onDblClick.bind(this));
     this._graph.on(G6NodeEvent.DRAG_START, this._onDragStart.bind(this));
     this._graph.on(G6NodeEvent.DRAG_END, this._onDragEnd.bind(this));
     this._graph.on(G6NodeEvent.DRAG_ENTER, this._onDragEnter.bind(this));
@@ -560,6 +561,11 @@ export class Graph {
     }
     this.clickVar(...names);
     this.selectNode(e.target.id);
+  }
+
+  private _onDblClick(e: IG6PointerEvent<G6Rect>) {
+    this.selectNode(e.target.id);
+    this.editSubtree();
   }
 
   private _isDragState(state: string): boolean {
