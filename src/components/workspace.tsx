@@ -117,6 +117,9 @@ export const Workspace: FC = () => {
     ],
     keysRef,
     (e, key) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
       e.preventDefault();
       e.stopImmediatePropagation();
       e.stopPropagation();
