@@ -14,6 +14,7 @@ import { useWorkspace } from "../contexts/workspace-context";
 import * as b3util from "../misc/b3util";
 import i18n from "../misc/i18n";
 import { Hotkey, isMacos } from "../misc/keys";
+import Path from "../misc/path";
 
 const MenuItemLabel: FC<FlexProps> = (itemProps) => {
   return (
@@ -107,6 +108,7 @@ export const Menu: FC<LayoutProps> = () => {
             click: () => {
               console.log("newFile");
               const path = dialog.showSaveDialogSync({
+                defaultPath: workspace.workdir.replaceAll("/", Path.sep),
                 properties: ["showOverwriteConfirmation"],
                 filters: [{ name: "Json", extensions: ["json"] }],
               });

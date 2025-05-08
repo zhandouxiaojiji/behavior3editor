@@ -189,8 +189,8 @@ b3util.setSizeCalculator((data: NodeData) => {
     height += 20;
   }
   updateHeight(data.args);
-  updateHeight(data.input);
-  updateHeight(data.output);
+  data.input?.find((v) => !!v) && updateHeight(data.input);
+  data.output?.find((v) => !!v) && updateHeight(data.output);
   return [width, height];
 });
 
@@ -513,7 +513,7 @@ class TreeNode extends Rect {
   }
 
   private drawInputText(attributes: Required<RectStyleProps>, container: Group) {
-    const input = this._data.input ?? [];
+    const input = this._data.input?.find((v) => !!v) ? this._data.input : [];
     const { str, line } =
       input.length > 0
         ? toBreakWord(`${i18n.t("regnode.input")}${JSON.stringify(input)}`, 200)
@@ -552,7 +552,7 @@ class TreeNode extends Rect {
   }
 
   private drawOutputText(attributes: Required<RectStyleProps>, container: Group) {
-    const output = this._data.output ?? [];
+    const output = this._data.output?.find((v) => !!v) ? this._data.output : [];
     const { str, line } =
       output.length > 0
         ? toBreakWord(`${i18n.t("regnode.output")}${JSON.stringify(output)}`, 200)

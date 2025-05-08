@@ -976,7 +976,7 @@ export class Graph {
     }
 
     const ret = await dialog.showSaveDialog({
-      defaultPath: workspace.workdir,
+      defaultPath: workspace.workdir.replaceAll("/", Path.sep),
       properties: ["showOverwriteConfirmation"],
       filters: [{ name: "Json", extensions: ["json"] }],
     });
