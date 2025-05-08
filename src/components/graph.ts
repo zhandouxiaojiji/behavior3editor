@@ -1001,6 +1001,8 @@ export class Graph {
     } as TreeData;
     fs.writeFileSync(subpath, JSON.stringify(subtreeModel, null, 2));
     data.path = workspace.relative(subpath);
+    this._graph.updateNodeData([node]);
+    this.editor.data.root = this._nodeToData("1");
     await this.refresh();
     this._storeHistory();
   }
