@@ -8,7 +8,6 @@ import { FiDelete } from "react-icons/fi";
 import { IoMdReturnLeft } from "react-icons/io";
 import { RiFocus3Line } from "react-icons/ri";
 import { VscCaseSensitive } from "react-icons/vsc";
-import { mergeRefs } from "react-merge-refs";
 import { useDebounceCallback } from "usehooks-ts";
 import { useShallow } from "zustand/react/shallow";
 import {
@@ -19,7 +18,7 @@ import {
   useWorkspace,
 } from "../contexts/workspace-context";
 import i18n from "../misc/i18n";
-import { Hotkey, isMacos, useKeyPress } from "../misc/keys";
+import { Hotkey, isMacos } from "../misc/keys";
 import { mergeClassNames } from "../misc/util";
 import { FilterOption, Graph } from "./graph";
 import "./register-node";
@@ -109,52 +108,12 @@ const createMenu = () => {
   return arr;
 };
 
-const hotkeyMap: Record<string, EditEvent> = {
-  [Hotkey.Copy]: "copy",
-  [Hotkey.Replace]: "replace",
-  [Hotkey.Paste]: "paste",
-  [Hotkey.Insert]: "insert",
-  [Hotkey.Enter]: "insert",
-  [Hotkey.Delete]: "delete",
-  [Hotkey.Backspace]: "delete",
-  [Hotkey.Undo]: "undo",
-  [Hotkey.Redo]: "redo",
-};
-
 export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) => {
   const workspace = useWorkspace(
     useShallow((state) => ({
       editing: state.editing,
     }))
   );
-
-  const keysRef = useRef<HTMLDivElement>(null);
-  useKeyPress(
-    [
-      Hotkey.Copy,
-      Hotkey.Replace,
-      Hotkey.Paste,
-      Hotkey.Insert,
-      Hotkey.Enter,
-      Hotkey.Delete,
-      Hotkey.Backspace,
-    ],
-    keysRef,
-    (e, key) => {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      e.stopPropagation();
-      editor.dispatch?.(hotkeyMap[key]);
-    }
-  );
-
-  useKeyPress([Hotkey.Undo, Hotkey.Redo], null, (e, key) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-      return;
-    }
-    e.stopPropagation();
-    editor.dispatch?.(hotkeyMap[key]);
-  });
 
   const searchInputRef = useRef<InputRef>(null);
   const graphRef = useRef(null);
@@ -309,7 +268,6 @@ export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) =>
     } else if (event === "clickVar") {
       graph.clickVar(data as string);
     }
-    keysRef.current?.focus();
   };
 
   if (graph) {
@@ -369,7 +327,7 @@ export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) =>
     <div
       {...props}
       className="b3-editor"
-      ref={mergeRefs([sizeRef, keysRef])}
+      ref={sizeRef}
       tabIndex={-1}
       style={{ maxWidth: "inherit", maxHeight: "inherit" }}
     >
@@ -491,7 +449,6 @@ export const Editor: FC<EditorProps> = ({ onChange, data: editor, ...props }) =>
                   filterType: "content",
                   placeholder: "",
                 });
-                keysRef.current?.focus();
               }}
             />
           </Flex>

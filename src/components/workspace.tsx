@@ -9,7 +9,7 @@ import useForceUpdate from "use-force-update";
 import { useWindowSize } from "usehooks-ts";
 import { useShallow } from "zustand/react/shallow";
 import { useSetting } from "../contexts/setting-context";
-import { EditorStore, useWorkspace } from "../contexts/workspace-context";
+import { EditEvent, EditorStore, useWorkspace } from "../contexts/workspace-context";
 import { modal } from "../misc/hooks";
 import { Hotkey, isMacos, setInputFocus, useKeyPress } from "../misc/keys";
 import Path from "../misc/path";
@@ -19,6 +19,18 @@ import { Inspector } from "./inspector";
 import { TitleBar } from "./titlebar";
 
 const { Header, Content, Sider } = Layout;
+
+const hotkeyMap: Record<string, EditEvent> = {
+  [Hotkey.Copy]: "copy",
+  [Hotkey.Replace]: "replace",
+  [Hotkey.Paste]: "paste",
+  [Hotkey.Insert]: "insert",
+  [Hotkey.Enter]: "insert",
+  [Hotkey.Delete]: "delete",
+  [Hotkey.Backspace]: "delete",
+  [Hotkey.Undo]: "undo",
+  [Hotkey.Redo]: "redo",
+};
 
 export const Workspace: FC = () => {
   const workspace = useWorkspace(
@@ -92,6 +104,33 @@ export const Workspace: FC = () => {
       keysRef.current?.focus();
     }
   }, [workspace.isShowingSearch]);
+
+  useKeyPress(
+    [
+      Hotkey.Copy,
+      Hotkey.Replace,
+      Hotkey.Paste,
+      Hotkey.Insert,
+      Hotkey.Enter,
+      Hotkey.Delete,
+      Hotkey.Backspace,
+    ],
+    keysRef,
+    (e, key) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      workspace.editing?.dispatch?.(hotkeyMap[key]);
+    }
+  );
+
+  useKeyPress([Hotkey.Undo, Hotkey.Redo], null, (e, key) => {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      return;
+    }
+    e.stopPropagation();
+    workspace.editing?.dispatch?.(hotkeyMap[key]);
+  });
 
   useEffect(() => {
     const editor = workspace.editing;
