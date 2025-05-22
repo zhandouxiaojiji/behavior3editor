@@ -857,7 +857,15 @@ export const loadModule = async (path: string) => {
     if (typeof require !== "undefined" && require.cache) {
       delete require.cache[require.resolve(path)];
     }
-    return await import(/* @vite-ignore */ `${path}?t=${Date.now()}`);
+    if (process.type === "renderer") {
+      return await import(/* @vite-ignore */ `${path}?t=${Date.now()}`);
+    } else {
+      const mjs = path.endsWith(".mjs") ? path : path.replace(".js", ".mjs");
+      fs.copyFileSync(path, mjs);
+      const ret = await import(/* @vite-ignore */ `file:///${mjs}?t=${Date.now()}`);
+      fs.unlinkSync(mjs);
+      return ret;
+    }
   } catch (e) {
     console.error(`failed to load module: ${path}`, e);
     return null;
@@ -919,7 +927,7 @@ export const isTreeFile = (path: string) => {
 const loadVarDecl = (list: ImportDecl[], arr: Array<VarDecl>) => {
   for (const entry of list) {
     if (!files[entry.path]) {
-      console.warn(`file not found:${workdir}/${entry.path}`);
+      console.warn(`file not found: ${workdir}/${entry.path}`);
       continue;
     }
 

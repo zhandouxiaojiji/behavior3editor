@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
+import * as fs from "fs";
 import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
@@ -29,6 +30,9 @@ for (let i = 0; i < argv.length; i++) {
   }
 }
 
+// buildProject = "D:/Users/bite/Desktop/work/bit-common/btree/btree.b3-workspace";
+// buildOutput = "C:/Users/bite/Codetypes/bit-client/assets/resources/data/btree";
+
 const printHelp = () => {
   console.log(`Usage: Behavior3 Editor ${VERSION} [options]`);
   console.log("Options:");
@@ -49,8 +53,8 @@ if (buildOutput || buildProject || buildHelp) {
     process.exit(1);
   }
   try {
-    const project = Path.posixPath(buildProject!);
-    const buildDir = Path.posixPath(buildOutput!);
+    const project = Path.posixPath(Path.resolve(buildProject!));
+    const buildDir = Path.posixPath(Path.resolve(buildOutput!));
     console.log("start build project:", project);
     if (!project.endsWith(".b3-workspace")) {
       throw new Error(`'${project}' is not a workspace`);
@@ -59,6 +63,16 @@ if (buildOutput || buildProject || buildHelp) {
     b3util.initWorkdir(workdir, (msg) => {
       console.error(`${msg}`);
     });
+    console.debug = () => {};
+
+    const files = Path.ls(workdir, true);
+    for (const file of files) {
+      if (file.endsWith(".json")) {
+        const path = Path.relative(workdir, file).replaceAll(Path.sep, "/");
+        b3util.files[path] = fs.statSync(file).mtimeMs;
+      }
+    }
+
     const hasError = await b3util.buildProject(project, buildDir);
     if (hasError) {
       console.error("build failed***");
