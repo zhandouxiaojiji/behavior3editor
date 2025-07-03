@@ -68,13 +68,18 @@ export const Workspace: FC = () => {
     workspace.save();
   });
 
-  useKeyPress(Hotkey.CloseEditor, null, (event) => {
+  useKeyPress(Hotkey.CloseAllOtherEditors, null, (event) => {
     event.preventDefault();
+    workspace.editors.forEach((editor) => {
+      if (editor.path !== workspace.editing?.path) {
+        workspace.close(editor.path);
+      }
+    });
   });
 
   useKeyPress(Hotkey.CloseEditor, null, (event) => {
+    event.preventDefault();
     if (workspace.editing) {
-      event.preventDefault();
       if (workspace.editing.changed) {
         showSaveDialog(workspace.editing);
       } else {
