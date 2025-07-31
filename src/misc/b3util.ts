@@ -12,6 +12,7 @@ import {
   isIntType,
   isJsonType,
   isStringType,
+  keyWords,
   NodeArg,
   NodeData,
   TreeData,
@@ -141,7 +142,7 @@ export const isNewVersion = (version: string) => {
 };
 
 export const isValidVariableName = (name: string) => {
-  return /^[a-zA-Z_$][a-zA-Z_$0-9]*$/.test(name);
+  return /^[a-zA-Z_$][a-zA-Z_$0-9]*$/.test(name) && !keyWords.includes(name);
 };
 
 export const isSubtreeRoot = (data: NodeData) => {

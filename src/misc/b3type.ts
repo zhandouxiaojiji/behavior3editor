@@ -1,6 +1,8 @@
 import { NodeDef } from "../behavior3/src/behavior3";
 
-export const VERSION = "1.8.2";
+export const VERSION = "1.8.4";
+
+export const keyWords = ["true", "false", "null", "undefined", "NaN", "Infinity"];
 
 export type NodeType = NodeDef["type"] | "Other" | "Error";
 export type NodeArg = Exclude<NodeDef["args"], undefined>[number];
