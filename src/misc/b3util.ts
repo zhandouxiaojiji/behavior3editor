@@ -823,6 +823,7 @@ export const buildProject = async (project: string, buildDir: string) => {
   for (const path of Path.ls(Path.dirname(project), true)) {
     if (path.endsWith(".json")) {
       const buildpath = buildDir + "/" + path.substring(workdir.length + 1);
+      console.log("build:", buildpath);
       let tree = createBuildData(path);
       if (buildScript) {
         tree = processBatch(tree, path, buildScript);
@@ -834,7 +835,6 @@ export const buildProject = async (project: string, buildDir: string) => {
         console.log("skip:", buildpath);
         continue;
       }
-      console.log("build:", buildpath);
       const declare: FileVarDecl = {
         import: tree.import.map((v) => ({ path: v, vars: [], depends: [] })),
         vars: tree.vars.map((v) => ({ name: v.name, desc: v.desc })),
