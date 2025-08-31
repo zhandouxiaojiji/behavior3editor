@@ -426,7 +426,12 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
         });
         workspace.allFiles.forEach((file) => {
           let tree: TreeData | null = readTree(file.path);
-          tree = b3util.processBatch(tree, file.path, batch);
+          const errors: string[] = [];
+          tree = b3util.processBatch(tree, file.path, batch, errors);
+          if (errors.length) {
+            errors.forEach((error) => message.error(error));
+            hasError = true;
+          }
           if (tree) {
             batch.onWriteFile?.(file.path, tree);
             writeTree(file.path, tree);

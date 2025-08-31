@@ -37,8 +37,8 @@ type Env = {
 
 export interface BatchScript {
   onSetup?(env: Env): void;
-  onProcessTree?(tree: TreeData, path: string): TreeData | null;
-  onProcessNode?(node: NodeData): NodeData | null;
+  onProcessTree?(tree: TreeData, path: string, errors: string[]): TreeData | null;
+  onProcessNode?(node: NodeData, errors: string[]): NodeData | null;
   onWriteFile?(path: string, tree: TreeData): void;
   onComplete?(status: "success" | "failure"): void;
 }
@@ -767,12 +767,17 @@ export const createBuildData = (path: string) => {
   return null;
 };
 
-export const processBatch = (tree: TreeData | null, path: string, batch: BatchScript) => {
+export const processBatch = (
+  tree: TreeData | null,
+  path: string,
+  batch: BatchScript,
+  errors: string[]
+) => {
   if (!tree) {
     return null;
   }
   if (batch.onProcessTree) {
-    tree = batch.onProcessTree(tree, path);
+    tree = batch.onProcessTree(tree, path, errors);
   }
   if (!tree) {
     return null;
@@ -789,7 +794,7 @@ export const processBatch = (tree: TreeData | null, path: string, batch: BatchSc
         });
         node.children = children;
       }
-      return batch.onProcessNode?.(node);
+      return batch.onProcessNode?.(node, errors);
     };
     tree.root = processNode(tree.root) ?? ({} as NodeData);
   }
@@ -823,10 +828,10 @@ export const buildProject = async (project: string, buildDir: string) => {
   for (const path of Path.ls(Path.dirname(project), true)) {
     if (path.endsWith(".json")) {
       const buildpath = buildDir + "/" + path.substring(workdir.length + 1);
-      console.log("build:", buildpath);
       let tree = createBuildData(path);
+      const errors: string[] = [];
       if (buildScript) {
-        tree = processBatch(tree, path, buildScript);
+        tree = processBatch(tree, path, buildScript, errors);
       }
       if (!tree) {
         continue;
@@ -834,6 +839,11 @@ export const buildProject = async (project: string, buildDir: string) => {
       if (tree.export === false) {
         console.log("skip:", buildpath);
         continue;
+      }
+      console.log("build:", buildpath);
+      if (errors.length) {
+        errors.forEach((msg) => console.error(msg));
+        hasError = true;
       }
       const declare: FileVarDecl = {
         import: tree.import.map((v) => ({ path: v, vars: [], depends: [] })),

@@ -1,6 +1,6 @@
 import { NodeDef } from "../behavior3/src/behavior3";
 
-export const VERSION = "1.8.4";
+export const VERSION = "1.8.5";
 
 export const keyWords = ["true", "false", "null", "undefined", "NaN", "Infinity"];
 

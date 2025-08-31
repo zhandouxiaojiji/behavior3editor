@@ -44,12 +44,12 @@ export const onSetup = (env) => {
   console.log(env.fs.readFileSync("sample/scripts/build.js", "utf8"));
 };
 
-export const onProcessTree = (tree) => {
+export const onProcessTree = (tree, errors) => {
   console.log(`processTree ${tree.name}`);
   return tree;
 };
 
-export const onProcessNode = (node, tree) => {
+export const onProcessNode = (node, tree, errors) => {
   console.log(`processNode ${tree.name} ${node.name}#${node.id}`);
   return node;
 };
