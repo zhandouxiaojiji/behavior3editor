@@ -822,6 +822,7 @@ const NodeInspector: FC = () => {
     if (editingNode.data.name !== newname) {
       workspace.onEditingNode({
         data: {
+          $id: editingNode.data.$id,
           id: editingNode.data.id,
           name: workspace.nodeDefs.get(newname)?.name ?? newname,
           desc: editingNode.data.desc,

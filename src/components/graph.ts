@@ -19,7 +19,7 @@ import * as b3util from "../misc/b3util";
 import { message } from "../misc/hooks";
 import i18n from "../misc/i18n";
 import Path from "../misc/path";
-import { readTree, writeTree } from "../misc/util";
+import { nanoid, readTree, writeTree } from "../misc/util";
 import { TreeNodeState, TreeNodeStyle } from "./register-node";
 
 type G6NodeState = Exclude<G6GraphOptions["node"], undefined>["state"];
@@ -89,8 +89,8 @@ export class Graph {
           const dataB = nodeB.data as unknown as NodeData;
           return Number(dataA.id) - Number(dataB.id);
         },
-        getHeight: ({ data }: { data: NodeData }) => data.size![1],
-        getWidth: ({ data }: { data: NodeData }) => data.size![0],
+        getHeight: ({ data }: { data: NodeData }) => data.$size![1],
+        getWidth: ({ data }: { data: NodeData }) => data.$size![0],
         getVGap: () => 10,
         getHGap: () => 30,
       },
@@ -147,7 +147,7 @@ export class Graph {
   private async _update(data: TreeData, refreshId: boolean = true, refreshVars: boolean = false) {
     this.editor.data = data;
     if (refreshId) {
-      b3util.refreshNodeData(this.data.root, 1);
+      b3util.refreshNodeData(this.data, this.data.root, 1);
     }
 
     if (refreshVars) {
@@ -471,18 +471,24 @@ export class Graph {
 
   async updateNode(editNode: EditNode) {
     const node = this._graph.getNodeData(editNode.data.id);
-    const data = node.data as unknown as NodeData;
+    let data = node.data as unknown as NodeData;
     if (b3util.isNodeEqual(data, editNode.data)) {
       return;
     }
 
+    const subtree = data.path;
+
     // update node
-    node.data = { ...editNode.data, size: b3util.calcSize(editNode.data) };
+    data = { ...editNode.data, $size: b3util.calcSize(editNode.data) };
+    if (editNode.data.name !== data.name) {
+      data.$id = nanoid();
+    }
+    node.data = data as unknown as Record<string, unknown>;
     this._graph.updateNodeData([node]);
     await this._graph.draw();
 
     // update subtree
-    if (data.path !== editNode.data.path) {
+    if (subtree !== editNode.data.path) {
       this.editor.data.root = this._nodeToData("1");
       await this.refresh();
     }
@@ -640,7 +646,7 @@ export class Graph {
     const id = this._dropId;
     const pos = this._graph.getElementPosition(id);
     const data = this._graph.getNodeData(id).data as unknown as NodeData;
-    const [w, h] = data.size!;
+    const [w, h] = data.$size!;
     const x = e.canvas.x - pos[0];
     const y = e.canvas.y - pos[1];
     const states = this._getState(id);
@@ -803,17 +809,20 @@ export class Graph {
       }
       console.debug("parse node:", str);
 
+      const node = JSON.parse(str) as NodeData;
+      b3util.dfs(node, (v) => (v.$id = nanoid()));
+
       const root = this._nodeToData("1");
       let dstData: NodeData | undefined;
-      b3util.dfs(root, (node) => {
-        if (node.id === this._selectedId) {
-          dstData = node;
+      b3util.dfs(root, (v) => {
+        if (v.id === this._selectedId) {
+          dstData = v;
         }
       });
 
       assert(dstData, this._selectedId);
       dstData.children ||= [];
-      dstData.children.push(JSON.parse(str) as NodeData);
+      dstData.children.push(node);
       this.selectNode(null);
       await this._update({ ...this.data, root });
       this._storeHistory();
@@ -881,7 +890,7 @@ export class Graph {
 
     assert(dstData, this._selectedId);
     dstData.children ||= [];
-    dstData.children.push({ id: "", name: "unknow" });
+    dstData.children.push({ id: "", name: "unknow", $id: nanoid() });
     await this._update({ ...this.data, root });
     this._storeHistory();
   }
@@ -920,7 +929,7 @@ export class Graph {
   hasSubtreeUpdated() {
     let updated = false;
     b3util.dfs(this.data.root, (node) => {
-      if (node.path && b3util.files[node.path] !== node.mtime) {
+      if (node.path && b3util.files[node.path] !== node.$mtime) {
         updated = true;
       }
     });

@@ -388,7 +388,7 @@ class TreeNode extends Rect {
   }
 
   private drawStatusIcon(attributes: Required<RectStyleProps>, container: Group) {
-    const status = ((this._data.status ?? 0) & 0b111).toString(2).padStart(3, "0");
+    const status = ((this._data.$status ?? 0) & 0b111).toString(2).padStart(3, "0");
     this.upsert(
       "status",
       GImage,
@@ -758,8 +758,8 @@ class TreeNode extends Rect {
       color = NODE_COLORS[classify];
     }
 
-    assert(data.size);
-    const [width, height] = data.size;
+    assert(data.$size);
+    const [width, height] = data.$size;
 
     this._prefix = (node.prefix as string) ?? "";
     this._width = width;

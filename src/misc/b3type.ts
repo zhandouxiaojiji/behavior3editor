@@ -27,10 +27,13 @@ export interface NodeData {
   disabled?: boolean;
   path?: string;
 
+  // nanoid, for override
+  $id: string;
+
   // for runtime
-  mtime?: number;
-  size?: number[];
-  status?: number;
+  $mtime?: number;
+  $size?: number[];
+  $status?: number;
 }
 
 export type NodeLayout = "compact" | "normal";
@@ -71,6 +74,10 @@ export interface TreeData {
   import: string[];
   vars: VarDecl[];
   root: NodeData;
+
+  $override: {
+    [key: string]: Pick<NodeData, "desc" | "input" | "output" | "args" | "debug" | "disabled">;
+  };
 }
 
 export const getNodeType = (def: NodeDef): NodeType => {

@@ -20,7 +20,7 @@ import {
   VERSION,
 } from "./b3type";
 import Path from "./path";
-import { readJson, readTree, readWorkspace } from "./util";
+import { nanoid, readJson, readTree, readWorkspace } from "./util";
 
 export class NodeDefs extends Map<string, NodeDef> {
   get(key: string): NodeDef {
@@ -520,6 +520,7 @@ const parsingStack: string[] = [];
 
 export const createNode = (data: NodeData, includeChildren: boolean = true) => {
   const node: NodeData = {
+    $id: data.$id,
     id: data.id,
     name: data.name,
     desc: data.desc,
@@ -598,7 +599,7 @@ const appendStatusFlag = (status: number, childStatus: number) => {
 };
 
 const buildStatusFlag = (data: NodeData, childStatus: number) => {
-  let status = data.status!;
+  let status = data.$status!;
   const def = nodeDefs.get(data.name);
   if (def.status?.length) {
     const childSuccess = (childStatus >> StatusFlag.SUCCESS) & 1;
@@ -639,9 +640,9 @@ const buildStatusFlag = (data: NodeData, childStatus: number) => {
           break;
       }
     });
-    data.status = status;
+    data.$status = status;
   } else {
-    data.status = status | childStatus;
+    data.$status = status | childStatus;
   }
 };
 
@@ -694,9 +695,9 @@ export const checkTreeData = (data: NodeData) => {
   return true;
 };
 
-export const refreshNodeData = (node: NodeData, id: number) => {
+export const refreshNodeData = (tree: TreeData, node: NodeData, id: number) => {
   node.id = (id++).toString();
-  node.size = calcSize(node);
+  node.$size = calcSize(node);
 
   const def = nodeDefs.get(node.name);
 
@@ -718,16 +719,16 @@ export const refreshNodeData = (node: NodeData, id: number) => {
     parsingStack.push(node.path);
     try {
       const subtreePath = workdir + "/" + node.path;
-      const subtree = readTree(subtreePath).root;
-      id = refreshNodeData(subtree, --id);
+      const subtree = readTree(subtreePath);
+      id = refreshNodeData(subtree, subtree.root, --id);
       node.name = subtree.name;
       node.desc = subtree.desc;
-      node.args = subtree.args;
-      node.input = subtree.input;
-      node.output = subtree.output;
-      node.children = subtree.children;
-      node.mtime = fs.statSync(subtreePath).mtimeMs;
-      node.size = calcSize(node);
+      node.args = subtree.root.args;
+      node.input = subtree.root.input;
+      node.output = subtree.root.output;
+      node.children = subtree.root.children;
+      node.$mtime = fs.statSync(subtreePath).mtimeMs;
+      node.$size = calcSize(node);
     } catch (e) {
       alertError(`解析子树失败：${node.path}`);
       console.log("parse subtree:", e);
@@ -735,16 +736,16 @@ export const refreshNodeData = (node: NodeData, id: number) => {
     parsingStack.pop();
   } else if (node.children?.length) {
     for (let i = 0; i < node.children.length; i++) {
-      id = refreshNodeData(node.children[i], id);
+      id = refreshNodeData(tree, node.children[i], id);
     }
   }
 
-  node.status = toStatusFlag(node);
+  node.$status = toStatusFlag(node);
   if (node.children) {
     let childStatus = 0;
     node.children.forEach((child) => {
-      if (child.status && !child.disabled) {
-        childStatus = appendStatusFlag(childStatus, child.status);
+      if (child.$status && !child.disabled) {
+        childStatus = appendStatusFlag(childStatus, child.$status);
       }
     });
     buildStatusFlag(node, childStatus);
@@ -756,7 +757,7 @@ export const refreshNodeData = (node: NodeData, id: number) => {
 export const createBuildData = (path: string) => {
   try {
     const treeModel: TreeData = readTree(path);
-    refreshNodeData(treeModel.root, 1);
+    refreshNodeData(treeModel, treeModel.root, 1);
     dfs(treeModel.root, (node) => (node.id = treeModel.prefix + node.id));
     treeModel.name = Path.basenameWithoutExt(path);
     treeModel.root = createFileData(treeModel.root, true);
@@ -885,6 +886,7 @@ export const loadModule = async (path: string) => {
 
 export const createFileData = (data: NodeData, includeSubtree?: boolean) => {
   const nodeData: NodeData = {
+    $id: data.$id,
     id: data.id,
     name: data.name,
     desc: data.desc || undefined,
@@ -926,7 +928,9 @@ export const createNewTree = (path: string) => {
     root: {
       id: "1",
       name: "Sequence",
+      $id: nanoid(),
     },
+    $override: {},
   };
   return tree;
 };

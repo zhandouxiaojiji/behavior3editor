@@ -1,8 +1,14 @@
 import * as fs from "fs";
+import { customAlphabet } from "nanoid";
 import { type WorkspaceModel } from "../contexts/workspace-context";
-import { VarDecl, VERSION, type TreeData } from "./b3type";
+import { VERSION, type TreeData } from "./b3type";
 import { dfs } from "./b3util";
 import Path from "./path";
+
+export const nanoid = customAlphabet(
+  "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  10
+);
 
 export const readJson = <T>(path: string): T => {
   const str = fs.readFileSync(path, "utf-8");
@@ -21,16 +27,21 @@ export const readWorkspace = (path: string) => {
 };
 
 export const readTree = (path: string) => {
-  const data = readJson(path) as TreeData & { declvar?: VarDecl[] };
+  const data = readJson(path) as TreeData;
   data.version = data.version ?? VERSION;
   data.prefix = data.prefix ?? "";
   data.group = data.group || [];
   data.import = data.import || [];
-  data.vars = data.vars || data.declvar || [];
+  data.vars = data.vars || [];
   data.root = data.root || {};
 
   // compatible with old version
-  dfs(data.root, (node) => (node.id = node.id.toString()));
+  dfs(data.root, (node) => {
+    node.id = node.id.toString();
+    if (!node.$id) {
+      node.$id = nanoid();
+    }
+  });
 
   return data;
 };
@@ -46,6 +57,7 @@ export const writeTree = (path: string, data: TreeData) => {
     import: data.import,
     vars: data.vars,
     root: data.root,
+    $override: data.$override,
   });
 };
 
