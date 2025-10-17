@@ -748,7 +748,7 @@ class TreeNode extends Rect {
       !b3util.nodeDefs.has(data.name) ||
       (data.path && !node.children?.length) ||
       (nodeDef.group && !nodeDef.group.some((g) => b3util.usingGroups?.[g])) ||
-      !b3util.checkTreeData(data) ||
+      !b3util.isValidNodeData(data) ||
       foundUndefined(data.input) ||
       foundUndefined(data.output) ||
       foundUndefinedInArgs(nodeDef, data) ||

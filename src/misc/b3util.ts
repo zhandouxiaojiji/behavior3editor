@@ -20,10 +20,11 @@ import {
   VERSION,
 } from "./b3type";
 import Path from "./path";
+import { stringifyJson } from "./stringify";
 import { nanoid, readJson, readTree, readWorkspace } from "./util";
 
 export class NodeDefs extends Map<string, NodeDef> {
-  get(key: string): NodeDef {
+  override get(key: string): NodeDef {
     return super.get(key) ?? unknownNodeDef;
   }
 }
@@ -188,8 +189,10 @@ export const isNodeEqual = (node1: NodeData, node2: NodeData) => {
   return false;
 };
 
-const error = (data: NodeData, msg: string) => {
-  console.error(`check ${data.id}|${data.name}: ${msg}`);
+type ErrorPrinter = (msg: string) => void;
+
+const formatError = (data: NodeData, msg: string) => {
+  return `check ${data.id}|${data.name}: ${msg}`;
 };
 
 export const getNodeArgRawType = (arg: NodeArg) => {
@@ -208,75 +211,62 @@ export const checkNodeArgValue = (
   data: NodeData,
   arg: NodeArg,
   value: unknown,
-  verbose?: boolean
+  printer?: ErrorPrinter
 ) => {
   let hasError = false;
   const type = getNodeArgRawType(arg);
+  const error = !printer ? () => {} : (msg: string) => printer(formatError(data, msg));
   if (isFloatType(type)) {
     const isNumber = typeof value === "number";
     const isOptional = value === undefined && isNodeArgOptional(arg);
     if (!(isNumber || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a number`);
-      }
+      error(`'${arg.name}=${JSON.stringify(value)}' is not a number`);
       hasError = true;
     }
   } else if (isIntType(type)) {
     const isInt = typeof value === "number" && value === Math.floor(value);
     const isOptional = value === undefined && isNodeArgOptional(arg);
     if (!(isInt || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a int`);
-      }
+      error(`'${arg.name}=${JSON.stringify(value)}' is not a int`);
       hasError = true;
     }
   } else if (isStringType(type)) {
     const isString = typeof value === "string" && value;
     const isOptional = (value === undefined || value === "") && isNodeArgOptional(arg);
     if (!(isString || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a string`);
-      }
+      error(`'${arg.name}=${JSON.stringify(value)}' is not a string`);
       hasError = true;
     }
   } else if (isExprType(type)) {
     const isExpr = typeof value === "string" && value;
     const isOptional = (value === undefined || value === "") && isNodeArgOptional(arg);
     if (!(isExpr || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${JSON.stringify(value)}' is not an expr string`);
-      }
+      error(`'${arg.name}=${JSON.stringify(value)}' is not an expr string`);
       hasError = true;
     }
   } else if (isJsonType(type)) {
     const isJson = value !== undefined && value !== "";
     const isOptional = isNodeArgOptional(arg);
     if (!(isJson || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${value}' is not an invalid object`);
-      }
+      error(`'${arg.name}=${value}' is not an invalid object`);
       hasError = true;
     }
   } else if (isBoolType(type)) {
     const isBool = typeof value === "boolean" || value === undefined;
     if (!isBool) {
-      if (verbose) {
-        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a boolean`);
-      }
+      error(`'${arg.name}=${JSON.stringify(value)}' is not a boolean`);
       hasError = true;
     }
   } else {
     hasError = true;
-    error(data, `unknown arg type '${arg.type}'`);
+    error(`unknown arg type '${arg.type}'`);
   }
 
   if (hasArgOptions(arg)) {
     const found = !!arg.options?.find((option) => option.value === value);
     const isOptional = value === undefined && isNodeArgOptional(arg);
     if (!(found || isOptional)) {
-      if (verbose) {
-        error(data, `'${arg.name}=${JSON.stringify(value)}' is not a one of the option values`);
-      }
+      error(`'${arg.name}=${JSON.stringify(value)}' is not a one of the option values`);
       hasError = true;
     }
   }
@@ -284,37 +274,34 @@ export const checkNodeArgValue = (
   return !hasError;
 };
 
-export const checkNodeArg = (data: NodeData, conf: NodeDef, i: number, verbose?: boolean) => {
+export const checkNodeArg = (data: NodeData, conf: NodeDef, i: number, printer?: ErrorPrinter) => {
   let hasError = false;
   const arg = conf.args![i] as NodeArg;
   const value = data.args?.[arg.name];
+  const error = !printer ? () => {} : (msg: string) => printer(formatError(data, msg));
   if (isNodeArgArray(arg)) {
     if (!Array.isArray(value) || value.length === 0) {
       if (!isNodeArgOptional(arg)) {
-        if (verbose) {
-          error(data, `'${arg.name}=${JSON.stringify(value)}' is not an array or empty array`);
-        }
+        error(`'${arg.name}=${JSON.stringify(value)}' is not an array or empty array`);
         hasError = true;
       }
     } else {
       for (let j = 0; j < value.length; j++) {
-        if (!checkNodeArgValue(data, arg, value[j], verbose)) {
+        if (!checkNodeArgValue(data, arg, value[j], printer)) {
           hasError = true;
         }
       }
     }
-  } else if (!checkNodeArgValue(data, arg, value, verbose)) {
+  } else if (!checkNodeArgValue(data, arg, value, printer)) {
     hasError = true;
   }
   if (arg.oneof !== undefined) {
     const idx = conf.input?.findIndex((v) => v.startsWith(arg.oneof!)) ?? -1;
     if (!checkOneof(arg, data.args?.[arg.name], data.input?.[idx])) {
-      if (verbose) {
-        error(
-          data,
-          `only one is allowed for between argument '${arg.name}' and input '${data.input?.[idx]}'`
-        );
-      }
+      error(
+        `only one is allowed for between argument '${arg.name}' and input '${data.input?.[idx]}'`
+      );
+
       hasError = true;
     }
   }
@@ -333,13 +320,44 @@ export const checkOneof = (arg: NodeArg, argValue: unknown, inputValue: unknown)
   return (argValue !== "" && inputValue === "") || (argValue === "" && inputValue !== "");
 };
 
-export const checkNodeData = (data: NodeData | null | undefined) => {
+export const isValidNodeData = (data: NodeData) => {
+  const def = nodeDefs.get(data.name);
+  if (def.input) {
+    for (let i = 0; i < def.input.length; i++) {
+      if (!isValidInputOrOutput(def.input, data.input, i)) {
+        return false;
+      }
+    }
+  }
+  if (def.output) {
+    for (let i = 0; i < def.output.length; i++) {
+      if (!isValidInputOrOutput(def.output, data.output, i)) {
+        return false;
+      }
+    }
+  }
+  if (!isValidChildren(data)) {
+    return false;
+  }
+  if (def.args) {
+    for (let i = 0; i < def.args.length; i++) {
+      if (!checkNodeArg(data, def, i)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+};
+
+const checkNodeData = (data: NodeData | null | undefined, printer: ErrorPrinter) => {
   if (!data) {
     return false;
   }
+  const error = !printer ? () => {} : (msg: string) => printer(formatError(data, msg));
   const conf = nodeDefs.get(data.name);
   if (conf.name === unknownNodeDef.name) {
-    error(data, `undefined node: ${data.name}`);
+    error(`undefined node: ${data.name}`);
     return false;
   }
 
@@ -347,7 +365,7 @@ export const checkNodeData = (data: NodeData | null | undefined) => {
 
   if (conf.group) {
     if (!conf.group.some((g) => usingGroups?.[g])) {
-      error(data, `node group '${conf.group}' is not enabled`);
+      error(`node group '${conf.group}' is not enabled`);
       hasError = true;
     }
   }
@@ -356,7 +374,7 @@ export const checkNodeData = (data: NodeData | null | undefined) => {
     if (data.input) {
       for (const v of data.input) {
         if (v && !usingVars[v]) {
-          error(data, `input variable '${v}' is not defined`);
+          error(`input variable '${v}' is not defined`);
           hasError = true;
         }
       }
@@ -364,7 +382,7 @@ export const checkNodeData = (data: NodeData | null | undefined) => {
     if (data.output) {
       for (const v of data.output) {
         if (v && !usingVars[v]) {
-          error(data, `output variable '${v}' is not defined`);
+          error(`output variable '${v}' is not defined`);
           hasError = true;
         }
       }
@@ -386,7 +404,7 @@ export const checkNodeData = (data: NodeData | null | undefined) => {
           }
           for (const v of vars) {
             if (v && !usingVars[v]) {
-              error(data, `expr variable '${arg.name}' is not defined`);
+              error(`expr variable '${arg.name}' is not defined`);
               hasError = true;
             }
           }
@@ -403,11 +421,11 @@ export const checkNodeData = (data: NodeData | null | undefined) => {
           for (const expr of exprs) {
             try {
               if (!new ExpressionEvaluator(expr).dryRun()) {
-                error(data, `expr '${expr}' is not valid`);
+                error(`expr '${expr}' is not valid`);
                 hasError = true;
               }
             } catch (e) {
-              error(data, `expr '${expr}' is not valid`);
+              error(`expr '${expr}' is not valid`);
               hasError = true;
             }
           }
@@ -420,7 +438,7 @@ export const checkNodeData = (data: NodeData | null | undefined) => {
     const count = data.children?.length || 0;
     if (conf.children !== count) {
       hasError = true;
-      error(data, `expect ${conf.children} children, but got ${count}`);
+      error(`expect ${conf.children} children, but got ${count}`);
     }
   }
 
@@ -435,14 +453,13 @@ export const checkNodeData = (data: NodeData | null | undefined) => {
       }
       if (data.input[i] && !isValidVariableName(data.input[i])) {
         error(
-          data,
           `input field '${data.input[i]}' is not a valid variable name,` +
             `should start with a letter or underscore`
         );
         hasError = true;
       }
       if (!isValidInputOrOutput(conf.input, data.input, i)) {
-        error(data, `intput field '${conf.input[i]}' is required`);
+        error(`intput field '${conf.input[i]}' is required`);
         hasError = true;
       }
       if (i === conf.input.length - 1 && conf.input.at(-1)?.endsWith("...")) {
@@ -465,14 +482,13 @@ export const checkNodeData = (data: NodeData | null | undefined) => {
       }
       if (data.output[i] && !isValidVariableName(data.output[i])) {
         error(
-          data,
           `output field '${data.output[i]}' is not a valid variable name,` +
             `should start with a letter or underscore`
         );
         hasError = true;
       }
       if (!isValidInputOrOutput(conf.output, data.output, i)) {
-        error(data, `output field '${conf.output[i]}' is required`);
+        error(`output field '${conf.output[i]}' is required`);
         hasError = true;
       }
       if (i === conf.output.length - 1 && conf.output.at(-1)?.endsWith("...")) {
@@ -496,7 +512,7 @@ export const checkNodeData = (data: NodeData | null | undefined) => {
         args[key] = value;
       }
 
-      if (!checkNodeArg(data, conf, i, true)) {
+      if (!checkNodeArg(data, conf, i, printer)) {
         hasError = true;
       }
     }
@@ -505,7 +521,7 @@ export const checkNodeData = (data: NodeData | null | undefined) => {
 
   if (data.children) {
     for (const child of data.children) {
-      if (!checkNodeData(child)) {
+      if (!checkNodeData(child, printer)) {
         hasError = true;
       }
     }
@@ -665,36 +681,6 @@ const isValidInputOrOutput = (def: string[], data: string[] | undefined, index: 
   return def[index].includes("?") || data?.[index] || isVariadic(def, index);
 };
 
-export const checkTreeData = (data: NodeData) => {
-  const def = nodeDefs.get(data.name);
-  if (def.input) {
-    for (let i = 0; i < def.input.length; i++) {
-      if (!isValidInputOrOutput(def.input, data.input, i)) {
-        return false;
-      }
-    }
-  }
-  if (def.output) {
-    for (let i = 0; i < def.output.length; i++) {
-      if (!isValidInputOrOutput(def.output, data.output, i)) {
-        return false;
-      }
-    }
-  }
-  if (!isValidChildren(data)) {
-    return false;
-  }
-  if (def.args) {
-    for (let i = 0; i < def.args.length; i++) {
-      if (!checkNodeArg(data, def, i, false)) {
-        return false;
-      }
-    }
-  }
-
-  return true;
-};
-
 export const refreshNodeData = (tree: TreeData, node: NodeData, id: number) => {
   node.id = (id++).toString();
   node.$size = calcSize(node);
@@ -721,8 +707,8 @@ export const refreshNodeData = (tree: TreeData, node: NodeData, id: number) => {
       const subtreePath = workdir + "/" + node.path;
       const subtree = readTree(subtreePath);
       id = refreshNodeData(subtree, subtree.root, --id);
-      node.name = subtree.name;
-      node.desc = subtree.desc;
+      node.name = subtree.root.name;
+      node.desc = subtree.root.desc;
       node.args = subtree.root.args;
       node.input = subtree.root.input;
       node.output = subtree.root.output;
@@ -761,6 +747,8 @@ export const createBuildData = (path: string) => {
     dfs(treeModel.root, (node) => (node.id = treeModel.prefix + node.id));
     treeModel.name = Path.basenameWithoutExt(path);
     treeModel.root = createFileData(treeModel.root, true);
+    dfs(treeModel.root, (node) => delete (node as Partial<NodeData>).$id);
+    delete (treeModel as Partial<TreeData>).$override;
     return treeModel as TreeData;
   } catch (e) {
     console.log("build error:", path, e);
@@ -826,6 +814,7 @@ export const buildProject = async (project: string, buildDir: string) => {
     });
   }
 
+  const allErrors: string[] = [];
   for (const path of Path.ls(Path.dirname(project), true)) {
     if (path.endsWith(".json")) {
       const buildpath = buildDir + "/" + path.substring(workdir.length + 1);
@@ -843,7 +832,6 @@ export const buildProject = async (project: string, buildDir: string) => {
       }
       console.log("build:", buildpath);
       if (errors.length) {
-        errors.forEach((msg) => console.error(msg));
         hasError = true;
       }
       const declare: FileVarDecl = {
@@ -852,14 +840,19 @@ export const buildProject = async (project: string, buildDir: string) => {
         subtree: [],
       };
       refreshVarDecl(tree.root, tree.group, declare);
-      if (!checkNodeData(tree?.root)) {
+      if (!checkNodeData(tree?.root, (msg) => errors.push(msg))) {
         hasError = true;
+      }
+      if (errors.length) {
+        allErrors.push(`${path}:`);
+        errors.forEach((v) => allErrors.push(`  ${v}`));
       }
       buildScript?.onWriteFile?.(buildpath, tree);
       fs.mkdirSync(Path.dirname(buildpath), { recursive: true });
-      fs.writeFileSync(buildpath, JSON.stringify(tree, null, 2));
+      fs.writeFileSync(buildpath, stringifyJson(tree, { indent: 2 }));
     }
   }
+  allErrors.forEach((v) => console.error(v));
   buildScript?.onComplete?.(hasError ? "failure" : "success");
   return hasError;
 };
@@ -930,6 +923,7 @@ export const createNewTree = (path: string) => {
       name: "Sequence",
       $id: nanoid(),
     },
+    custom: {},
     $override: {},
   };
   return tree;
@@ -1017,7 +1011,7 @@ const collectSubtree = (data: NodeData) => {
 export const refreshVarDecl = (root: NodeData, group: string[], declare: FileVarDecl) => {
   const filter: Record<string, boolean> = {};
   const vars: Array<VarDecl> = new (class extends Array {
-    push(...items: VarDecl[]): number {
+    override push(...items: VarDecl[]): number {
       for (const v of items) {
         if (filter[v.name]) {
           continue;

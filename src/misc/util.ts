@@ -4,6 +4,7 @@ import { type WorkspaceModel } from "../contexts/workspace-context";
 import { VERSION, type TreeData } from "./b3type";
 import { dfs } from "./b3util";
 import Path from "./path";
+import { stringifyJson } from "./stringify";
 
 export const nanoid = customAlphabet(
   "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -16,7 +17,7 @@ export const readJson = <T>(path: string): T => {
 };
 
 export const writeJson = <T>(path: string, data: T) => {
-  const str = JSON.stringify(data, undefined, 2);
+  const str = stringifyJson(data, { indent: 2 });
   fs.writeFileSync(path, str, "utf-8");
 };
 
@@ -34,6 +35,8 @@ export const readTree = (path: string) => {
   data.import = data.import || [];
   data.vars = data.vars || [];
   data.root = data.root || {};
+  data.$override = data.$override || {};
+  data.custom = data.custom || {};
 
   // compatible with old version
   dfs(data.root, (node) => {
@@ -57,6 +60,7 @@ export const writeTree = (path: string, data: TreeData) => {
     import: data.import,
     vars: data.vars,
     root: data.root,
+    custom: data.custom,
     $override: data.$override,
   });
 };
