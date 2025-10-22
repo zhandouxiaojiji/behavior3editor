@@ -1,6 +1,6 @@
 import { NodeDef } from "../behavior3/src/behavior3";
 
-export const VERSION = "1.8.5";
+export const VERSION = "1.8.7";
 
 export const keyWords = ["true", "false", "null", "undefined", "NaN", "Infinity"];
 
@@ -27,10 +27,13 @@ export interface NodeData {
   disabled?: boolean;
   path?: string;
 
+  // nanoid, for override
+  $id: string;
+
   // for runtime
-  mtime?: number;
-  size?: number[];
-  status?: number;
+  $mtime?: number;
+  $size?: number[];
+  $status?: number;
 }
 
 export type NodeLayout = "compact" | "normal";
@@ -70,7 +73,12 @@ export interface TreeData {
   group: string[];
   import: string[];
   vars: VarDecl[];
+  custom: Record<string, string | number | boolean | object>;
   root: NodeData;
+
+  $override: {
+    [key: string]: Pick<NodeData, "desc" | "input" | "output" | "args" | "debug" | "disabled">;
+  };
 }
 
 export const getNodeType = (def: NodeDef): NodeType => {

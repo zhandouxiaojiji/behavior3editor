@@ -549,7 +549,7 @@ const validateArg = (
   } else if (value === null && !required) {
     value = undefined;
   }
-  if (!checkNodeArgValue(node, arg, value, true)) {
+  if (!checkNodeArgValue(node, arg, value, console.error)) {
     return Promise.reject(new Error(i18n.t("node.invalidValue")));
   }
   return Promise.resolve(value);
@@ -822,6 +822,7 @@ const NodeInspector: FC = () => {
     if (editingNode.data.name !== newname) {
       workspace.onEditingNode({
         data: {
+          $id: editingNode.data.$id,
           id: editingNode.data.id,
           name: workspace.nodeDefs.get(newname)?.name ?? newname,
           desc: editingNode.data.desc,
