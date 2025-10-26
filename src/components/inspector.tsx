@@ -738,6 +738,7 @@ const NodeInspector: FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finish = (values: any) => {
     const data = {} as NodeData;
+    data.$id = editingNode.data.$id;
     data.id = editingNode.data.id;
     data.name = values.name;
     data.debug = values.debug || undefined;

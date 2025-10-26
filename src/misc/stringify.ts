@@ -251,8 +251,10 @@ export const stringifyJson = (data: unknown, option?: JsonStringifyOption) => {
       buffer.writeString(numberToString(value, ctx.precision));
     } else if (typeof value === "boolean") {
       buffer.writeString(value.toString());
-    } else if (value === null || value === undefined) {
+    } else if (value === null) {
       buffer.writeString("null");
+    } else if (value === undefined) {
+      buffer.writeString("undefined");
     } else if (typeof value === "string") {
       buffer.writeString('"');
       buffer.writeString(escape(value));
@@ -280,7 +282,7 @@ export const stringifyJson = (data: unknown, option?: JsonStringifyOption) => {
       return;
     }
 
-    const ks = keys(value, undefined, value["!ignore"]);
+    const ks = keys(value, (v) => v !== undefined, value["!ignore"]);
     const space = ctx.indent > 0 ? " " : "";
     buffer.writeString("{");
     buffer.linefeed();
