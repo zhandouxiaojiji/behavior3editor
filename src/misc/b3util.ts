@@ -702,6 +702,7 @@ export const refreshNodeData = (tree: TreeData, node: NodeData, id: number) => {
       alertError(`循环引用节点：${node.path}`, 4);
       return id;
     }
+    delete node.$mtime;
     parsingStack.push(node.path);
     try {
       const subtreePath = workdir + "/" + node.path;
@@ -741,15 +742,23 @@ export const refreshNodeData = (tree: TreeData, node: NodeData, id: number) => {
 };
 
 export const createBuildData = (path: string) => {
+  const clearUnnecessaryKey = (data: NodeData | TreeData) => {
+    for (const key in data) {
+      if (key.startsWith("$")) {
+        delete data[key as keyof (NodeData | TreeData)];
+      }
+    }
+  };
+
   try {
     const treeModel: TreeData = readTree(path);
     refreshNodeData(treeModel, treeModel.root, 1);
     dfs(treeModel.root, (node) => (node.id = treeModel.prefix + node.id));
     treeModel.name = Path.basenameWithoutExt(path);
     treeModel.root = createFileData(treeModel.root, true);
-    dfs(treeModel.root, (node) => delete (node as Partial<NodeData>).$id);
-    delete (treeModel as Partial<TreeData>).$override;
-    return treeModel as TreeData;
+    dfs(treeModel.root, (node) => clearUnnecessaryKey(node));
+    clearUnnecessaryKey(treeModel);
+    return treeModel;
   } catch (e) {
     console.log("build error:", path, e);
   }
