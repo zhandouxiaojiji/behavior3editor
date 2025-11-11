@@ -1,6 +1,6 @@
 {
   "name": "behavior3editor",
-  "version": "1.8.8",
+  "version": "1.8.9",
   "main": "dist-electron/main/index.js",
   "description": "行为树编辑器",
   "author": "zhandouxiaojiji & codetypes",

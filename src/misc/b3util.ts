@@ -252,8 +252,9 @@ export const checkNodeArgValue = (
       hasError = true;
     }
   } else if (isBoolType(type)) {
-    const isBool = typeof value === "boolean" || value === undefined;
-    if (!isBool) {
+    const isBool = typeof value === "boolean";
+    const isOptional = value === undefined && isNodeArgOptional(arg);
+    if (!(isBool || isOptional)) {
       error(`'${arg.name}=${JSON.stringify(value)}' is not a boolean`);
       hasError = true;
     }
