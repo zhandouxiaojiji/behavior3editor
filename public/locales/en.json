@@ -131,6 +131,6 @@
   "node.subtreeSaveRootError": "Root node cann't be save as subtree",
   "node.type": "Node type",
   "node.undefinedVariable": "Variable '{{variable}}' is not defined",
-
+  "node.jsonData": "JSON Data",
   "node.unknown.desc": "New node"
 }

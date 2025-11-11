@@ -616,6 +616,7 @@ const NodeInspector: FC = () => {
     } else {
       form.setFieldValue("children", def.children);
     }
+    form.setFieldValue("json-data", JSON.stringify(data, null, 2));
     def.args?.forEach((arg) => {
       const type = getNodeArgRawType(arg);
       const value = data.args?.[arg.name];
@@ -1494,6 +1495,11 @@ const NodeInspector: FC = () => {
                 }
               })}
             </>
+          )}
+          {def.name === "unknown" && (
+            <Form.Item name="json-data" label={t("node.jsonData")}>
+              <TextArea autoSize />
+            </Form.Item>
           )}
         </Form>
         {disabled && (

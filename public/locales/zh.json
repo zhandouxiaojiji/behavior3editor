@@ -131,5 +131,6 @@
   "node.subtreeSaveRootError": "根节点不能保存为子树",
   "node.type": "节点类型",
   "node.undefinedVariable": "变量 “{{variable}}” 未定义",
+  "node.jsonData": "JSON 数据",
   "node.unknown.desc": "新建节点"
 }
