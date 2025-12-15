@@ -382,9 +382,6 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       }
     }
     if (buildDir) {
-      for (const editor of workspace.editors) {
-        editor.dispatch?.("save");
-      }
       const debug = console.debug;
       console.debug = () => {};
       try {
