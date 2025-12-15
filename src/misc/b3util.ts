@@ -502,13 +502,14 @@ const checkNodeData = (data: NodeData | null | undefined, printer: ErrorPrinter)
   }
   if (conf.args) {
     const args: { [k: string]: unknown } = {};
+    data.args ||= {};
     for (let i = 0; i < conf.args.length; i++) {
       const key = conf.args[i].name;
-      if (data.args && data.args[key] === undefined && conf.args[i].default !== undefined) {
+      if (data.args[key] === undefined && conf.args[i].default !== undefined) {
         data.args[key] = conf.args[i].default;
       }
 
-      const value = data.args?.[key];
+      const value = data.args[key];
       if (value !== undefined) {
         args[key] = value;
       }
