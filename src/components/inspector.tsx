@@ -677,7 +677,7 @@ const NodeInspector: FC = () => {
         node.input?.forEach((v, i) => {
           let desc: string;
           const inputDef = def.input;
-          if (inputDef && i >= inputDef.length && isVariadic(inputDef, -1)) {
+          if (inputDef?.length && i >= inputDef.length && isVariadic(inputDef, -1)) {
             desc = inputDef[inputDef.length - 1];
           } else {
             desc = inputDef?.[i] ?? "<unknown>";
@@ -690,7 +690,7 @@ const NodeInspector: FC = () => {
         node.output?.forEach((v, i) => {
           let desc: string;
           const outputDef = def.output;
-          if (outputDef && i >= outputDef.length && isVariadic(outputDef, -1)) {
+          if (outputDef?.length && i >= outputDef.length && isVariadic(outputDef, -1)) {
             desc = outputDef[outputDef.length - 1];
           } else {
             desc = outputDef?.[i] ?? "<unknown>";
