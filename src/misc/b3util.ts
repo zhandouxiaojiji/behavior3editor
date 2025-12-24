@@ -105,7 +105,7 @@ export const parseExpr = (expr: string) => {
     return parsedExprs[expr];
   }
   const result = expr
-    .split(/[^a-zA-Z0-9_.]/)
+    .split(/[^a-zA-Z0-9_.'"]/)
     .map((v) => v.split(".")[0])
     .filter((v) => isValidVariableName(v));
   parsedExprs[expr] = result;

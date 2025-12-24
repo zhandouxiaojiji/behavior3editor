@@ -533,7 +533,6 @@ const validateArg = (
           return Promise.reject(new Error(i18n.t("node.invalidExpression")));
         }
       } catch (e) {
-        console.error(e);
         return Promise.reject(new Error(i18n.t("node.invalidExpression")));
       }
     }
