@@ -373,6 +373,16 @@ export const Workspace: FC = () => {
                 >
                   <PiTreeStructureFill size="50px" />
                   <div>Behavior3 Editor</div>
+                  <div
+                    style={{
+                      paddingLeft: "5px",
+                      paddingTop: "15px",
+                      fontSize: "18px",
+                      color: "gray",
+                    }}
+                  >
+                    {app.getVersion()}
+                  </div>
                 </Flex>
                 <Flex vertical style={{ paddingLeft: "55px", paddingBottom: "15px" }}>
                   <div style={{ fontSize: "22px", fontWeight: "500" }}>{t("start")}</div>
