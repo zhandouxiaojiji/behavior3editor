@@ -137,6 +137,14 @@ body {
   outline: none;
 }
 
+.ant-select-dropdown .ant-select-item-option-selected {
+  background-color: var(--b3-color-selected) !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-active {
+  background-color: var(--b3-color-selected) !important;
+}
+
 .ant-form-item .ant-form-item-explain {
   font-size: small;
 }

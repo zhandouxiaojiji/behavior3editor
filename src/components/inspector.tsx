@@ -11,6 +11,7 @@ import {
   Divider,
   Flex,
   Form,
+  FormInstance,
   Input,
   InputNumber,
   Select,
@@ -26,7 +27,7 @@ import Markdown from "react-markdown";
 import { useDebounceCallback } from "usehooks-ts";
 import { useShallow } from "zustand/react/shallow";
 import { ExpressionEvaluator } from "../behavior3/src/behavior3";
-import { EditNode, EditTree, useWorkspace } from "../contexts/workspace-context";
+import { EditNode, EditorStore, EditTree, useWorkspace } from "../contexts/workspace-context";
 import {
   hasArgOptions,
   ImportDecl,
@@ -43,12 +44,14 @@ import {
 import {
   checkNodeArgValue,
   checkOneof,
+  getNodeArgOptions,
   getNodeArgRawType,
   isNodeArgArray,
   isNodeArgOptional,
   isValidChildren,
   isValidVariableName,
   isVariadic,
+  NodeDefs,
   parseExpr,
 } from "../misc/b3util";
 import { message } from "../misc/hooks";
@@ -554,6 +557,223 @@ const validateArg = (
   return Promise.resolve(value);
 };
 
+const updateFormWithNode = (
+  form: FormInstance,
+  {
+    editingNode,
+    nodeDefs,
+  }: {
+    editingNode: EditNode;
+    nodeDefs: NodeDefs;
+  }
+) => {
+  const data = editingNode.data;
+  const def = nodeDefs.get(data.name);
+  const t = i18n.t;
+  form.resetFields();
+  form.setFieldValue("id", editingNode.prefix + data.id);
+  form.setFieldValue("name", data.name);
+  form.setFieldValue("type", def.type);
+  form.setFieldValue("desc", data.desc || def.desc);
+  form.setFieldValue("debug", data.debug);
+  form.setFieldValue("disabled", data.disabled);
+  form.setFieldValue("path", data.path);
+  form.setFieldValue(
+    "group",
+    def.group?.map((g) => ({ label: g, value: g }))
+  );
+  if (def.children === undefined || def.children === -1) {
+    form.setFieldValue("children", t("node.children.unlimited"));
+  } else {
+    form.setFieldValue("children", def.children);
+  }
+  form.setFieldValue("json-data", JSON.stringify(data, null, 2));
+  def.args?.forEach((arg) => {
+    const type = getNodeArgRawType(arg);
+    const value = data.args?.[arg.name];
+    const name = `args.${arg.name}`;
+    if (isNodeArgArray(arg)) {
+      form.setFieldValue(
+        name,
+        (Array.isArray(value) ? value : []).map((item) => {
+          if (isJsonType(type)) {
+            return item === null ? "null" : JSON.stringify(item ?? arg.default, null, 2);
+          } else {
+            return item;
+          }
+        })
+      );
+    } else if (isJsonType(type)) {
+      form.setFieldValue(
+        name,
+        value === null ? "null" : JSON.stringify(value ?? arg.default, null, 2)
+      );
+    } else {
+      form.setFieldValue(name, value ?? arg.default);
+    }
+  });
+  def.input?.forEach((_, i) => {
+    if (isVariadic(def.input!, i)) {
+      form.setFieldValue(`input.${i}`, data.input?.slice(i) ?? []);
+    } else {
+      form.setFieldValue(`input.${i}`, data.input?.[i]);
+    }
+  });
+  def.output?.forEach((_, i) => {
+    if (isVariadic(def.output!, i)) {
+      form.setFieldValue(`output.${i}`, data.output?.slice(i) ?? []);
+    } else {
+      form.setFieldValue(`output.${i}`, data.output?.[i]);
+    }
+  });
+};
+
+const createNodeFromForm = (
+  form: FormInstance,
+  {
+    editingNode,
+    nodeDefs,
+  }: {
+    editingNode: EditNode;
+    nodeDefs: NodeDefs;
+  }
+) => {
+  const def = nodeDefs.get(editingNode.data.name);
+  const data = {} as NodeData;
+  const values = form.getFieldsValue();
+  data.$id = editingNode.data.$id;
+  data.id = editingNode.data.id;
+  data.name = values.name;
+  data.debug = values.debug || undefined;
+  data.disabled = values.disabled || undefined;
+  data.desc = values.desc && values.desc !== def.desc ? values.desc : undefined;
+  data.path = values.path || undefined;
+
+  if (def.args?.length) {
+    def.args?.forEach((arg) => {
+      const value = values[`args.${arg.name}`];
+      if (value !== null && value !== undefined && value !== "") {
+        data.args ||= {};
+        const type = getNodeArgRawType(arg);
+        if (isNodeArgArray(arg)) {
+          const arr: unknown[] = [];
+          if (Array.isArray(value)) {
+            value.forEach((item) => {
+              if (isJsonType(type)) {
+                try {
+                  arr.push(item === "null" ? null : JSON.parse(item));
+                } catch {
+                  /** ignore */
+                }
+              } else if (item !== null && item !== undefined) {
+                arr.push(item);
+              }
+            });
+          }
+          data.args[arg.name] = !isNodeArgOptional(arg) ? arr : arr.length ? arr : undefined;
+        } else if (isJsonType(type)) {
+          try {
+            data.args[arg.name] = value === "null" ? null : JSON.parse(value);
+          } catch {
+            /** ignore */
+          }
+        } else {
+          data.args[arg.name] = value;
+        }
+      }
+    });
+  } else {
+    data.args = {};
+  }
+
+  if (def.input?.length) {
+    def.input?.forEach((_, i) => {
+      data.input ||= [];
+      if (isVariadic(def.input!, i)) {
+        const arr = (values[`input.${i}`] ?? []) as string[];
+        data.input.push(...arr.filter((v) => typeof v === "string"));
+      } else {
+        const v = values[`input.${i}`];
+        data.input.push(v ?? "");
+      }
+    });
+  } else {
+    data.input = [];
+  }
+
+  if (def.output?.length) {
+    def.output?.forEach((_, i) => {
+      data.output ||= [];
+      if (isVariadic(def.output!, i)) {
+        const arr = (values[`output.${i}`] ?? []) as string[];
+        data.output.push(...arr.filter((v) => typeof v === "string"));
+      } else {
+        const v = values[`output.${i}`];
+        data.output.push(v ?? "");
+      }
+    });
+  } else {
+    data.output = [];
+  }
+  return data;
+};
+
+const createInOutOptions = ({
+  nodeDefs,
+  usingVars,
+  editing,
+}: {
+  nodeDefs: NodeDefs;
+  usingVars: Record<string, VarDecl> | null;
+  editing: EditorStore | undefined;
+}) => {
+  const options: OptionType[] = [];
+  const filter: Record<string, boolean> = {};
+  const collect = (node?: NodeData) => {
+    if (node) {
+      const def = nodeDefs.get(node.name);
+      node.input?.forEach((v, i) => {
+        let desc: string;
+        const inputDef = def.input;
+        if (inputDef?.length && i >= inputDef.length && isVariadic(inputDef, -1)) {
+          desc = inputDef[inputDef.length - 1];
+        } else {
+          desc = inputDef?.[i] ?? "<unknown>";
+        }
+        if (!filter[v]) {
+          options.push({ label: `${v}(${desc})`, value: v });
+          filter[v] = true;
+        }
+      });
+      node.output?.forEach((v, i) => {
+        let desc: string;
+        const outputDef = def.output;
+        if (outputDef?.length && i >= outputDef.length && isVariadic(outputDef, -1)) {
+          desc = outputDef[outputDef.length - 1];
+        } else {
+          desc = outputDef?.[i] ?? "<unknown>";
+        }
+        if (!filter[v]) {
+          options.push({ label: `${v}(${desc})`, value: v });
+          filter[v] = true;
+        }
+      });
+      node.children?.forEach((child) => collect(child));
+    }
+  };
+  if (usingVars) {
+    Object.values(usingVars).forEach((v) => {
+      if (!filter[v.name]) {
+        options.push({ label: `${v.name}(${v.desc})`, value: v.name });
+        filter[v.name] = true;
+      }
+    });
+  } else {
+    collect(editing?.data.root);
+  }
+  return options;
+};
+
 const NodeInspector: FC = () => {
   const workspace = useWorkspace(
     useShallow((state) => ({
@@ -578,7 +798,13 @@ const NodeInspector: FC = () => {
     100
   );
 
+  const [nodeArgs, setNodeArgs] = useState<Record<string, unknown>>(
+    workspace.editingNode.data.args ?? {}
+  );
+
   const submit = () => {
+    setNodeArgs(createNodeFromForm(form, workspace).args ?? {});
+
     if (form.isFieldsValidating()) {
       setTimeout(() => {
         submit();
@@ -596,124 +822,24 @@ const NodeInspector: FC = () => {
 
   // set form values
   useEffect(() => {
-    const data = workspace.editingNode.data;
-    const def = workspace.nodeDefs.get(workspace.editingNode.data.name);
-    form.resetFields();
-    form.setFieldValue("id", workspace.editingNode.prefix + data.id);
-    form.setFieldValue("name", data.name);
-    form.setFieldValue("type", def.type);
-    form.setFieldValue("desc", data.desc || def.desc);
-    form.setFieldValue("debug", data.debug);
-    form.setFieldValue("disabled", data.disabled);
-    form.setFieldValue("path", data.path);
-    form.setFieldValue(
-      "group",
-      def.group?.map((g) => ({ label: g, value: g }))
-    );
-    if (def.children === undefined || def.children === -1) {
-      form.setFieldValue("children", t("node.children.unlimited"));
-    } else {
-      form.setFieldValue("children", def.children);
-    }
-    form.setFieldValue("json-data", JSON.stringify(data, null, 2));
-    def.args?.forEach((arg) => {
-      const type = getNodeArgRawType(arg);
-      const value = data.args?.[arg.name];
-      const name = `args.${arg.name}`;
-      if (isNodeArgArray(arg)) {
-        form.setFieldValue(
-          name,
-          (Array.isArray(value) ? value : []).map((item) => {
-            if (isJsonType(type)) {
-              return item === null ? "null" : JSON.stringify(item ?? arg.default, null, 2);
-            } else {
-              return item;
-            }
-          })
-        );
-      } else if (isJsonType(type)) {
-        form.setFieldValue(
-          name,
-          value === null ? "null" : JSON.stringify(value ?? arg.default, null, 2)
-        );
-      } else {
-        form.setFieldValue(name, value ?? arg.default);
-      }
-    });
-    def.input?.forEach((_, i) => {
-      if (isVariadic(def.input!, i)) {
-        form.setFieldValue(`input.${i}`, data.input?.slice(i) ?? []);
-      } else {
-        form.setFieldValue(`input.${i}`, data.input?.[i]);
-      }
-    });
-    def.output?.forEach((_, i) => {
-      if (isVariadic(def.output!, i)) {
-        form.setFieldValue(`output.${i}`, data.output?.slice(i) ?? []);
-      } else {
-        form.setFieldValue(`output.${i}`, data.output?.[i]);
-      }
-    });
+    updateFormWithNode(form, workspace);
     validateFieldsLater();
   }, [workspace.editingNode]);
 
   // auto complete for node
-  const nodeOptions = useMemo(() => {
-    const options: OptionType[] = [];
-    workspace.nodeDefs.forEach((e) => {
-      options.push({ label: `${e.name}(${e.desc})`, value: e.name });
-    });
-    return options;
-  }, [workspace.nodeDefs]);
+  const nodeOptions = useMemo(
+    () =>
+      Array.from(workspace.nodeDefs.entries()).map(([name, def]) => {
+        return { label: `${name}(${def.desc})`, value: name };
+      }),
+    [workspace.nodeDefs]
+  );
 
   // auto complete for input and output
-  const inoutVarOptions = useMemo(() => {
-    const options: OptionType[] = [];
-    const filter: Record<string, boolean> = {};
-    const collect = (node?: NodeData) => {
-      if (node) {
-        const def = workspace.nodeDefs.get(node.name);
-        node.input?.forEach((v, i) => {
-          let desc: string;
-          const inputDef = def.input;
-          if (inputDef?.length && i >= inputDef.length && isVariadic(inputDef, -1)) {
-            desc = inputDef[inputDef.length - 1];
-          } else {
-            desc = inputDef?.[i] ?? "<unknown>";
-          }
-          if (!filter[v]) {
-            options.push({ label: `${v}(${desc})`, value: v });
-            filter[v] = true;
-          }
-        });
-        node.output?.forEach((v, i) => {
-          let desc: string;
-          const outputDef = def.output;
-          if (outputDef?.length && i >= outputDef.length && isVariadic(outputDef, -1)) {
-            desc = outputDef[outputDef.length - 1];
-          } else {
-            desc = outputDef?.[i] ?? "<unknown>";
-          }
-          if (!filter[v]) {
-            options.push({ label: `${v}(${desc})`, value: v });
-            filter[v] = true;
-          }
-        });
-        node.children?.forEach((child) => collect(child));
-      }
-    };
-    if (workspace.usingVars) {
-      Object.values(workspace.usingVars).forEach((v) => {
-        if (!filter[v.name]) {
-          options.push({ label: `${v.name}(${v.desc})`, value: v.name });
-          filter[v.name] = true;
-        }
-      });
-    } else {
-      collect(workspace.editing?.data.root);
-    }
-    return options;
-  }, [workspace.editing, workspace.usingVars]);
+  const inoutVarOptions = useMemo(
+    () => createInOutOptions(workspace),
+    [workspace.editing, workspace.usingVars]
+  );
 
   // auto complete for subtree
   const subtreeOptions = useMemo(() => {
@@ -734,87 +860,9 @@ const NodeInspector: FC = () => {
   const def = workspace.nodeDefs.get(editingNode.data.name);
   const disabled = editingNode.disabled;
 
-  // update value
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const finish = (values: any) => {
-    const data = {} as NodeData;
-    data.$id = editingNode.data.$id;
-    data.id = editingNode.data.id;
-    data.name = values.name;
-    data.debug = values.debug || undefined;
-    data.disabled = values.disabled || undefined;
-    data.desc = values.desc && values.desc !== def.desc ? values.desc : undefined;
-    data.path = values.path || undefined;
-
-    if (def.args?.length) {
-      def.args?.forEach((arg) => {
-        const value = values[`args.${arg.name}`];
-        if (value !== null && value !== undefined && value !== "") {
-          data.args ||= {};
-          const type = getNodeArgRawType(arg);
-          if (isNodeArgArray(arg)) {
-            const arr: unknown[] = [];
-            if (Array.isArray(value)) {
-              value.forEach((item) => {
-                if (isJsonType(type)) {
-                  try {
-                    arr.push(item === "null" ? null : JSON.parse(item));
-                  } catch {
-                    /** ignore */
-                  }
-                } else if (item !== null && item !== undefined) {
-                  arr.push(item);
-                }
-              });
-            }
-            data.args[arg.name] = !isNodeArgOptional(arg) ? arr : arr.length ? arr : undefined;
-          } else if (isJsonType(type)) {
-            try {
-              data.args[arg.name] = value === "null" ? null : JSON.parse(value);
-            } catch {
-              /** ignore */
-            }
-          } else {
-            data.args[arg.name] = value;
-          }
-        }
-      });
-    } else {
-      data.args = {};
-    }
-
-    if (def.input?.length) {
-      def.input?.forEach((_, i) => {
-        data.input ||= [];
-        if (isVariadic(def.input!, i)) {
-          const arr = (values[`input.${i}`] ?? []) as string[];
-          data.input.push(...arr.filter((v) => typeof v === "string"));
-        } else {
-          const v = values[`input.${i}`];
-          data.input.push(v ?? "");
-        }
-      });
-    } else {
-      data.input = [];
-    }
-
-    if (def.output?.length) {
-      def.output?.forEach((_, i) => {
-        data.output ||= [];
-        if (isVariadic(def.output!, i)) {
-          const arr = (values[`output.${i}`] ?? []) as string[];
-          data.output.push(...arr.filter((v) => typeof v === "string"));
-        } else {
-          const v = values[`output.${i}`];
-          data.output.push(v ?? "");
-        }
-      });
-    } else {
-      data.output = [];
-    }
-
+  const finish = () => {
     workspace.editing?.dispatch?.("updateNode", {
-      data: data,
+      data: createNodeFromForm(form, workspace),
     } as EditNode);
   };
 
@@ -833,7 +881,7 @@ const NodeInspector: FC = () => {
         prefix: editingNode.prefix,
         disabled: editingNode.disabled,
       });
-      finish(form.getFieldsValue());
+      finish();
     } else {
       submit();
     }
@@ -841,7 +889,7 @@ const NodeInspector: FC = () => {
 
   const changeSubtree = () => {
     if (form.getFieldValue("path") !== editingNode.data.path) {
-      finish(form.getFieldsValue());
+      finish();
     } else {
       submit();
     }
@@ -1182,7 +1230,7 @@ const NodeInspector: FC = () => {
                                   () => ({
                                     validator(_, value) {
                                       return validateArg(
-                                        editingNode.data,
+                                        createNodeFromForm(form, workspace),
                                         arg,
                                         value,
                                         workspace.usingVars
@@ -1215,12 +1263,14 @@ const NodeInspector: FC = () => {
                                     disabled={disabled}
                                     onBlur={submit}
                                     onChange={submit}
-                                    options={(arg.options ?? []).map((option) => {
-                                      return {
-                                        value: option.value,
-                                        label: `${option.name}(${option.value})`,
-                                      };
-                                    })}
+                                    options={(getNodeArgOptions(arg, nodeArgs) ?? []).map(
+                                      (option) => {
+                                        return {
+                                          value: option.value,
+                                          label: `${option.name}(${option.value})`,
+                                        };
+                                      }
+                                    )}
                                     filterOption={(value, option) => {
                                       value = value.toUpperCase();
                                       return !!option?.label
@@ -1280,7 +1330,7 @@ const NodeInspector: FC = () => {
                         ({ getFieldValue, setFieldValue, isFieldValidating, validateFields }) => ({
                           async validator(_, value) {
                             return validateArg(
-                              editingNode.data,
+                              createNodeFromForm(form, workspace),
                               arg,
                               value,
                               workspace.usingVars
@@ -1344,7 +1394,7 @@ const NodeInspector: FC = () => {
                           disabled={disabled}
                           onBlur={submit}
                           onChange={submit}
-                          options={(arg.options ?? []).map((option) => {
+                          options={(getNodeArgOptions(arg, nodeArgs) ?? []).map((option) => {
                             return {
                               value: option.value,
                               label: `${option.name}(${option.value})`,

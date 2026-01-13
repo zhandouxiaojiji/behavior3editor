@@ -69,9 +69,28 @@ export const initWorkdir = (path: string, handler: typeof alertError) => {
   const nodeDefData = readJson(`${workdir}/node-config.b3-setting`) as NodeDef[];
   const groups: Set<string> = new Set();
   nodeDefs = new NodeDefs();
-  for (const v of nodeDefData) {
-    nodeDefs.set(v.name, v);
-    v.group?.forEach((g) => groups.add(g));
+  for (const node of nodeDefData) {
+    node.args?.forEach((arg) => {
+      if (arg.options && !arg.options[0].source) {
+        arg.options = [
+          {
+            source: arg.options as unknown as Array<{ name: string; value: unknown }>,
+          },
+        ];
+      }
+      arg.options?.forEach((option) => {
+        Object.keys(option.match ?? {}).forEach((key) => {
+          if (!node.args?.find((v) => v.name === key)) {
+            console.error(
+              `match key '${key}' in arg '${arg.name}' of ` +
+                `node '${node.name}' is not found in args`
+            );
+          }
+        });
+      });
+    });
+    nodeDefs.set(node.name, node);
+    node.group?.forEach((g) => groups.add(g));
   }
   groupDefs = Array.from(groups).sort();
 };
@@ -207,6 +226,19 @@ export const isNodeArgOptional = (arg: NodeArg) => {
   return arg.type.includes("?");
 };
 
+export const getNodeArgOptions = (arg: NodeArg, args: Record<string, unknown>) => {
+  if (!arg.options) {
+    return;
+  }
+  const defaultMatch = arg.options.find((option) => !option.match);
+  if (defaultMatch) {
+    return defaultMatch.source;
+  }
+  return arg.options.find((entry) =>
+    Object.entries(entry.match!).every(([key, value]) => value.includes(args[key]))
+  )?.source;
+};
+
 export const checkNodeArgValue = (
   data: NodeData,
   arg: NodeArg,
@@ -264,7 +296,8 @@ export const checkNodeArgValue = (
   }
 
   if (hasArgOptions(arg)) {
-    const found = !!arg.options?.find((option) => option.value === value);
+    const options = getNodeArgOptions(arg, data.args ?? {});
+    const found = !!options?.find((option) => option.value === value);
     const isOptional = value === undefined && isNodeArgOptional(arg);
     if (!(found || isOptional)) {
       error(`'${arg.name}=${JSON.stringify(value)}' is not a one of the option values`);
