@@ -468,12 +468,10 @@ const checkNodeData = (data: NodeData | null | undefined, printer: ErrorPrinter)
     }
   }
 
-  if (conf.children !== undefined && conf.children !== -1) {
-    const count = data.children?.length || 0;
-    if (conf.children !== count) {
-      hasError = true;
-      error(`expect ${conf.children} children, but got ${count}`);
-    }
+  if (!isValidChildren(data)) {
+    hasError = true;
+    const count = data.children?.filter((c) => !c.disabled).length || 0;
+    error(`expect ${conf.children} children, but got ${count}`);
   }
 
   let hasVaridicInput = false;
@@ -700,7 +698,7 @@ const buildStatusFlag = (data: NodeData, childStatus: number) => {
 export const isValidChildren = (data: NodeData) => {
   const def = nodeDefs.get(data.name);
   if (def.children !== undefined && def.children !== -1) {
-    return (data.children?.length || 0) === def.children;
+    return (data.children?.filter((c) => !c.disabled).length || 0) === def.children;
   }
   return true;
 };
