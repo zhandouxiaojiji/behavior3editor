@@ -1,3 +1,7 @@
+# vscode插件
+
+[Behavior Tree Editor](https://marketplace.visualstudio.com/items?itemName=codetypes.vscode-behavior3)
+
 # 行为树编辑器
 
 这是一个直观、可视化、通用的行为树编辑器，行为树的保存格式为 json，可以让策划自行去实现 AI，技能，buff 等复杂的游戏逻辑，从而减少不必要的沟通成本和提升开发效率。
