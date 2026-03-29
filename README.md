@@ -101,7 +101,7 @@ npm run build # 编译可执行文件
 ## 示例行为树框架
 
 - lua 版本 [behavior3lua](https://github.com/zhandouxiaojiji/behavior3lua)
-- js/ts 版本 [behavior3-ts](https://github.com/zhongfq/behavior3-ts)。
+- js/ts 版本 [behavior3-ts](https://github.com/codetypess/behavior3-ts)。
 
 ## About
 
