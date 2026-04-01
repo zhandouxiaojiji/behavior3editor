@@ -1,6 +1,6 @@
-# vscode插件
+# vscode 插件
 
-[Behavior Tree Editor](https://marketplace.visualstudio.com/items?itemName=codetypes.vscode-behavior3)
+[Behavior3 Editor](https://marketplace.visualstudio.com/items?itemName=codetypes.vscode-behavior3)
 
 # 行为树编辑器
 
