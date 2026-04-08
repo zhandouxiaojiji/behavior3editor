@@ -1,5 +1,5 @@
 import { Node, NodeDef } from "../behavior3/src/behavior3";
-import { Context, DeepReadonly } from "../behavior3/src/behavior3/context";
+import { Context } from "../behavior3/src/behavior3/context";
 
 export const zhNodeDef = () => {
   const context = new (class extends Context {
@@ -7,7 +7,7 @@ export const zhNodeDef = () => {
       throw new Error("Method not implemented.");
     }
   })();
-  const defs: DeepReadonly<NodeDef>[] = [];
+  const defs: NodeDef[] = [];
   for (const k in context.nodeDefs) {
     const descriptor = context.nodeDefs[k];
     defs.push(descriptor);
